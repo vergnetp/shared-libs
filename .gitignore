@@ -1,0 +1,31 @@
+# Bytecode files
+*.pyc
+*.pyo
+__pycache__/
+
+# Virtual environment directories (if using virtualenv or venv)
+env/
+venv/
+ENV/
+.venv/
+
+# pytest cache
+.cache/
+.pytest_cache
+
+# Distribution/Packaging
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# PyCharm project files
+.idea/
+
+# VS Code workspace settings
+.vscode/
+
+# OS-specific files
+.DS_Store  # macOS
+Thumbs.db  # Windows
