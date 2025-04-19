@@ -1,5 +1,5 @@
 import pytest
-from errors.error import Error, TrackError, ApiKeyError
+from ..error import Error, TrackError, ApiKeyError
 
 def test_basic_error_str_contains_description_and_location():
     err = Error(description="Something went wrong", action="Retry", critical=True)

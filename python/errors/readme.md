@@ -1,12 +1,12 @@
-# This module is meant to offer Support friendly Exceptions
+# This module provides exceptions designed for support and debugging purposes.
 
-Error is to be raised when you want to want to add custom description or action (for support purpose mainly).
+Use Error to wrap exceptions with additional context like a description or a recommended action.
 
-When converted to string, it will pretty print the chained Errors down to the possible unhandled error.
+Use TrackError to trace function call paths (stack traces) through your application.
 
-TrackError is to be raised in all functions you want to trace the stack for.
+When converted to a string, errors are pretty-printed recursively down to the root cause.
 
-Note that the critical flag bubble up once True
+The critical flag bubbles up when set to True anywhere in the chain.
 
 ## Example
 
@@ -21,12 +21,6 @@ def get_data():
     except Exception as e:
         raise TrackError(e)
 
-def pass_through():
-    try:
-        return get_data()
-    except Exception as e:
-        raise TrackError(e)
-
 def appli():
     try:
         data = get_data()
@@ -38,6 +32,7 @@ def api():
         appli()
     except Exception as e:
         raise Error(e, description='Internal Error', action='Please try again later')
+
 try:
     api()
 except Exception as e:    
@@ -53,24 +48,29 @@ Error:
     "description": "Internal Error",
     "action": "Please try again later",
     "critical": True,
-    "location": "C:\\Users\\vergn\\Desktop\\DigitalPixo\\repo\\server\\test.py api line 41",
+    "location": "...\\test.py api line 23",
     "error": {
         "description": "could not get data from database",
         "action": "cancel the order",
         "critical": True,
-        "location": "C:\\Users\\vergn\\Desktop\\DigitalPixo\\repo\\server\\test.py appli line 35",
+        "location": "...\\test.py appli line 17",
         "error": {
             "description": "Connection to \"my database\" failed",
             "action": "check inner exception",
-            "location": "C:\\Users\\vergn\\Desktop\\DigitalPixo\\repo\\server\\test.py get_data line 20",
+            "location": "...\\test.py get_data line 7",
             "error": {
                 "description": "[Errno 2] No such file or directory: 'my database'",
-                "location": "C:\\Users\\vergn\\Desktop\\DigitalPixo\\repo\\server\\test.py get_data line 18"
+                "location": "...\\test.py get_data line 5"
             }
         }
     }
 }
 
 Stack:
-['C:\\Users\\vergn\\Desktop\\DigitalPixo\\repo\\server\\test.py api line 41', 'C:\\Users\\vergn\\Desktop\\DigitalPixo\\repo\\server\\test.py appli line 35', 'C:\\Users\\vergn\\Desktop\\DigitalPixo\\repo\\server\\test.py pass_through line 29', 'C:\\Users\\vergn\\Desktop\\DigitalPixo\\repo\\server\\test.py get_data line 23', 'C:\\Users\\vergn\\Desktop\\DigitalPixo\\repo\\server\\test.py get_data line 20', 'C:\\Users\\vergn\\Desktop\\DigitalPixo\\repo\\server\\test.py get_data line 18']
+['...\\test.py api line 23', 
+'...\\test.py appli line 17', 
+'...\\test.py get_data line 11', 
+'...\\test.py get_data line 7', 
+'...\\test.py get_data line 5']
+
 ```
