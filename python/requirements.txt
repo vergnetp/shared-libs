@@ -1,2 +1,11 @@
 pytest
+pytest-asyncio
+nest_asyncio
 psutil
+python-dotenv
+aiosqlite
+pymysql
+aiomysql
+cryptography
+psycopg2-binary
+asyncpg

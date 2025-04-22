@@ -1,0 +1,392 @@
+22/04/2025 11:36:55:990710: INFO: Email sent successfully to ['bob@example.com'] with subject: Test
+22/04/2025 11:36:56:014208: INFO: Email sent successfully to ['a@example.com'] with subject: Test Compressed
+22/04/2025 11:36:56:017319: ERROR:
+Error sending email to ['x@example.com'] with subject: Test. Error: Error:
+{
+    "description": null,
+    "action": null,
+    "critical": false,
+    "location": "C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 86",
+    "error": "SMTP credentials are missing."
+}
+Trace:
+['C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 86', 'unknown']
+22/04/2025 11:36:56:036810: ERROR:
+Error sending email to ['a@example.com'] with subject: Too big. Error: Error:
+{
+    "description": null,
+    "action": null,
+    "critical": false,
+    "location": "C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 77",
+    "error": "File size exceeds 25 MB limit."
+}
+Trace:
+['C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 77', 'unknown']
+22/04/2025 11:51:18:594914: INFO: Email sent successfully to ['bob@example.com'] with subject: Test
+22/04/2025 11:51:18:617097: INFO: Email sent successfully to ['a@example.com'] with subject: Test Compressed
+22/04/2025 11:51:18:620354: ERROR:
+Error sending email to ['x@example.com'] with subject: Test. Error: Error:
+{
+    "description": null,
+    "action": null,
+    "critical": false,
+    "location": "C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 86",
+    "error": "SMTP credentials are missing."
+}
+Trace:
+['C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 86', 'unknown']
+22/04/2025 11:51:18:632612: ERROR:
+Error sending email to ['a@example.com'] with subject: Too big. Error: Error:
+{
+    "description": null,
+    "action": null,
+    "critical": false,
+    "location": "C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 77",
+    "error": "File size exceeds 25 MB limit."
+}
+Trace:
+['C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 77', 'unknown']
+22/04/2025 12:59:59:320954: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 13:02:26:287289: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 13:04:12:286924: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 13:08:28:230516: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 13:10:20:040316: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 13:12:59:392105: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 13:15:16:060239: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 13:16:42:098555: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 13:18:42:150571: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 13:48:45:589763: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 13:49:57:813225: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 13:51:05:280264: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 13:54:23:766159: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 13:58:31:418712: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 13:59:46:946924: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 17:00:32:216000: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 17:01:01:643170: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 17:02:01:648661: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 17:10:06:457490: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 17:11:29:883560: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 17:12:57:763554: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 17:24:53:522669: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 17:26:46:758671: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 17:31:27:272255: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 17:32:37:955612: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 17:33:42:492924: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 17:34:10:402677: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 17:35:05:348063: ERROR:
+Error while closing connection of testdb: connect() got an unexpected keyword argument 'database'
+22/04/2025 17:36:58:846811: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:37:00:855241: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:37:02:870576: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:37:04:879973: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:37:06:888298: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:37:08:899287: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:37:10:909602: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:37:12:924117: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:37:14:933733: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:37:16:945701: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:37:53:004242: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:37:55:014845: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:37:57:026096: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:37:59:033133: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:38:01:041308: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:38:03:067884: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:38:05:076354: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:38:07:084672: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:38:09:092603: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:38:11:100935: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:40:47:444040: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:40:49:454294: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:40:51:461478: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:40:53:468497: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:40:55:477524: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:40:57:484750: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:40:59:492713: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:41:01:503602: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:41:03:511883: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:41:05:520719: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:43:32:453338: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:43:34:857784: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:44:23:733610: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:44:23:735065: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:44:23:736696: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:44:23:738235: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:44:23:739675: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:44:23:741071: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:44:23:742344: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:44:23:743615: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:45:24:698284: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:45:27:133023: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:46:17:958802: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:46:19:975433: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:46:21:991917: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:46:24:008582: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:46:26:026898: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:46:28:044751: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:46:30:061702: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:46:32:089950: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:46:34:138686: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:46:36:157543: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:46:36:167278: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:46:36:169560: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:46:36:170943: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:46:36:172464: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:46:36:173971: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:46:36:175608: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:46:36:176806: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:46:36:177700: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:50:08:298276: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:50:10:315250: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:50:12:332444: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:50:14:349221: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:50:16:366931: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:50:18:384984: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:50:20:401580: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:50:22:421027: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:50:24:438556: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:50:26:456513: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:50:26:467351: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:50:26:468852: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:50:26:470510: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:50:26:471944: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:50:26:473427: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:50:26:474560: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:50:26:476105: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:50:26:477632: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:50:26:479759: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:50:26:481165: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:51:47:917898: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:51:50:627421: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:52:41:478666: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:52:43:495914: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:52:45:513901: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:52:47:537534: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:52:49:554982: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:52:51:571995: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:52:53:590889: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:52:55:608646: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:52:57:626238: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:52:59:642761: ERROR:
+Error while closing connection of testdb_postgres: 'PostgresDatabase' object has no attribute '_async_tx'
+22/04/2025 17:52:59:651525: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:52:59:653422: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:52:59:654917: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:52:59:655892: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:52:59:657171: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:52:59:658512: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:52:59:659903: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:52:59:661376: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:58:04:302500: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:58:06:309771: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 17:58:08:316435: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:01:07:301102: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:01:09:307664: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:01:11:316193: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:01:13:331741: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:01:15:348030: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:01:17:358173: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:01:19:365298: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:01:21:371052: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:01:23:378241: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:03:06:834051: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:03:08:841337: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:03:10:847339: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:05:25:663759: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:05:27:671569: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:05:29:676994: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:58:36:651816: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:58:38:658642: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:58:40:666212: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:58:42:675099: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:58:44:727027: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:58:46:745017: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:58:48:752075: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:58:50:758151: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:58:52:777252: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 18:58:53:184552: ERROR:
+Error while closing connection of testdb_mysql: connect() got an unexpected keyword argument 'database'
+22/04/2025 19:07:03:050258: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:07:05:056855: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:07:07:065758: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:07:09:072616: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:07:11:079918: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:07:13:088970: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:07:15:096381: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:07:17:103029: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:14:08:303483: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:14:10:309789: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:14:12:316621: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:14:14:322689: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:14:16:332462: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:14:18:340993: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:14:20:346517: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'
+22/04/2025 19:14:22:353324: ERROR:
+Error while closing connection of testdb_mysql: 'MySqlDatabase' object has no attribute '_pool'

@@ -74,3 +74,51 @@ Error sending email to ['a@example.com'] with subject: Too big. Error: Error:
 }
 Trace:
 ['C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 77', 'unknown']
+19/04/2025 16:42:14:603583: INFO: Email sent successfully to ['bob@example.com'] with subject: Test
+19/04/2025 16:42:14:627815: INFO: Email sent successfully to ['a@example.com'] with subject: Test Compressed
+19/04/2025 16:42:14:631498: ERROR:
+Error sending email to ['x@example.com'] with subject: Test. Error: Error:
+{
+    "description": null,
+    "action": null,
+    "critical": false,
+    "location": "C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 86",
+    "error": "SMTP credentials are missing."
+}
+Trace:
+['C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 86', 'unknown']
+19/04/2025 16:42:14:643818: ERROR:
+Error sending email to ['a@example.com'] with subject: Too big. Error: Error:
+{
+    "description": null,
+    "action": null,
+    "critical": false,
+    "location": "C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 77",
+    "error": "File size exceeds 25 MB limit."
+}
+Trace:
+['C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 77', 'unknown']
+19/04/2025 18:33:44:816158: INFO: Email sent successfully to ['bob@example.com'] with subject: Test
+19/04/2025 18:33:44:846740: INFO: Email sent successfully to ['a@example.com'] with subject: Test Compressed
+19/04/2025 18:33:44:849684: ERROR:
+Error sending email to ['x@example.com'] with subject: Test. Error: Error:
+{
+    "description": null,
+    "action": null,
+    "critical": false,
+    "location": "C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 86",
+    "error": "SMTP credentials are missing."
+}
+Trace:
+['C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 86', 'unknown']
+19/04/2025 18:33:44:863425: ERROR:
+Error sending email to ['a@example.com'] with subject: Too big. Error: Error:
+{
+    "description": null,
+    "action": null,
+    "critical": false,
+    "location": "C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 77",
+    "error": "File size exceeds 25 MB limit."
+}
+Trace:
+['C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\emailing\\emailer.py send_email line 77', 'unknown']
