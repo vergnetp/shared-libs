@@ -38,21 +38,37 @@ class PostgresDatabase(Database):
     def type(self) -> str:
         return "postgres"
 
-    def placeholder(self) -> str:
-        return "%s"
+    def placeholder(self, is_async: bool=True) -> str:
+        if is_async:
+            return '$1'
+        else:
+            return "%s"
 
     # --- region Sync methods ---
     def begin_transaction(self) -> None:
-        # Don't set autocommit here, it's already False from init
-        # Ensure schema is set correctly before beginning transaction
+        # Reset any existing transaction
+        if self._conn.get_transaction_status() != psycopg2.extensions.TRANSACTION_STATUS_IDLE:
+            self._conn.rollback()
+        
+        # Make sure autocommit is off
+        self._conn.autocommit = False
+        
+        # Explicitly start a transaction block
+        self._cursor.execute("select 1")
+        
+        # Set search path
         self._cursor.execute("SET search_path TO public")
-        pass
-
+        
     def commit_transaction(self) -> None:
         self._conn.commit()
 
     def rollback_transaction(self) -> None:
-        self._conn.rollback()
+        print('ROLLED BACK???')
+        if self._conn.get_transaction_status() != psycopg2.extensions.TRANSACTION_STATUS_IDLE:
+            self._conn.rollback()
+            print('ROLLED BACK!!!!')
+        else:
+            print('NO TRANSACTION')
 
     def execute_sql(self, sql: str, parameters=()) -> list:
         if not self.is_connected():
@@ -108,6 +124,7 @@ class PostgresDatabase(Database):
     # endregion ----------
 
     # --- region Async methods ---
+
     async def _init_async(self):
         if self._pool is None:
             self._pool = await asyncpg.create_pool(**self.config())

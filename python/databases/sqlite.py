@@ -37,7 +37,7 @@ class SqliteDatabase(Database):
     def type(self) -> str:
         return "sqlite"
 
-    def placeholder(self) -> str:
+    def placeholder(self, is_async: bool=True) -> str:
         return "?"
 
     # region --- Sync methods ---

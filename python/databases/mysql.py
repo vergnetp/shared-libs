@@ -25,7 +25,7 @@ class MySqlDatabase(Database):
     def type(self) -> str:
         return "mysql"
 
-    def placeholder(self) -> str:
+    def placeholder(self, is_async: bool=True) -> str:
         return "%s"
 
     # region --- Sync methods ---
