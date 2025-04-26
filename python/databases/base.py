@@ -1,6 +1,7 @@
 # This is the base class exposing all the methods that any DataBase class will fulfill
 
 import os
+import uuid
 from typing import Callable, Awaitable, Optional, Tuple, List, Any, final
 import asyncio, re
 import nest_asyncio
@@ -61,17 +62,11 @@ class Database(ABC):
     async def _run_metadata_flow(self, entity_name: str, executor: Callable[..., Awaitable], is_async: bool = True):
         try:
             entity_name = self._sanitize_identifier(entity_name)
-            if is_async:
-                if self.type() == 'postgres':
-                    version_row = await executor(
-                        f"SELECT version FROM _meta_version WHERE entity_name = {self.placeholder(is_async)}", 
-                        entity_name  # Pass as individual parameter for asyncpg
-                    )
-                else:
-                    version_row = await executor(
-                        f"SELECT version FROM _meta_version WHERE entity_name = {self.placeholder(is_async)}", 
-                        (entity_name,)  # Keep as tuple for other databases
-                    )
+            if is_async:               
+                version_row = await executor(
+                    f"SELECT version FROM _meta_version WHERE entity_name = {self.placeholder(is_async)}",
+                    (entity_name,)
+                )
             else:
                 version_row = executor(
                     f"SELECT version FROM _meta_version WHERE entity_name = {self.placeholder(is_async)}", 
@@ -82,7 +77,7 @@ class Database(ABC):
             if self.__meta_versions.get(entity_name) == version:
                 return self.__meta_cache[entity_name]
 
-            rows = await executor(f"SELECT name, type FROM {entity_name}_meta", ()) if is_async else executor(f"SELECT name, type FROM {entity_name}_meta")
+            rows = await executor(f"SELECT name, type FROM {entity_name}_meta -- {uuid.uuid4()}") if is_async else executor(f"SELECT name, type FROM {entity_name}_meta")
             meta = {name: typ for name, typ in rows}
             self.__meta_cache[entity_name] = meta
             self.__keys_cache[entity_name] = list(meta.keys())
@@ -114,6 +109,7 @@ class Database(ABC):
                 INSERT INTO _meta_version (entity_name, version)
                 VALUES ({pl}, 1)
                 ON CONFLICT(entity_name) DO UPDATE SET version = _meta_version.version + 1
+                -- {uuid.uuid4()}
                 """
         else:  # sqlite
             # For SQLite, use REPLACE
@@ -124,12 +120,9 @@ class Database(ABC):
             
         try:
             if is_async:
-                if self.type() == 'postgres':
-                    await executor(sql, entity_name)
-                else:
-                    await executor(sql, (entity_name,) if self.type() != 'sqlite' else (entity_name, entity_name))
+                await executor(sql, (entity_name,))
             else:
-                executor(sql, (entity_name,) if self.type() != 'sqlite' else (entity_name, entity_name))
+                executor(sql, (entity_name,))
         except Exception as e:
             raise TrackError(e)
 
@@ -142,17 +135,29 @@ class Database(ABC):
     async def _run_ensure_tables(self, entity_name: str, executor: Callable[..., Awaitable], is_async: bool = True):
         try:
             entity_name = self._sanitize_identifier(entity_name)
-            await executor("""
-                CREATE TABLE IF NOT EXISTS _meta_version (
-                    entity_name VARCHAR(255) PRIMARY KEY,
-                    version INTEGER
-                )""") if is_async else executor("""
+            if is_async:
+                await executor("""
+                    CREATE TABLE IF NOT EXISTS _meta_version (
+                        entity_name VARCHAR(255) PRIMARY KEY,
+                        version INTEGER
+                    ) -- {uuid.uuid4()}""")
+            else:
+                executor("""
                 CREATE TABLE IF NOT EXISTS _meta_version (
                     entity_name VARCHAR(255) PRIMARY KEY,
                     version INTEGER
                 )""")
-            await executor(f'create table if not exists {entity_name}_meta (name varchar(255) {"PRIMARY KEY" if self.type() == "sqlite" else ",PRIMARY KEY (name)"}, type varchar(255))') if is_async else executor(f'create table if not exists {entity_name}_meta (name varchar(255) {"PRIMARY KEY" if self.type() == "sqlite" else ",PRIMARY KEY (name)"}, type varchar(255))')
+                
+            meta_table_sql = f'create table if not exists {entity_name}_meta (name varchar(255) {"PRIMARY KEY" if self.type() == "sqlite" else ",PRIMARY KEY (name)"}, type varchar(255))'
+            if is_async and self.type() == 'postgres':
+                meta_table_sql += f' -- {uuid.uuid4()}'
+                
+            await executor(meta_table_sql) if is_async else executor(meta_table_sql)
+            
             create_sql = f"create table if not exists {entity_name} (id VARCHAR(255) {'PRIMARY KEY' if self.type() == 'sqlite' else ',PRIMARY KEY (id)'})"
+            if is_async and self.type() == 'postgres':
+                create_sql += f' -- {uuid.uuid4()}'
+                
             await executor(create_sql) if is_async else executor(create_sql)
         except Exception as e:
             raise TrackError(e)
@@ -186,36 +191,39 @@ class Database(ABC):
             raise TrackError(e)
 
     async def _run_metadata_schema_check(self, entity_name: str, keys, sample_values, get_metadata, executor, bump_version, is_async: bool):
-        pl = self.placeholder(is_async)
-        meta = await get_metadata(entity_name) if is_async else get_metadata(entity_name)
+        try:
+            pl = self.placeholder(is_async)
+            meta = await get_metadata(entity_name) if is_async else get_metadata(entity_name)
 
-        for key in keys:
-            sample_value = sample_values.get(key)
-            if key not in meta and sample_value is not None:
-                typ = str(type(sample_value))
-                
-                # Build SQL based on database type
-                if self.type() == 'sqlite':
-                    insert_sql = f"INSERT OR REPLACE INTO {entity_name}_meta VALUES ({pl},{pl})"
-                elif self.type() == 'postgres':
-                    insert_sql = f"INSERT INTO {entity_name}_meta VALUES ({pl},{pl}) ON CONFLICT(name) DO UPDATE SET type=EXCLUDED.type"
-                else:  # mysql
-                    insert_sql = f"INSERT INTO {entity_name}_meta VALUES ({pl},{pl}) ON DUPLICATE KEY UPDATE type=VALUES(type)"
-                
-                if is_async:
-                    if self.type() == 'postgres':
-                        await executor(insert_sql, key, typ)
-                    else:
+            for key in keys:
+                sample_value = sample_values.get(key)
+                if key not in meta and sample_value is not None:
+                    typ = str(type(sample_value))
+                    
+                    # Build SQL based on database type
+                    if self.type() == 'sqlite':
+                        insert_sql = f"INSERT OR REPLACE INTO {entity_name}_meta VALUES ({self.placeholders(2, is_async)})"
+                    elif self.type() == 'postgres':
+                        insert_sql = f"INSERT INTO {entity_name}_meta VALUES ({self.placeholders(2, is_async)}) ON CONFLICT(name) DO UPDATE SET type=EXCLUDED.type -- {uuid.uuid4()}"
+                    else:  # mysql
+                        insert_sql = f"INSERT INTO {entity_name}_meta VALUES ({self.placeholders(2, is_async)}) ON DUPLICATE KEY UPDATE type=VALUES(type)"
+                    
+                    if is_async:                 
                         await executor(insert_sql, (key, typ))
-                    if key != 'id':
-                        await executor(f"ALTER TABLE {entity_name} ADD {key} TEXT")
-                    await bump_version(entity_name)
-                else:
-                    executor(insert_sql, (key, typ))
-                    if key != 'id':
-                        executor(f"ALTER TABLE {entity_name} ADD {key} TEXT")
-                    bump_version(entity_name)
-
+                        if key != 'id':
+                            alter_sql = f"ALTER TABLE {entity_name} ADD {key} TEXT"
+                            if is_async and self.type() == 'postgres':
+                                alter_sql += f" -- {uuid.uuid4()}"
+                            await executor(alter_sql)
+                        await bump_version(entity_name)
+                    else:
+                        executor(insert_sql, (key, typ))
+                        if key != 'id':
+                            executor(f"ALTER TABLE {entity_name} ADD {key} TEXT")
+                        bump_version(entity_name)
+        except Exception as e:
+            raise TrackError(e)
+    
     def _ensure_metadata_and_schema(self, entity_name, keys, sample_values):
         _run_sync(self._run_metadata_schema_check(
             entity_name, keys, sample_values,
@@ -237,6 +245,8 @@ class Database(ABC):
             keys, types = await get_keys_types(entity_name) if is_async else get_keys_types(entity_name)
             where_clause = f"WHERE {filter}" if filter else ''
             sql = f"SELECT {','.join(keys)} FROM {entity_name} {where_clause}"
+            if is_async and self.type() == 'postgres':
+                sql += f" -- {uuid.uuid4()}"
             rows = await fetch_rows(sql) if is_async else fetch_rows(sql)
             results = [await convert_row(entity_name, row, keys, types, cast) if is_async else convert_row(entity_name, row, keys, types, cast) for row in rows]
             if single and len(results) == 0:
@@ -260,115 +270,119 @@ class Database(ABC):
         )
 
     async def _run_save_entities(self, entity_name, entities, chunk_size, ensure_tables, ensure_schema, executor, executemany, is_async):
-        if not entities:
-            return
+        try:
+            if not entities:
+                return
+                
+            entity_name = self._sanitize_identifier(entity_name)
+
+            await ensure_tables(entity_name) if is_async else ensure_tables(entity_name)
+
+            entities = [self._prepare_entity_data(e) for e in entities]
+            keys = sorted(set(k for e in entities for k in e.keys()))
+            sample_values = {k: e.get(k) for e in entities for k in keys if e.get(k) is not None}
+
+            await ensure_schema(entity_name, keys, sample_values) if is_async else ensure_schema(entity_name, keys, sample_values)
+
+            or_replace = 'OR REPLACE' if self.type() == 'sqlite' else ''
+            insert_sql = f"INSERT {or_replace} INTO {entity_name} ({','.join(keys)}) VALUES({self.placeholders(len(keys), is_async)})"
             
-        entity_name = self._sanitize_identifier(entity_name)
+            # Add appropriate upsert clause for database type
+            if self.type() == 'sqlite':
+                # SQLite uses OR REPLACE which is already in the insert_sql
+                pass
+            elif self.type() == 'postgres':
+                # PostgreSQL style ON CONFLICT
+                # Only update non-created fields
+                update_keys = [key for key in keys if key != 'created']
+                if update_keys:  # Only add the clause if we have keys to update
+                    duplicates = [f'{key}=EXCLUDED.{key}' for key in update_keys]
+                    insert_sql += f" ON CONFLICT(id) DO UPDATE SET {', '.join(duplicates)}"
+                    if is_async:
+                        insert_sql += f" -- {uuid.uuid4()}"
+            else:
+                # MySQL style ON DUPLICATE KEY UPDATE
+                # Only update non-created fields
+                update_keys = [key for key in keys if key != 'created']
+                if update_keys:  # Only add the clause if we have keys to update
+                    duplicates = [f'{key}=VALUES({key})' for key in update_keys]
+                    insert_sql += f" ON DUPLICATE KEY UPDATE {', '.join(duplicates)}"
 
-        await ensure_tables(entity_name) if is_async else ensure_tables(entity_name)
+            values_list = [tuple(str(e.get(k, '')) for k in keys) for e in entities]
 
-        entities = [self._prepare_entity_data(e) for e in entities]
-        keys = sorted(set(k for e in entities for k in e.keys()))
-        sample_values = {k: e.get(k) for e in entities for k in keys if e.get(k) is not None}
-
-        await ensure_schema(entity_name, keys, sample_values) if is_async else ensure_schema(entity_name, keys, sample_values)
-
-        or_replace = 'OR REPLACE' if self.type() == 'sqlite' else ''
-        insert_sql = f"INSERT {or_replace} INTO {entity_name} ({','.join(keys)}) VALUES({self.placeholders(len(keys), is_async)})"
-        
-        # Add appropriate upsert clause for database type
-        if self.type() == 'sqlite':
-            # SQLite uses OR REPLACE which is already in the insert_sql
-            pass
-        elif self.type() == 'postgres':
-            # PostgreSQL style ON CONFLICT
-            # Only update non-created fields
-            update_keys = [key for key in keys if key != 'created']
-            if update_keys:  # Only add the clause if we have keys to update
-                duplicates = [f'{key}=EXCLUDED.{key}' for key in update_keys]
-                insert_sql += f" ON CONFLICT(id) DO UPDATE SET {', '.join(duplicates)}"
-        else:
-            # MySQL style ON DUPLICATE KEY UPDATE
-            # Only update non-created fields
-            update_keys = [key for key in keys if key != 'created']
-            if update_keys:  # Only add the clause if we have keys to update
-                duplicates = [f'{key}=VALUES({key})' for key in update_keys]
-                insert_sql += f" ON DUPLICATE KEY UPDATE {', '.join(duplicates)}"
-
-        values_list = [tuple(str(e.get(k, '')) for k in keys) for e in entities]
-
-        for i in range(0, len(values_list), chunk_size):
-            chunk = values_list[i:i + chunk_size]
-            try:
-                await executemany(insert_sql, chunk) if is_async else executemany(insert_sql, chunk)
-            except (NotImplementedError, AttributeError):
-                for row in chunk:
-                    if is_async and self.type() == 'postgres':
-                        await executor(insert_sql, *row)  # Unpack tuple for asyncpg
-                    else:
-                        await executor(insert_sql, row)
+            for i in range(0, len(values_list), chunk_size):
+                chunk = values_list[i:i + chunk_size]
+                try:
+                    await executemany(insert_sql, chunk) if is_async else executemany(insert_sql, chunk)
+                except (NotImplementedError, AttributeError):
+                    for row in chunk:        
+                        await executor(insert_sql, row) if is_async else executor(insert_sql, row)
+        except Exception as e:
+            raise TrackError(e)
     # endregion --------------------------------------
 
     # region --- FINAL FUNCTIONS ------
-    @final
-    def __del__(self):
-        try:
-            loop = asyncio.get_running_loop()
-            if loop.is_running():
-                asyncio.create_task(self.close_async())
-            else:
-                loop = asyncio.new_event_loop()
-                loop.run_until_complete(self.close_async())
-        except Exception:
-            pass
-
     @final
     def __enter__(self) -> "Database":
         return self
 
     @final
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
-        logger.debug(f"exiting database {self.alias()}")
+    def __del__(self):       
+        # Only perform synchronous cleanup - don't try to use async methods
         try:
-            loop = asyncio.get_running_loop()
-            if loop.is_running():
-                asyncio.create_task(self.close_async(exc_type))
-            else:
-                self.close(exc_type)
-        except Exception:
-            pass
+            if hasattr(self, '_close'):  # Check if attribute exists in case of partial initialization
+                self._close()
+        except Exception as e:
+            # Use print instead of logger during __del__ as logger might be unavailable
+            print(f"Error during database cleanup: {e}")
 
+    @final
+    def __exit__(self, exc_type, exc_value, traceback) -> None:      
+        # Use synchronous close for context manager
+        try:
+            self.close(exc_type and exc_value)
+        except Exception as e:
+            logger.debug(f"Error during context manager exit for {self.alias()}: {e}")
+        return False  # Don't suppress exceptions
+    
     @final
     def close(self, error: Optional[Exception] = None) -> None:
         """
         Close the connection safely.
-        Also ensure any pending sqls are committed (or rollback if error is not None).
-        Logs any failure during closure.        
-        """
+        Also ensure any pending work is committed or rolled back appropriately.
+        """       
         try:
             if error is None:
                 self.commit_transaction()
             else:
                 self.rollback_transaction()
             self._close()
+            logger.debug(f"{self.alias()} database closed")
         except Exception as e:
-            logger.error(f'Error while closing connection of {self.alias()}: {e}')
+            logger.error(f'Error closing connection for {self.alias()}: {e}')
 
     @final
     async def close_async(self, error: Optional[Exception] = None) -> None:
         """
-        Close the connection safely.
-        Also ensure any pending sqls are committed (or rollback if error is not None).
-        Logs any failure during closure.        
+        Close the async connection safely.
+        Also ensure any pending work is committed or rolled back appropriately.
         """
         try:
+            # Skip if event loop is closed
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                logger.debug(f"Cannot close {self.alias()} async: no running event loop")
+                return
+
             if error is None:
                 await self.commit_transaction_async()
             else:
                 await self.rollback_transaction_async()
             await self._close_async()
+            logger.debug(f"{self.alias()} async database closed")
         except Exception as e:
-            logger.error(f'Error while closing connection of {self.alias()}: {e}')
+            logger.error(f'Error closing async connection for {self.alias()}: {e}')
 
     @final
     def env(self) -> str:
