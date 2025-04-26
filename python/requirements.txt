@@ -10,3 +10,4 @@ cryptography
 psycopg2-binary
 asyncpg
 arq
+pyyaml
