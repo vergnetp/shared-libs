@@ -609,7 +609,7 @@ class AsyncLogger:
         # Close Redis connection if active
         if self.use_redis and self.redis_pool:
             try:
-                asyncio.run(self.redis_pool.close())
+                asyncio.run(self.redis_pool.aclose())
             except Exception as e:
                 if not self.quiet_init:
                     print(f"Error closing Redis pool: {e}", file=sys.stderr)
