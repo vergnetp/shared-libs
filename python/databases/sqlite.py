@@ -3,6 +3,7 @@ import sqlite3
 import aiosqlite
 from ..errors import TrackError
 from .base import Database
+from .. import log
 
 class SqliteDatabase(Database):
     def __init__(self, database: str, alias: str = None, env: str = 'prod'):
@@ -53,7 +54,11 @@ class SqliteDatabase(Database):
     def execute_sql(self, sql: str, parameters=()) -> list:
         if not self.is_connected():
             raise TrackError(Exception("Lost SQLite connection"))
-        self._cursor.execute(sql, parameters)
+        try:
+            self._cursor.execute(sql, parameters)
+        except Exception as e:
+            log.error(f'Error executing sqlite sql: {sql} parameters: {parameters} error: {e}')
+            raise
         return self._cursor.fetchall()
 
     def executemany_sql(self, sql: str, parameters_list: list) -> None:

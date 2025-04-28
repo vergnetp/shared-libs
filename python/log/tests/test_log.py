@@ -20,7 +20,7 @@ def test_error_logs_message(tmp_path, monkeypatch):
     patch_utils(monkeypatch, tmp_path)
     importlib.reload(mylog)
     mylog.error("[UNIT TEST] Error occurred")
-    time.sleep(0.5)
+    mylog.AsyncLogger.get_instance().shutdown()  # <<<<< FORCE FLUSH!
     content = read_log_content(get_log_file(tmp_path))
     assert "[ERROR]" in content
     assert "[UNIT TEST] Error occurred" in content
@@ -29,7 +29,7 @@ def test_info_logs_message(tmp_path, monkeypatch):
     patch_utils(monkeypatch, tmp_path)
     importlib.reload(mylog)
     mylog.info("[UNIT TEST] Info message")
-    time.sleep(0.5)
+    mylog.AsyncLogger.get_instance().shutdown()  # <<<<< FORCE FLUSH!
     content = read_log_content(get_log_file(tmp_path))
     assert "[INFO]" in content
     assert "[UNIT TEST] Info message" in content

@@ -1,3 +1,6 @@
+# Fixed Logging System (python/log/logging.py)
+# Focus on improving thread safety, buffer handling, and error recovery
+
 import queue
 import threading
 import traceback
@@ -6,12 +9,12 @@ import os
 import sys
 import json
 import pathlib
+import time
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any, Union, List
 import atexit
 from .. import utils
-from .. import framework
 
 # Optional Redis dependencies
 try:
@@ -33,6 +36,9 @@ except ImportError:
 # Configuration constants
 MAX_QUEUE_SIZE = 10000
 MAX_MESSAGE_SIZE = 5000
+DEFAULT_FLUSH_INTERVAL = 5  # seconds
+DEFAULT_RETRY_INTERVAL = 30  # seconds
+DEFAULT_RETRY_COUNT = 3
 # Maximum verbosity level; any message with a level above this will be ignored
 MAX_VERBOSE_LEVEL = 10
 
@@ -63,7 +69,10 @@ class AsyncLogger:
                  service_name: str = None,
                  min_level: Union[LogLevel, str] = LogLevel.INFO,
                  log_debug_to_file: bool = False,
-                 quiet_init: bool = False):  # Added quiet_init parameter
+                 flush_interval: int = DEFAULT_FLUSH_INTERVAL,
+                 retry_interval: int = DEFAULT_RETRY_INTERVAL,
+                 retry_count: int = DEFAULT_RETRY_COUNT,
+                 quiet_init: bool = False):
         """
         Initialize the logger with configurable options.
         
@@ -72,30 +81,35 @@ class AsyncLogger:
             redis_url: Redis connection URL
             log_dir: Directory for local log files
                      If None, uses ../../../logs/ (relative to logger module)
-                     This matches the original logger's behavior
             service_name: Identifier for this service instance
             min_level: Minimum log level to process
             log_debug_to_file: If True, debug messages will be written to file
                               (default is False for backward compatibility)
+            flush_interval: How often to flush logs to disk/Redis (seconds)
+            retry_interval: How long to wait between Redis reconnection attempts
+            retry_count: How many times to retry Redis connection
             quiet_init: If True, suppresses printing the initialization message
-                       (default is False)
-            
-        Note:
-            All these parameters can also be configured via:
-            1. Direct parameters to this constructor
-            2. Environment variables (LOG_DIR, LOGGING_USE_REDIS, etc.)
-            3. Config file (specified by CONFIG_FILE env var, defaults to config.yml)
-            
-            See get_instance() for more details on configuration precedence.
         """
         # Core settings
         self.queue = queue.Queue(maxsize=MAX_QUEUE_SIZE)
-        self.worker_thread = threading.Thread(target=self._process_queue, daemon=True)
+        self.worker_thread = threading.Thread(
+            target=self._process_queue,
+            daemon=True,
+            name="AsyncLoggerWorker"
+        )
         self.use_redis = use_redis and REDIS_AVAILABLE
         self.log_dir = log_dir  # Can be None to use default path
         self.service_name = service_name or f"service-{os.getpid()}"
         self.log_debug_to_file = log_debug_to_file
         self.quiet_init = quiet_init  # Store quiet_init setting
+        self.flush_interval = flush_interval
+        self.retry_interval = retry_interval
+        self.retry_count = retry_count
+        
+        # Thread synchronization
+        self._queue_lock = threading.RLock()
+        self._redis_lock = threading.RLock()
+        self._file_lock = threading.RLock()
         
         # Set minimum log level
         if isinstance(min_level, str):
@@ -106,6 +120,8 @@ class AsyncLogger:
         # Redis settings
         self.redis_url = redis_url
         self.redis_pool: Optional[ArqRedis] = None
+        self._redis_healthy = False
+        self._last_redis_attempt = 0
         
         # Ensure log directory exists if not using default path
         if self.log_dir is not None:
@@ -121,6 +137,7 @@ class AsyncLogger:
         
         # Worker state
         self._shutdown = False
+        self._last_flush_time = time.time()
         
         # Start worker thread
         self.worker_thread.start()
@@ -149,34 +166,76 @@ class AsyncLogger:
         
     def _ensure_log_dir(self):
         """Ensure the log directory exists"""
-        if not os.path.exists(self.log_dir):
-            try:
-                os.makedirs(self.log_dir, exist_ok=True)
-            except Exception as e:
-                # Print instead of logging to avoid recursion
-                print(f"Failed to create log directory: {e}", file=sys.stderr)
+        with self._file_lock:
+            if not os.path.exists(self.log_dir):
+                try:
+                    os.makedirs(self.log_dir, exist_ok=True)
+                except (OSError, PermissionError) as e:
+                    # Print instead of logging to avoid recursion
+                    print(f"Failed to create log directory: {e}", file=sys.stderr)
+                    # Try to find a writable directory as fallback
+                    try:
+                        self.log_dir = os.path.join(os.path.expanduser("~"), ".logs")
+                        os.makedirs(self.log_dir, exist_ok=True)
+                        print(f"Using fallback log directory: {self.log_dir}", file=sys.stderr)
+                    except Exception:
+                        # Last resort is to use current directory
+                        self.log_dir = os.getcwd()
+                        print(f"Using current directory for logs: {self.log_dir}", file=sys.stderr)
     
     async def _init_redis(self):
-        """Initialize Redis connection pool"""
+        """
+        Initialize Redis connection pool with retry logic
+        """
         if not REDIS_AVAILABLE:
             if not self.quiet_init:
                 self._direct_log(LogLevel.ERROR, "Required Redis libraries not available")
             return
             
-        try:
-            if self.redis_url:
-                self.redis_pool = await create_pool(self.redis_url)
-            else:
-                self.redis_pool = await create_pool()
-            if not self.quiet_init:
-                self._direct_log(LogLevel.INFO, "Redis connection established")
-        except Exception as e:
+        with self._redis_lock:
+            self._last_redis_attempt = time.time()
+            
+            for attempt in range(self.retry_count):
+                try:
+                    if self.redis_url:
+                        self.redis_pool = await create_pool(self.redis_url)
+                    else:
+                        self.redis_pool = await create_pool()
+                        
+                    # Test the connection
+                    ping_result = await self.redis_pool.ping()
+                    if not ping_result:
+                        raise Exception("Redis ping failed")
+                        
+                    self._redis_healthy = True
+                    if not self.quiet_init:
+                        self._direct_log(LogLevel.INFO, f"Redis connection established (attempt {attempt+1})")
+                    return
+                except Exception as e:
+                    if not self.quiet_init:
+                        self._direct_log(
+                            LogLevel.WARN, 
+                            f"Redis connection attempt {attempt+1} failed: {e}"
+                        )
+                    if self.redis_pool:
+                        try:
+                            self.redis_pool.close()
+                            await self.redis_pool.wait_closed()
+                        except Exception:
+                            pass
+                        self.redis_pool = None
+                    
+                    if attempt < self.retry_count - 1:
+                        await asyncio.sleep(self.retry_interval / (attempt + 1))
+            
+            # All retries failed
+            self._redis_healthy = False
+            self.use_redis = False  # Disable Redis for now
             if not self.quiet_init:
                 self._direct_log(
                     LogLevel.ERROR, 
-                    f"Failed to initialize Redis: {e}. Falling back to local logging."
+                    f"Failed to initialize Redis after {self.retry_count} attempts. Falling back to local logging."
                 )
-            self.use_redis = False
     
     @staticmethod
     def _load_config():
@@ -202,23 +261,41 @@ class AsyncLogger:
             "redis_url": None,
             "service_name": f"service-{os.getpid()}",
             "log_debug_to_file": False,  # Default to not logging debug to file
-            "quiet_init": False  # Default to showing init message
+            "quiet_init": False,  # Default to showing init message
+            "flush_interval": DEFAULT_FLUSH_INTERVAL,
+            "retry_interval": DEFAULT_RETRY_INTERVAL,
+            "retry_count": DEFAULT_RETRY_COUNT,
         }
         
         # Try to load from config file if it exists
-        config_file = os.getenv("CONFIG_FILE", "config.json")
-        if os.path.exists(config_file):
-            try:
-                with open(config_file, 'r') as f:
-                    if config_file.endswith(('.yml', '.yaml')) and YAML_AVAILABLE:
-                        file_config = yaml.safe_load(f)
-                    else:
-                        file_config = json.load(f)
-                        
-                    if file_config and "logging" in file_config:
-                        config.update(file_config["logging"])
-            except Exception as e:
-                print(f"Error loading config file: {e}", file=sys.stderr)
+        config_paths = [
+            os.getenv("CONFIG_FILE"),
+            "config.yml",
+            "config.yaml",
+            "config.json",
+            os.path.join(utils.get_config_folder(), "logging.yml"),
+            os.path.join(utils.get_config_folder(), "logging.yaml"),
+            os.path.join(utils.get_config_folder(), "logging.json"),
+        ]
+        
+        for config_file in [p for p in config_paths if p]:
+            if os.path.exists(config_file):
+                try:
+                    with open(config_file, 'r') as f:
+                        if config_file.endswith(('.yml', '.yaml')) and YAML_AVAILABLE:
+                            file_config = yaml.safe_load(f)
+                        else:
+                            file_config = json.load(f)
+                            
+                        if file_config:
+                            # Look for logging section or use whole file
+                            if "logging" in file_config:
+                                config.update(file_config["logging"])
+                            else:
+                                config.update(file_config)
+                        break  # Use first valid config file found
+                except Exception as e:
+                    print(f"Error loading config file {config_file}: {e}", file=sys.stderr)
         
         # Environment variables override config file
         env_mappings = {
@@ -228,13 +305,22 @@ class AsyncLogger:
             "REDIS_URL": "redis_url",
             "SERVICE_NAME": "service_name",
             "LOG_DEBUG_TO_FILE": "log_debug_to_file",
-            "QUIET_LOGGER_INIT": "quiet_init"
+            "QUIET_LOGGER_INIT": "quiet_init",
+            "LOG_FLUSH_INTERVAL": "flush_interval",
+            "REDIS_RETRY_INTERVAL": "retry_interval",
+            "REDIS_RETRY_COUNT": "retry_count"
         }
         
         for env_var, config_key in env_mappings.items():
             if os.getenv(env_var):
                 if config_key in ("use_redis", "log_debug_to_file", "quiet_init"):
-                    config[config_key] = os.getenv(env_var).lower() == "true"
+                    config[config_key] = os.getenv(env_var).lower() in ("true", "1", "yes", "y")
+                elif config_key in ("flush_interval", "retry_interval", "retry_count"):
+                    try:
+                        config[config_key] = int(os.getenv(env_var))
+                    except ValueError:
+                        # Keep default if can't convert to int
+                        pass
                 else:
                     config[config_key] = os.getenv(env_var)
         
@@ -262,7 +348,7 @@ class AsyncLogger:
             with cls._instance_lock:
                 if cls._instance is None:
                     # Set quiet_init for tests if testing mode is detected
-                    if 'pytest' in sys.modules:
+                    if 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST'):
                         kwargs.setdefault('quiet_init', True)
                     
                     # Load config from file and environment
@@ -274,85 +360,158 @@ class AsyncLogger:
                     cls._instance = AsyncLogger(**config)
         return cls._instance
     
+    def _check_redis_retry(self):
+        """Check if we should retry Redis connection"""
+        if not self.use_redis or self._redis_healthy:
+            return False
+            
+        now = time.time()
+        if now - self._last_redis_attempt > self.retry_interval:
+            return True
+        return False
+        
     def _process_queue(self):
         """Worker thread that processes the log queue"""
+        batch = []
+        last_flush = time.time()
+        
         while not self._shutdown:
             try:
-                record = self.queue.get(timeout=0.1)
-                if record is None:  # Sentinel for shutdown
-                    break
+                # Check if we need to retry Redis connection
+                if self._check_redis_retry():
+                    asyncio.run(self._init_redis())
+                
+                # Try to get a message with timeout
+                try:
+                    record = self.queue.get(timeout=0.1)
+                    if record is None:  # Sentinel for shutdown
+                        break
+                        
+                    # Process record
+                    batch.append(record)
+                    self.queue.task_done()
+                except queue.Empty:
+                    # No messages, check if we need to flush batch
+                    pass
                     
-                asyncio.run(self._handle_log(record))
-                self.queue.task_done()
-            except queue.Empty:
-                continue
+                # Check if we should flush due to batch size or time
+                now = time.time()
+                if (len(batch) >= 20 or  # Flush on batch size
+                    (batch and now - last_flush >= self.flush_interval)):  # Flush on interval
+                    self._flush_batch(batch)
+                    batch = []
+                    last_flush = now
+                    
             except Exception:
                 # Log the exception but keep the thread running
                 traceback_msg = traceback.format_exc()
                 # Use print instead of logging to avoid potential recursion
                 if not self.quiet_init:
                     print(f"Logger thread error: {traceback_msg}", file=sys.stderr)
+                
+                # Sleep briefly to avoid tight error loop
+                time.sleep(0.5)
+                
+        # Final flush of remaining messages on shutdown
+        if batch:
+            self._flush_batch(batch)
     
-    async def _handle_log(self, record: Dict[str, Any]):
+    def _flush_batch(self, batch: List[Dict[str, Any]]):
         """
-        Process a log record, sending to Redis and/or writing locally.
+        Process a batch of log records
         
         Args:
-            record: Dictionary containing log metadata and message
+            batch: List of log records to process
         """
-        level = record['level']
-        
-        # Skip logs below minimum level
-        if level.value < self.min_level.value:
+        if not batch:
             return
             
-        try:
-            # Try Redis first if enabled
-            if self.use_redis and self.redis_pool:
-                try:
-                    # Convert LogLevel enum to string for serialization
-                    record_copy = record.copy()
-                    record_copy['level'] = record_copy['level'].name
-                    
-                    await self.redis_pool.enqueue_job(
-                        "log_message", 
-                        log_record=record_copy
-                    )
-                    
-                    # For critical logs, ensure we have local backup too
-                    if level == LogLevel.CRITICAL:
-                        self._write_to_local(record)
-                        
-                except Exception as e:
-                    # Redis failed, log locally and include the Redis error
-                    if not self.quiet_init:
-                        print(f"Redis logging failed: {e}, falling back to local", file=sys.stderr)
-                    # Only write non-debug logs to local file when Redis fails
-                    # unless log_debug_to_file is enabled
-                    if level != LogLevel.DEBUG or self.log_debug_to_file:
-                        self._write_to_local(record)
-            else:
-                # Redis not enabled
-                # For debug messages, handle according to configuration
-                if level == LogLevel.DEBUG:
-                    # Always write to stdout
-                    self._write_to_stdout_only(record)
-                    
-                    # Optionally also write to file if configured
-                    if self.log_debug_to_file:
-                        self._write_to_file_only(record)
-                else:
-                    # Write other levels to both stdout and file
-                    self._write_to_local(record)
-                
-        except Exception as e:
-            # Last resort if all else fails - direct console output
-            print(f"CRITICAL LOGGING FAILURE: {e}", file=sys.stderr)
-            print(f"Original message: {record.get('message', 'unknown')}", file=sys.stderr)
+        # Copy batch to prevent race conditions
+        batch_copy = batch.copy()
+        
+        # Run async flush for Redis
+        if self.use_redis and self._redis_healthy and self.redis_pool:
+            try:
+                asyncio.run(self._flush_batch_redis(batch_copy))
+            except Exception as e:
+                # Redis failed, fall back to local logging
+                if not self.quiet_init:
+                    print(f"Redis batch flush failed: {e}, falling back to local", file=sys.stderr)
+                self._flush_batch_local(batch_copy)
+        else:
+            # Use local logging
+            self._flush_batch_local(batch_copy)
     
-    def _write_to_stdout_only(self, record: Dict[str, Any]):
+    async def _flush_batch_redis(self, batch: List[Dict[str, Any]]):
         """
-        Write a log record to stdout only.
+        Flush batch of records to Redis
+        
+        Args:
+            batch: List of log records to process
+        """
+        if not self.redis_pool:
+            raise Exception("Redis pool not initialized")
+            
+        with self._redis_lock:
+            # Group critical records for local backup
+            critical_records = [record for record in batch if record['level'] == LogLevel.CRITICAL]
+            
+            # Convert LogLevel enum to string for serialization
+            redis_batch = []
+            for record in batch:
+                record_copy = record.copy()
+                record_copy['level'] = record_copy['level'].name
+                redis_batch.append(record_copy)
+                
+            # Enqueue batch job to Redis
+            await self.redis_pool.enqueue_job(
+                "log_batch",  # Worker needs to handle batched logs
+                log_records=redis_batch
+            )
+            
+            # For critical logs, ensure we have local backup too
+            if critical_records:
+                self._flush_batch_local(critical_records)
+    
+    def _flush_batch_local(self, batch: List[Dict[str, Any]]):
+        """
+        Flush batch of records to local storage
+        
+        Args:
+            batch: List of log records to process
+        """
+        # Group by log level for processing
+        debug_records = []
+        file_records = []
+        
+        for record in batch:
+            level = record['level']
+            
+            # Skip logs below minimum level
+            if level.value < self.min_level.value:
+                continue
+                
+            # For debug messages, handle according to configuration
+            if level == LogLevel.DEBUG:
+                debug_records.append(record)
+                if self.log_debug_to_file:
+                    file_records.append(record)
+            else:
+                # Write other levels to both stdout and file
+                file_records.append(record)
+                self._write_record_to_stdout(record)
+                
+        # Process debug records (stdout only by default)
+        for record in debug_records:
+            self._write_record_to_stdout(record)
+            
+        # Write file records in a single batch with lock
+        if file_records:
+            self._write_records_to_file(file_records)
+    
+    def _write_record_to_stdout(self, record: Dict[str, Any]):
+        """
+        Write a log record to stdout.
         
         Args:
             record: Dictionary containing log metadata and message
@@ -366,94 +525,83 @@ class AsyncLogger:
         # Format the message for display
         formatted_msg = f"{timestamp} {indent}{message}"
         
-        # Print to console
-        print(formatted_msg, flush=True)
-        
-    def _write_to_file_only(self, record: Dict[str, Any]):
-        """
-        Write a log record to the file only, not stdout.
-        
-        Args:
-            record: Dictionary containing log metadata and message
-        """
-        level = record['level']
-        message = record['message']
-        timestamp = record['timestamp']
-        indent_level = record.get('indent', 0)
-        indent = '    ' * indent_level
-        
-        # Format the message for file
-        formatted_msg = f"{timestamp} [{level.name}] {indent}{message}"
-            
-        # Write to log file
-        try:
-            log_path = self._get_log_file_path()
-            with open(log_path, 'a') as log_file:
-                log_file.write(f"{formatted_msg}\n")
-                if level == LogLevel.CRITICAL:
-                    log_file.flush()  # Force write immediately for critical logs
-        except Exception as e:
-            if not self.quiet_init:
-                print(f"Failed to write to log file: {e}", file=sys.stderr)
-    
-    def _get_log_file_path(self, date=None):
-        """
-        Returns the file path where logs should be saved.
-        
-        Args:
-            date (str, optional): A date string in YYYY_MM_DD format. Defaults to today.
-            
-        Returns:
-            str: Full path to the log file for the given date.
-            
-        The path is built using `build_path()` and follows the pattern:
-        ../../../logs/YYYY_MM_DD.log (relative to logger module location)
-        """
-        if date is None:
-            date = datetime.now().strftime("%Y_%m_%d")
-            
-        # Use the custom path builder to maintain compatibility with original logger
-        if self.log_dir is None:
-            # If no log_dir specified, use default path 3 directories up
-            return utils.build_path(utils.get_root(), 'logs', f'{date}.log')
-        else:
-            # Otherwise use the specified log directory
-            return os.path.join(self.log_dir, f"{date}.log")
-    
-    def _write_to_local(self, record: Dict[str, Any]):
-        """
-        Write a log record to the local file system and stdout.
-        
-        Args:
-            record: Dictionary containing log metadata and message
-        """
-        level = record['level']
-        message = record['message']
-        timestamp = record['timestamp']
-        indent_level = record.get('indent', 0)
-        indent = '    ' * indent_level
-        
-        # Format the message for display and file
-        formatted_msg_stdout = f"{timestamp} {indent}{message}"
-        formatted_msg_file = f"{timestamp} [{level.name}] {indent}{message}"
-        
-        # Always print to console (stderr for errors and critical)
+        # Print to console (stderr for errors and critical)
         if level in (LogLevel.ERROR, LogLevel.CRITICAL):
-            print(formatted_msg_stdout, file=sys.stderr, flush=True)
+            print(formatted_msg, file=sys.stderr, flush=True)
         else:
-            print(formatted_msg_stdout, flush=True)
+            print(formatted_msg, flush=True)
+    
+    def _write_records_to_file(self, records: List[Dict[str, Any]]):
+        """
+        Write multiple log records to file with a single lock.
+        
+        Args:
+            records: List of log records to write
+        """
+        if not records:
+            return
             
-        # Write to log file
-        try:
-            log_path = self._get_log_file_path()
-            os.makedirs(os.path.dirname(log_path), exist_ok=True)  # Ensure directory exists
-            with open(log_path, 'a') as log_file:
-                log_file.write(f"{formatted_msg_file}\n")
-                if level == LogLevel.CRITICAL:
-                    log_file.flush()  # Force write immediately for critical logs
-        except Exception as e:
-            if not self.quiet_init:
-                print(f"Failed to write to log file: {e}", file=sys.stderr)
+        # Group records by date
+        record_groups = {}
+        for record in records:
+            timestamp = record['timestamp']
+            date_str = timestamp.split()[0].replace('-', '_')
+            if date_str not in record_groups:
+                record_groups[date_str] = []
+            record_groups[date_str].append(record)
+            
+        # Write each group to its date file
+        with self._file_lock:
+            for date_str, group in record_groups.items():
+                log_path = self._get_log_file_path(date_str)
+                
+                # Ensure directory exists
+                try:
+                    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+                except Exception as e:
+                    if not self.quiet_init:
+                        print(f"Failed to create log directory for {log_path}: {e}", file=sys.stderr)
+                    continue
+                    
+                # Format all records for this date
+                lines = []
+                for record in group:
+                    level = record['level']
+                    message = record['message']
+                    timestamp = record['timestamp']
+                    indent_level = record.get('indent', 0)
+                    indent = '    ' * indent_level
+                    
+                    formatted_msg = f"{timestamp} [{level.name}] {indent}{message}"
+                    lines.append(formatted_msg + "\n")
+                    
+                # Write all lines to file
+                try:
+                    # First check if file is writable
+                    if os.path.exists(log_path):
+                        if not os.access(log_path, os.W_OK):
+                            raise PermissionError(f"No write permission for {log_path}")
+                            
+                    with open(log_path, 'a') as log_file:
+                        log_file.writelines(lines)
+                        if any(r['level'] == LogLevel.CRITICAL for r in group):
+                            log_file.flush()  # Force write immediately for critical logs
+                except Exception as e:
+                    if not self.quiet_init:
+                        print(f"Failed to write to log file {log_path}: {e}", file=sys.stderr)
+                        
+                        # Try fallback to user home directory
+                        try:
+                            fallback_path = os.path.join(
+                                os.path.expanduser('~'), 
+                                '.logs', 
+                                f"{date_str}.log"
+                            )
+                            os.makedirs(os.path.dirname(fallback_path), exist_ok=True)
+                            with open(fallback_path, 'a') as fallback_file:
+                                fallback_file.writelines(lines)
+                        except Exception as fallback_error:
+                            print(f"Failed to write to fallback log file: {fallback_error}", file=sys.stderr)
     
     def _direct_log(self, level: LogLevel, message: str):
         """
@@ -478,10 +626,11 @@ class AsyncLogger:
         # Write to file
         try:
             log_path = self._get_log_file_path()
-            os.makedirs(os.path.dirname(log_path), exist_ok=True)  # Ensure directory exists
-            with open(log_path, 'a') as log_file:
-                log_file.write(f"{formatted_msg}\n")
-                log_file.flush()  # Ensure it's written immediately
+            with self._file_lock:
+                os.makedirs(os.path.dirname(log_path), exist_ok=True)  # Ensure directory exists
+                with open(log_path, 'a') as log_file:
+                    log_file.write(f"{formatted_msg}\n")
+                    log_file.flush()  # Ensure it's written immediately
         except Exception as e:
             # Use print instead of logging to avoid recursion
             if not self.quiet_init:
@@ -522,45 +671,42 @@ class AsyncLogger:
             'pid': os.getpid(),
             'thread': threading.get_ident(),
         }
-        request_id = framework.context.request_id_var.get()
+        from ..framework.context import request_id_var
+        request_id = request_id_var.get()
         if request_id:
             record['request_id'] = request_id
         # Add context if provided
         if context:
             record['context'] = context
-            
-        # For critical logs, process immediately
-        if level == LogLevel.CRITICAL:
-            # Direct output for critical messages
-            formatted_msg = f"{message}"
-            print(formatted_msg, file=sys.stderr, flush=True)
-            
-            # Write to file directly to ensure it's captured
-            try:
-                log_path = self._get_log_file_path()
-                os.makedirs(os.path.dirname(log_path), exist_ok=True)  # Ensure directory exists
-                with open(log_path, 'a') as log_file:
-                    log_file.write(f"{timestamp} [CRITICAL] {indent * '    '}{message}\n")
-                    log_file.flush()
-            except Exception as e:
-                if not self.quiet_init:
-                    print(f"Failed to write critical log to file: {e}", file=sys.stderr)
-            
-            # Also enqueue for Redis if available
-            if self.use_redis and self.redis_pool:
-                try:
-                    self.queue.put_nowait(record)
-                except queue.Full:
-                    pass  # Already logged directly, so Redis is just a bonus
-            return
-            
-        # Queue normal logs
+
+        # Queue for processing (even critical logs go to queue for Redis if enabled)
         try:
             self.queue.put_nowait(record)
         except queue.Full:
             # If queue is full, log a warning but drop this message
             if not self.quiet_init:
-                print(f"Log queue full, dropping message: {message[:50]}...", file=sys.stderr)
+                print(f"Log queue full ({self.queue.qsize()}/{MAX_QUEUE_SIZE}), dropping message: {message[:50]}...", file=sys.stderr)
+    
+    def _get_log_file_path(self, date=None):
+        """
+        Returns the file path where logs should be saved.
+        
+        Args:
+            date (str, optional): A date string in YYYY_MM_DD format. Defaults to today.
+            
+        Returns:
+            str: Full path to the log file for the given date.
+        """
+        if date is None:
+            date = datetime.now().strftime("%Y_%m_%d")
+            
+        # Use the custom path builder to maintain compatibility with original logger
+        if self.log_dir is None:
+            # If no log_dir specified, use default path 3 directories up
+            return utils.build_path(utils.get_root(), 'logs', f'{date}.log')
+        else:
+            # Otherwise use the specified log directory
+            return os.path.join(self.log_dir, f"{date}.log")
     
     def set_log_level(self, level: Union[LogLevel, str]):
         """
@@ -622,173 +768,70 @@ class AsyncLogger:
 
 
 # Public API - Simple functions for common use
-def debug(message: str, indent: int = 0, context: Dict[str, Any] = None):
+def _log(level: LogLevel, prefix: str, message: str, indent: int = 0, context: Dict[str, Any] = None, force_flush: bool = False):
     """
-    Log a debug message to stdout only.
-    
+    Internal helper to log a message.
+
     Args:
-        message: The debug message.
-        indent: Optional indentation level.
+        level: LogLevel enum
+        prefix: String prefix like [DEBUG], [INFO], etc.
+        message: The actual message
+        indent: Indentation level
         context: Additional contextual data
-        
-    These messages are printed to stdout only and not written to the file.
+        force_flush: If True, immediately flush critical logs to file
     """
-    # Print directly to stdout first for immediate feedback and test compatibility
-    request_id = framework.context.request_id_var.get()
+    from ..framework.context import request_id_var
+    request_id = request_id_var.get()
     if request_id:
-        print(f"[DEBUG] [request_id={request_id}] {message}")
-    else:
-        print(f"[DEBUG] {message}")
-    
-    # Then also log through the async system
-    AsyncLogger.get_instance().enqueue_log(
-        LogLevel.DEBUG, f"[DEBUG] {message}", indent=indent, context=context
-    )
+        print(f"{prefix} [request_id={request_id}] {message}")
+    else: 
+        print(f"{prefix} {message}")
+
+    logger = AsyncLogger.get_instance()
+    logger.enqueue_log(level, f"{prefix} {message}", indent=indent, context=context)
+
+    if force_flush and level == LogLevel.CRITICAL:
+        # Force immediate flush to file
+        try:
+            log_path = logger._get_log_file_path()
+            with logger._file_lock:
+                os.makedirs(os.path.dirname(log_path), exist_ok=True)
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                indent_space = '    ' * indent
+                with open(log_path, 'a') as log_file:
+                    log_file.write(f"{timestamp} [{level.name}] {indent_space}{message}\n")
+                    log_file.flush()
+        except Exception as e:
+            if not logger.quiet_init:
+                print(f"Failed to force-flush critical log: {e}", file=sys.stderr)
+
+def debug(message: str, indent: int = 0, context: Dict[str, Any] = None):
+    _log(LogLevel.DEBUG, "[DEBUG]", message, indent, context)
 
 def info(message: str, indent: int = 0, context: Dict[str, Any] = None):
-    """Log an info message"""
-    # Print directly to stdout first
-    request_id = framework.context.request_id_var.get()
-    if request_id:
-        print(f"[INFO] [request_id={request_id}] {message}")
-    else:
-        print(f"[INFO] {message}")
-        
-    # Then log through the async system
-    AsyncLogger.get_instance().enqueue_log(
-        LogLevel.INFO, f"[INFO] {message}", indent=indent, context=context
-    )
+    _log(LogLevel.INFO, "[INFO]", message, indent, context)
 
 def warn(message: str, indent: int = 0, context: Dict[str, Any] = None):
-    """Log a warning message"""
-    # Print directly to stdout first
-    request_id = framework.context.request_id_var.get()
-    if request_id:
-        print(f"[WARN] [request_id={request_id}] {message}")
-    else:
-        print(f"[WARN] {message}")
-        
-    # Then log through the async system
-    AsyncLogger.get_instance().enqueue_log(
-        LogLevel.WARN, f"[WARN] {message}", indent=indent, context=context
-    )
+    _log(LogLevel.WARN, "[WARN]", message, indent, context)
 
 def error(message: str, indent: int = 0, context: Dict[str, Any] = None):
-    """Log an error message"""
-    # Print directly to stderr first
-    request_id = framework.context.request_id_var.get()
-    if request_id:
-        print(f"[ERROR] [request_id={request_id}] {message}", file=sys.stderr)
-    else:
-        print(f"[ERROR] {message}", file=sys.stderr)   
-        
-    # Then log through the async system
-    AsyncLogger.get_instance().enqueue_log(
-        LogLevel.ERROR, f"[ERROR] {message}", indent=indent, truncate=False, context=context
-    )
+    _log(LogLevel.ERROR, "[ERROR]", message, indent, context)
 
 def critical(message: str, context: Dict[str, Any] = None):
-    """
-    Log a critical message - processed immediately, guaranteed to be written
-    """
-    # Print directly to stdout with format matching the original logger for test compatibility
-    request_id = framework.context.request_id_var.get()
-    if request_id:
-        print(f"[CRITICAL] [request_id={request_id}] {message}")
-    else:
-        print(f"[CRITICAL] {message}")
-        
-    # Then log through the async system (keeping the CRITICAL: prefix for the async logs)
-    AsyncLogger.get_instance().enqueue_log(
-        LogLevel.CRITICAL, f"[CRITICAL] {message}", truncate=False, context=context
-    )
+    _log(LogLevel.CRITICAL, "[CRITICAL]", message, indent=0, context=context, force_flush=True)
 
-def profile(message: str, indent: int = 0):
-    """
-    Log a profiling message to stdout only.
-    
-    Args:
-        message: The profiling detail.
-        indent: Optional indentation level.
-        
-    Like debug(), this avoids file I/O and is helpful for inline performance traces.
-    """
-    # Print directly to stdout first
-    request_id = framework.context.request_id_var.get()
-    if request_id:
-        print(f"[PROFILER] [request_id={request_id}] {message}")
-    else:
-        print(f"[PROFILER] {message}")
-        
-    # Then log through the async system
-    AsyncLogger.get_instance().enqueue_log(
-        LogLevel.DEBUG, f"[PROFILER] {message}", indent=indent
-    )
-
-def set_log_level(level: Union[LogLevel, str]):
-    """Change the minimum log level"""
-    AsyncLogger.get_instance().set_log_level(level)
-
-def shutdown():
-    """Shutdown the logger, flushing all queued messages"""
-    if AsyncLogger._instance is not None:
-        AsyncLogger._instance.shutdown()
+def profile(message: str, indent: int = 0, context: Dict[str, Any] = None):
+    _log(LogLevel.DEBUG, "[PROFILER]", message, indent, context)
 
 def get_log_file():
     """
-    Returns the file path where current logs are being saved.
-    
-    This function exists for compatibility with the original logging module.
-    
-    Returns:
-        str: Full path to the current log file
-    """
-    return AsyncLogger.get_instance()._get_log_file_path()
-
-
-# Example ARQ worker configuration for handling log messages
-# This would be in a separate worker process/service
-'''
-async def log_message(ctx, *, log_record):
-    """
-    ARQ worker function to process logs sent via Redis.
-    
-    This would typically write to Elasticsearch, a central file, 
-    or other monitoring system.
+    Returns the file path where logs should be saved.
     
     Args:
-        ctx: ARQ context
-        log_record: The log record dictionary
+        date (str, optional): A date string in YYYY_MM_DD format. Defaults to today.
+        
+    Returns:
+        str: Full path to the log file for the given date.
     """
-    # Example: Convert to JSON format for storage
-    log_json = json.dumps(log_record)
-    
-    # Here you would implement your centralized logging logic
-    # For example:
-    # - Write to Elasticsearch
-    # - Send to a log aggregation service
-    # - Store in a database
-    # - Forward to monitoring systems
-    
-    # Example pseudo-code for Elasticsearch:
-    # await es_client.index(
-    #     index=f"logs-{datetime.now().strftime('%Y.%m.%d')}",
-    #     body=log_record
-    # )
-    
-    return True  # Return success
-'''
-
-# Example configuration file (config.json)
-'''
-{
-  "logging": {
-    "use_redis": true,
-    "redis_url": "redis://localhost:6379/0",
-    "min_level": "DEBUG",
-    "service_name": "auth-service",
-    "log_debug_to_file": true,
-    "quiet_init": true
-  }
-}
-'''
+    logger = AsyncLogger.get_instance()
+    return logger._get_log_file_path()

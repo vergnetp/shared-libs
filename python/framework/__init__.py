@@ -4,6 +4,7 @@ Framework module: expose a base web service app (FastAPI) that has some built in
 from fastapi import FastAPI
 from .app_factory import AppFactory
 from .config import AppConfig
+from .context import *
 
 def create_app(config: AppConfig) -> FastAPI:
     """

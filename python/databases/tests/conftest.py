@@ -175,3 +175,17 @@ async def close_mysql_pools():
             await MySqlDatabase._pool.wait_closed()
         except:
             pass
+
+@pytest.fixture(scope="session")
+def postgres_db(postgres_config):
+    """Sync Postgres Database Fixture"""
+    db = PostgresDatabase(postgres_config)
+    yield db
+    db.close()
+
+@pytest_asyncio.fixture
+async def postgres_db_async(postgres_config):
+    """Async Postgres Database Fixture"""
+    db = PostgresDatabase(postgres_config)
+    yield db
+    # Optionally close async pool later if needed

@@ -115,7 +115,7 @@ class Database(ABC):
             # For SQLite, use REPLACE
             sql = f"""
                 INSERT OR REPLACE INTO _meta_version (entity_name, version)
-                VALUES ({pl}, COALESCE((SELECT version FROM _meta_version WHERE entity_name = {pl}) + 1, 1))
+                VALUES ({pl}, COALESCE((SELECT version FROM _meta_version WHERE entity_name = '{entity_name}') + 1, 1))
                 """
             
         try:

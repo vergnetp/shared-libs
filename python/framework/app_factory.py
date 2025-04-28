@@ -23,6 +23,7 @@ class AppFactory:
             config: The application configuration object
             setup_infrastructure: Whether to generate infrastructure files
         """
+        
         self.config = config
         
         # Override environment from ENV if specified

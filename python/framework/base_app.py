@@ -3,7 +3,7 @@ import time
 import os
 import uuid
 
-from ..log import info
+
 from . import status as platform_status
 from . import context
 
@@ -15,6 +15,7 @@ def create_base_app() -> FastAPI:
       - /status endpoint
       - Request timing middleware
     """
+    from ..log import info
     app = FastAPI()
 
     @app.get("/status", tags=["Healthcheck"])
