@@ -1,0 +1,79 @@
+#!/bin/bash
+# shared_libs/framework/templates/deploy.sh.j2
+
+set -e
+
+# Configuration
+APP_NAME="{{ app_name }}"
+ENVIRONMENT="{{ env }}"
+TAG=$(date +%Y%m%d%H%M%S)
+API_SERVERS=({% for server in api_servers %}"{{ server }}" {% endfor %})
+WORKER_SERVERS=({% for server in worker_servers %}"{{ server }}" {% endfor %})
+{% if docker_registry %}
+DOCKER_REGISTRY="{{ docker_registry }}"
+{% endif %}
+
+# Load secrets from environment
+{% if db_password_var %}
+if [ -z "${!db_password_var}" ]; then
+    echo "ERROR: {{ db_password_var }} environment variable must be set"
+    exit 1
+fi
+DB_PASSWORD="${!db_password_var}"
+{% endif %}
+
+{% if redis_password_var %}
+if [ -z "${!redis_password_var}" ]; then
+    echo "ERROR: {{ redis_password_var }} environment variable must be set"
+    exit 1
+fi
+REDIS_PASSWORD="${!redis_password_var}"
+{% endif %}
+
+echo "Building and deploying {{ app_name }} ({{ env }})..."
+
+# 1. Build Docker images
+echo "Building Docker images..."
+docker-compose build --no-cache
+
+# 2. Tag images
+{% if docker_registry %}
+docker tag {{ app_name }}-api:latest ${DOCKER_REGISTRY}/{{ app_name }}-api:${TAG}
+docker tag {{ app_name }}-api:latest ${DOCKER_REGISTRY}/{{ app_name }}-api:latest
+
+# 3. Push to registry
+echo "Pushing images to registry..."
+{% if config.deployment.docker_username_env_var %}
+docker login ${DOCKER_REGISTRY} -u "${!docker_username_env_var}" -p "${!docker_password_env_var}"
+{% endif %}
+docker push ${DOCKER_REGISTRY}/{{ app_name }}-api:${TAG}
+docker push ${DOCKER_REGISTRY}/{{ app_name }}-api:latest
+{% endif %}
+
+# 4. Deploy to servers with zero downtime (rolling update)
+echo "Deploying to API servers..."
+for server in "${API_SERVERS[@]}"; do
+    echo "Deploying to $server..."
+    
+    # Transfer docker-compose file
+    scp docker-compose.yml $server:/opt/{{ app_name }}/
+    
+    # Deploy with environment variables
+    ssh $server "cd /opt/{{ app_name }} && \
+        export TAG=${TAG} && \
+        export DB_PASSWORD=${DB_PASSWORD} && \
+        {% if redis_password_var %}export REDIS_PASSWORD=${REDIS_PASSWORD} && {% endif %} \
+        docker-compose pull && \
+        docker-compose up -d --no-deps --scale api=2 api && \
+        sleep 5 && \
+        docker-compose exec -T api wget --spider --quiet http://localhost:8000/status || exit 1"
+    
+    echo "Deployed to $server successfully"
+done
+
+echo "Deployment successful!"
+echo "New version: ${TAG}"
+echo "To rollback, run: ./rollback.sh ${TAG}"
+
+# Save deployment info for rollback
+echo "${TAG}" > .last_deployment

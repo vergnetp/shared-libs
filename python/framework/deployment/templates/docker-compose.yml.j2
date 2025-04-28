@@ -1,0 +1,94 @@
+# shared_libs/framework/templates/docker-compose.yml.j2
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: {{ config.app_name }}-api:${TAG:-latest}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      {% if config.database.type == 'postgres' %}
+      - postgres
+      {% elif config.database.type == 'mysql' %}
+      - mysql
+      {% endif %}
+      {% if config.redis and config.redis.enabled %}
+      - redis
+      {% endif %}
+    environment:
+      - ENV={{ config.environment }}
+      {% if config.database.type == 'postgres' %}
+      - DATABASE_URL=postgresql://{{ config.database.user }}:${DB_PASSWORD}@postgres:{{ config.database.port }}/{{ config.database.database }}
+      {% elif config.database.type == 'mysql' %}
+      - DATABASE_URL=mysql://{{ config.database.user }}:${DB_PASSWORD}@mysql:{{ config.database.port }}/{{ config.database.database }}
+      {% elif config.database.type == 'sqlite' %}
+      - DATABASE_URL=sqlite:///${DATABASE_PATH:-./{{ config.database.database }}.db}
+      {% endif %}
+      {% if config.redis and config.redis.enabled %}
+      - REDIS_URL=redis://redis:{{ config.redis.port }}
+      {% endif %}
+
+  {% if config.database.type == 'postgres' %}
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER={{ config.database.user }}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB={{ config.database.database }}
+    ports:
+      - "${POSTGRES_PORT:-{{ config.database.port }}}:{{ config.database.port }}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  {% elif config.database.type == 'mysql' %}
+  mysql:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-root}
+      - MYSQL_DATABASE={{ config.database.database }}
+      - MYSQL_USER={{ config.database.user }}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "${MYSQL_PORT:-{{ config.database.port }}}:{{ config.database.port }}"
+    volumes:
+      - mysql_data:/var/lib/mysql
+  {% endif %}
+
+  {% if config.redis and config.redis.enabled %}
+  redis:
+    image: redis:7
+    ports:
+      - "${REDIS_PORT:-{{ config.redis.port }}}:{{ config.redis.port }}"
+    {% if config.redis.password_env_var %}
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    {% endif %}
+  {% endif %}
+
+  {% if config.opensearch and config.opensearch.enabled %}
+  opensearch:
+    image: opensearchproject/opensearch:latest
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_SECURITY_PLUGIN=true"
+    ports:
+      - "${OPENSEARCH_PORT:-{{ config.opensearch.port }}}:{{ config.opensearch.port }}"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+  {% endif %}
+
+volumes:
+  {% if config.database.type == 'postgres' %}
+  postgres_data:
+  {% elif config.database.type == 'mysql' %}
+  mysql_data:
+  {% endif %}
+  {% if config.opensearch and config.opensearch.enabled %}
+  opensearch_data:
+  {% endif %}

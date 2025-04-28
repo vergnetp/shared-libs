@@ -1,87 +1,50 @@
-from pydantic import BaseSettings, BaseModel, Field, AnyUrl
-from typing import Optional, Literal
-import os
+# shared_libs/framework/config.py
+from pydantic import BaseModel, Field, validator
+from typing import List, Optional, Literal, Dict, Any
 
+class DatabaseConfig(BaseModel):
+    """Database configuration for the application."""
+    type: Literal["postgres", "mysql", "sqlite"] = Field(..., description="Database type")
+    host: Optional[str] = Field(None, description="Database host (not required for SQLite)")
+    port: Optional[int] = Field(None, description="Database port")
+    database: str = Field(..., description="Database name")
+    user: Optional[str] = Field(None, description="Database user")
+    password_env_var: str = Field("DB_PASSWORD", description="Environment variable name for password")
 
-class SecretsConfig(BaseModel):
-    database_password: str
-    redis_password: Optional[str]
+class RedisConfig(BaseModel):
+    """Redis configuration."""
+    enabled: bool = Field(True, description="Whether Redis is enabled")
+    host: str = Field("localhost", description="Redis host")
+    port: int = Field(6379, description="Redis port")
+    password_env_var: Optional[str] = Field("REDIS_PASSWORD", description="Environment variable for password")
 
-class RuntimeSettings(BaseModel):
-    enable_beta_features: bool = False
-    max_requests_per_minute: int = 1000
+class OpenSearchConfig(BaseModel):
+    """OpenSearch configuration."""
+    enabled: bool = Field(False, description="Whether OpenSearch is enabled")
+    host: str = Field("localhost", description="OpenSearch host")
+    port: int = Field(9200, description="OpenSearch port")
+    index_prefix: str = Field("logs", description="Index prefix for logs")
 
-class LoggingConfig(BaseModel):
-    level: Literal["DEBUG", "INFO", "WARN", "ERROR", "CRITICAL"] = "INFO"
-    destination: Optional[Literal["stdout", "redis", "opensearch"]] = "stdout"
-    redis_url: Optional[AnyUrl] = None
-    opensearch_url: Optional[AnyUrl] = None
-    opensearch_index: Optional[str] = None
+class DeploymentConfig(BaseModel):
+    """Deployment configuration."""
+    api_servers: List[str] = Field(["localhost"], description="List of servers to deploy API to")
+    worker_servers: List[str] = Field(["localhost"], description="List of servers to deploy workers to")
+    docker_registry: Optional[str] = Field(None, description="Docker registry URL")
+    docker_username_env_var: Optional[str] = Field("DOCKER_USERNAME", description="Environment variable for Docker username")
+    docker_password_env_var: Optional[str] = Field("DOCKER_PASSWORD", description="Environment variable for Docker password")
 
-class DestinationsConfig(BaseModel):
-    opensearch_host: Optional[str] = None
-    opensearch_port: Optional[int] = None
-    postgres_host: Optional[str] = None
-    postgres_db: Optional[str] = None
-    postgres_user: Optional[str] = None
-    postgres_password: Optional[str] = None
-
-class AppConfig(BaseSettings):
-    service_name: str = Field(..., description="Name of the service (used for logging etc.)")
-    database_url: AnyUrl = Field(..., description="Database URL")
-    redis_url: Optional[AnyUrl] = Field(None, description="Redis URL if using queue or caching")
-    logging_config: Optional[LoggingConfig] = Field(default_factory=LoggingConfig, description="Logging configuration")
-    destinations_config: Optional[DestinationsConfig] = Field(default_factory=DestinationsConfig, description="Destination services config")
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-
-class ConfigService:
-    """
-    Centralized ConfigService:
-    - Loads environment settings (AppConfig)
-    - Loads secrets securely (SecretsConfig)
-    - Handles runtime feature flags (RuntimeSettings)
-    """
-
-    def __init__(self):
-        self.app_config = self._load_app_config()
-        self.secrets_config = self._load_secrets_config()
-        self.runtime_settings = self._load_runtime_settings()
-
-    def _load_app_config(self) -> AppConfig:
-        return AppConfig()  # Auto-load from .env or passed manually
-
-    def _load_secrets_config(self) -> SecretsConfig:
-        # In future: Load from Vault etc. 
-        database_password=os.environ.get("APP_DATABASE_PASSWORD", None) 
-        if not database_password:
-            raise RuntimeError("Missing required secret: APP_DATABASE_PASSWORD")     
-        return SecretsConfig(
-            database_password=database_password,
-            redis_password=os.environ.get("APP_REDIS_PASSWORD", None),            
-        )
-
-    def _load_runtime_settings(self) -> RuntimeSettings:
-        # Load from Redis, database, or a config API later
-        return RuntimeSettings()
-
-    def refresh_runtime_settings(self):
-        """Refresh dynamic runtime config."""
-        self.runtime_settings = self._load_runtime_settings()
-
-    def refresh_secrets(self):
-        """Optionally refresh secrets if your secret manager rotates them."""
-        self.secrets_config = self._load_secrets_config()
-
-"""
-Example of .env:
-SERVICE_NAME=project1-api
-DATABASE_URL=postgresql://user:pass@localhost:5432/project1db
-REDIS_URL=redis://localhost:6379
-
-config = AppConfig() would load automatically
-If fields are not valid (e.g. int instead of str), an error is raised upon config creation (before app start), thanks to pydantic
-"""
-
+class AppConfig(BaseModel):
+    """Main application configuration."""
+    app_name: str = Field(..., description="Application name")
+    environment: Literal["dev", "test", "staging", "prod"] = Field("dev", description="Environment")
+    database: DatabaseConfig
+    redis: Optional[RedisConfig] = Field(None, description="Redis configuration")
+    opensearch: Optional[OpenSearchConfig] = Field(None, description="OpenSearch configuration")
+    deployment: DeploymentConfig = Field(default_factory=DeploymentConfig, description="Deployment configuration")
+    
+    # You can add validators to ensure configuration consistency
+    @validator('redis', always=True)
+    def validate_redis(cls, v, values):
+        if v is None:
+            return RedisConfig(enabled=False)
+        return v
