@@ -11,6 +11,7 @@ from enum import Enum
 from typing import Optional, Dict, Any, Union
 import atexit
 from .. import utils
+from .. import framework
 
 # Optional Redis dependencies
 try:
@@ -521,7 +522,9 @@ class AsyncLogger:
             'pid': os.getpid(),
             'thread': threading.get_ident(),
         }
-        
+        request_id = framework.context.request_id_var.get()
+        if request_id:
+            record['request_id'] = request_id
         # Add context if provided
         if context:
             record['context'] = context
@@ -631,7 +634,11 @@ def debug(message: str, indent: int = 0, context: Dict[str, Any] = None):
     These messages are printed to stdout only and not written to the file.
     """
     # Print directly to stdout first for immediate feedback and test compatibility
-    print(f"[DEBUG] {message}")
+    request_id = framework.context.request_id_var.get()
+    if request_id:
+        print(f"[DEBUG] [request_id={request_id}] {message}")
+    else:
+        print(f"[DEBUG] {message}")
     
     # Then also log through the async system
     AsyncLogger.get_instance().enqueue_log(
@@ -641,7 +648,11 @@ def debug(message: str, indent: int = 0, context: Dict[str, Any] = None):
 def info(message: str, indent: int = 0, context: Dict[str, Any] = None):
     """Log an info message"""
     # Print directly to stdout first
-    print(f"[INFO] {message}")
+    request_id = framework.context.request_id_var.get()
+    if request_id:
+        print(f"[INFO] [request_id={request_id}] {message}")
+    else:
+        print(f"[INFO] {message}")
         
     # Then log through the async system
     AsyncLogger.get_instance().enqueue_log(
@@ -651,7 +662,11 @@ def info(message: str, indent: int = 0, context: Dict[str, Any] = None):
 def warn(message: str, indent: int = 0, context: Dict[str, Any] = None):
     """Log a warning message"""
     # Print directly to stdout first
-    print(f"[WARN] {message}")
+    request_id = framework.context.request_id_var.get()
+    if request_id:
+        print(f"[WARN] [request_id={request_id}] {message}")
+    else:
+        print(f"[WARN] {message}")
         
     # Then log through the async system
     AsyncLogger.get_instance().enqueue_log(
@@ -661,7 +676,11 @@ def warn(message: str, indent: int = 0, context: Dict[str, Any] = None):
 def error(message: str, indent: int = 0, context: Dict[str, Any] = None):
     """Log an error message"""
     # Print directly to stderr first
-    print(f"[ERROR] {message}", file=sys.stderr)
+    request_id = framework.context.request_id_var.get()
+    if request_id:
+        print(f"[ERROR] [request_id={request_id}] {message}", file=sys.stderr)
+    else:
+        print(f"[ERROR] {message}", file=sys.stderr)   
         
     # Then log through the async system
     AsyncLogger.get_instance().enqueue_log(
@@ -673,7 +692,11 @@ def critical(message: str, context: Dict[str, Any] = None):
     Log a critical message - processed immediately, guaranteed to be written
     """
     # Print directly to stdout with format matching the original logger for test compatibility
-    print(f"[CRITICAL] {message}")
+    request_id = framework.context.request_id_var.get()
+    if request_id:
+        print(f"[CRITICAL] [request_id={request_id}] {message}")
+    else:
+        print(f"[CRITICAL] {message}")
         
     # Then log through the async system (keeping the CRITICAL: prefix for the async logs)
     AsyncLogger.get_instance().enqueue_log(
@@ -691,7 +714,11 @@ def profile(message: str, indent: int = 0):
     Like debug(), this avoids file I/O and is helpful for inline performance traces.
     """
     # Print directly to stdout first
-    print(f"[PROFILER] {message}")
+    request_id = framework.context.request_id_var.get()
+    if request_id:
+        print(f"[PROFILER] [request_id={request_id}] {message}")
+    else:
+        print(f"[PROFILER] {message}")
         
     # Then log through the async system
     AsyncLogger.get_instance().enqueue_log(
