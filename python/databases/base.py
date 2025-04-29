@@ -1,45 +1,207 @@
-# This is the base class exposing all the methods that any DataBase class will fulfill
+# Fix for the Database base class (python/databases/base.py)
+# Focus on improving connection handling and transaction safety
 
 import os
 import uuid
+import asyncio
+import contextlib
 from typing import Callable, Awaitable, Optional, Tuple, List, Any, final
-import asyncio, re
 import nest_asyncio
+import re
 from abc import ABC, abstractmethod
 from ..errors import TrackError
 from .. import log as logger
 from .. import utils
 
 def _run_sync(coro):
+    """
+    Safely run a coroutine from a synchronous context.
+    
+    This handles both cases: when called from within an event loop
+    and when called from outside an event loop.
+    """
     try:
         loop = asyncio.get_running_loop()
-        nest_asyncio.apply(loop)  # ← patch the loop so we can nest safely
+        # Patch the loop so we can nest safely
+        nest_asyncio.apply(loop)
         return loop.run_until_complete(coro)
     except RuntimeError:
+        # No running loop
         return asyncio.run(coro)
     
 class Database(ABC):
-    def __init__(self, database: str, host: str=None, port: int=None, user: str=None, password: str=None, alias: str = None, env: str = 'prod'):
+    """
+    Abstract base class for database implementations.
+    Provides common functionality for database operations with
+    both synchronous and asynchronous interfaces.
+    """
+    
+    def __init__(self, database: str, host: str=None, port: int=None, 
+                 user: str=None, password: str=None, alias: str = None, 
+                 env: str = 'prod'):
+        """
+        Initialize the database connection.
+        
+        Args:
+            database: Database name
+            host: Database server hostname (not used for SQLite)
+            port: Database server port (not used for SQLite)
+            user: Username for authentication (not used for SQLite)
+            password: Password for authentication (not used for SQLite)
+            alias: Friendly name for this database connection
+            env: Environment name (prod, dev, test)
+        """
         self.__host = host
         self.__port = port
         self.__database = database
         self.__user = user
         self.__password = password
         self.__env = env
-        self.__alias = alias or database or f'self.type()_database'
+        self.__alias = alias or database or f'{self.type()}_database'
+        
+        # Metadata cache
         self.__meta_cache = {}
         self.__keys_cache = {}
         self.__types_cache = {}
         self.__meta_versions = {}
-
-    # region --- HELPERS --------------
+        
+        # Transaction state tracking
+        self._tx_active = False
+        self._tx_depth = 0  # For nested transactions
+    
+    # region --- CONTEXT MANAGERS ---
+    @contextlib.contextmanager
+    def transaction(self):
+        """
+        Context manager for database transactions.
+        
+        Usage:
+            with db.transaction():
+                db.execute_sql("INSERT INTO users VALUES ('user1', 'name1')")
+                db.execute_sql("INSERT INTO profiles VALUES ('user1', 'bio')")
+        
+        If any operation within the block fails, the transaction is rolled back.
+        Otherwise, it is committed when exiting the block.
+        """
+        outer_tx = self._tx_active
+        
+        if not outer_tx:
+            self.begin_transaction()
+            
+        self._tx_depth += 1
+        
+        try:
+            yield self
+        except Exception as e:
+            # Only roll back if this is the outermost transaction
+            if self._tx_depth == 1:
+                self.rollback_transaction()
+            self._tx_depth = max(0, self._tx_depth - 1)
+            raise e
+        else:
+            self._tx_depth = max(0, self._tx_depth - 1)
+            # Only commit if this is the outermost transaction
+            if self._tx_depth == 0 and not outer_tx:
+                self.commit_transaction()
+    
+    @staticmethod
+    async def _async_transaction_cm(db, func, *args, **kwargs):
+        """Helper for async_transaction context manager"""
+        outer_tx = db._tx_active
+        
+        if not outer_tx:
+            await db.begin_transaction_async()
+            
+        db._tx_depth += 1
+        
+        try:
+            result = await func(*args, **kwargs)
+            return result
+        except Exception as e:
+            # Only roll back if this is the outermost transaction
+            if db._tx_depth == 1:
+                await db.rollback_transaction_async()
+            db._tx_depth = max(0, db._tx_depth - 1)
+            raise e
+        finally:
+            db._tx_depth = max(0, db._tx_depth - 1)
+            # Only commit if this is the outermost transaction
+            if db._tx_depth == 0 and not outer_tx:
+                await db.commit_transaction_async()
+    
+    def async_transaction(self, func):
+        """
+        Decorator for async functions to run within a transaction.
+        
+        Usage:
+            @db.async_transaction
+            async def create_user(user_data):
+                await db.execute_sql_async(...)
+                await db.execute_sql_async(...)
+        
+        If the function raises an exception, the transaction is rolled back.
+        Otherwise, it is committed when the function completes.
+        """
+        @contextlib.asynccontextmanager
+        async def async_transaction_context():
+            outer_tx = self._tx_active
+            
+            if not outer_tx:
+                await self.begin_transaction_async()
+                
+            self._tx_depth += 1
+            
+            try:
+                yield self
+            except Exception as e:
+                # Only roll back if this is the outermost transaction
+                if self._tx_depth == 1:
+                    await self.rollback_transaction_async()
+                self._tx_depth = max(0, self._tx_depth - 1)
+                raise e
+            finally:
+                self._tx_depth = max(0, self._tx_depth - 1)
+                # Only commit if this is the outermost transaction
+                if self._tx_depth == 0 and not outer_tx:
+                    await self.commit_transaction_async()
+                    
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            async with async_transaction_context():
+                return await func(*args, **kwargs)
+        return wrapper
+    # endregion -------------------
+    
+    # region --- HELPERS ----------
     @staticmethod
     def _sanitize_identifier(name: str) -> str:
+        """
+        Safely sanitize an SQL identifier to prevent SQL injection.
+        
+        Args:
+            name: The identifier to sanitize
+            
+        Returns:
+            The sanitized identifier
+            
+        Raises:
+            ValueError: If the identifier contains unsafe characters
+        """
         if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', name):
             raise ValueError(f"Unsafe SQL identifier: {name}")
         return name
 
     def placeholders(self, count: int, is_async: bool=True) -> str:
+        """
+        Generate SQL placeholders for parameterized queries.
+        
+        Args:
+            count: Number of placeholders to generate
+            is_async: Whether this is for async queries
+            
+        Returns:
+            String of placeholders separated by commas
+        """
         if self.type() == "postgres":
             if is_async:
                 return ", ".join(f"${i+1}" for i in range(count))
@@ -49,17 +211,59 @@ class Database(ABC):
             return ", ".join([self.placeholder(is_async)] * count)
     
     def _get_keys_and_types(self, entity_name: str) -> Tuple[List[str], List[str]]:
+        """
+        Get the keys and types for an entity from metadata.
+        
+        Args:
+            entity_name: Name of the entity
+            
+        Returns:
+            Tuple of (keys, types)
+        """
         meta = self._get_entity_metadata(entity_name)
         return list(meta.keys()), list(meta.values())
 
     async def _get_keys_and_types_async(self, entity_name: str) -> Tuple[List[str], List[str]]:
+        """
+        Get the keys and types for an entity from metadata (async version).
+        
+        Args:
+            entity_name: Name of the entity
+            
+        Returns:
+            Tuple of (keys, types)
+        """
         meta = await self._get_entity_metadata_async(entity_name)
         return list(meta.keys()), list(meta.values())
 
     def _prepare_entity_data(self, entity: dict) -> dict:
+        """
+        Prepare entity data before saving.
+        Can be overridden by subclasses to add timestamps, etc.
+        
+        Args:
+            entity: The entity data
+            
+        Returns:
+            Prepared entity data
+        """
         return entity
 
     async def _run_metadata_flow(self, entity_name: str, executor: Callable[..., Awaitable], is_async: bool = True):
+        """
+        Run the metadata retrieval flow.
+        
+        Args:
+            entity_name: Name of the entity
+            executor: Function to execute SQL
+            is_async: Whether this is async mode
+            
+        Returns:
+            Entity metadata
+            
+        Raises:
+            TrackError: On database errors
+        """
         try:
             entity_name = self._sanitize_identifier(entity_name)
             if is_async:               
@@ -74,10 +278,20 @@ class Database(ABC):
                 )
             version = version_row[0][0] if version_row else 0
 
+            # Cache hit - return immediately if version matches
             if self.__meta_versions.get(entity_name) == version:
                 return self.__meta_cache[entity_name]
 
-            rows = await executor(f"SELECT name, type FROM {entity_name}_meta -- {uuid.uuid4()}") if is_async else executor(f"SELECT name, type FROM {entity_name}_meta")
+            # Get fresh metadata
+            query = f"SELECT name, type FROM {entity_name}_meta"
+            if is_async:
+                # Add comment with UUID for PostgreSQL query cache busting
+                query += f" -- {uuid.uuid4()}"
+                rows = await executor(query)
+            else:
+                rows = executor(query)
+                
+            # Update cache
             meta = {name: typ for name, typ in rows}
             self.__meta_cache[entity_name] = meta
             self.__keys_cache[entity_name] = list(meta.keys())
@@ -88,12 +302,41 @@ class Database(ABC):
             raise TrackError(e)
 
     def _get_entity_metadata(self, entity_name: str):
+        """
+        Get entity metadata synchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            
+        Returns:
+            Entity metadata dictionary
+        """
         return _run_sync(self._run_metadata_flow(entity_name, self.execute_sql, is_async=False))
 
     async def _get_entity_metadata_async(self, entity_name: str):
+        """
+        Get entity metadata asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            
+        Returns:
+            Entity metadata dictionary
+        """
         return await self._run_metadata_flow(entity_name, self.execute_sql_async, is_async=True)
 
     async def _run_version_bump(self, entity_name: str, executor: Callable[..., Awaitable], is_async: bool = True):
+        """
+        Increment the metadata version for an entity.
+        
+        Args:
+            entity_name: Name of the entity
+            executor: Function to execute SQL
+            is_async: Whether this is async mode
+            
+        Raises:
+            TrackError: On database errors
+        """
         pl = self.placeholder(is_async)
         
         # Use different SQL syntax based on database type
@@ -115,7 +358,7 @@ class Database(ABC):
             # For SQLite, use REPLACE
             sql = f"""
                 INSERT OR REPLACE INTO _meta_version (entity_name, version)
-                VALUES ({pl}, COALESCE((SELECT version FROM _meta_version WHERE entity_name = '{entity_name}') + 1, 1))
+                VALUES ({pl}, COALESCE((SELECT version FROM _meta_version WHERE entity_name = {pl}) + 1, 1))
                 """
             
         try:
@@ -127,48 +370,112 @@ class Database(ABC):
             raise TrackError(e)
 
     def _bump_entity_version(self, entity_name: str) -> None:
-       _run_sync(self._run_version_bump(entity_name, self.execute_sql, is_async=False))
+        """
+        Increment entity version synchronously.
+        
+        Args:
+            entity_name: Name of the entity
+        """
+        _run_sync(self._run_version_bump(entity_name, self.execute_sql, is_async=False))
 
     async def _bump_entity_version_async(self, entity_name: str) -> None:
+        """
+        Increment entity version asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+        """
         await self._run_version_bump(entity_name, self.execute_sql_async, is_async=True)
 
     async def _run_ensure_tables(self, entity_name: str, executor: Callable[..., Awaitable], is_async: bool = True):
+        """
+        Ensure required tables exist.
+        
+        Args:
+            entity_name: Name of the entity
+            executor: Function to execute SQL
+            is_async: Whether this is async mode
+            
+        Raises:
+            TrackError: On database errors
+        """
         try:
             entity_name = self._sanitize_identifier(entity_name)
-            if is_async:
-                await executor("""
-                    CREATE TABLE IF NOT EXISTS _meta_version (
-                        entity_name VARCHAR(255) PRIMARY KEY,
-                        version INTEGER
-                    ) -- {uuid.uuid4()}""")
-            else:
-                executor("""
+            
+            # Create _meta_version table if needed
+            meta_version_sql = """
                 CREATE TABLE IF NOT EXISTS _meta_version (
                     entity_name VARCHAR(255) PRIMARY KEY,
                     version INTEGER
-                )""")
+                )"""
+            
+            # Add UUID comment for PostgreSQL if async
+            if is_async and self.type() == 'postgres':
+                meta_version_sql += f" -- {uuid.uuid4()}"
                 
-            meta_table_sql = f'create table if not exists {entity_name}_meta (name varchar(255) {"PRIMARY KEY" if self.type() == "sqlite" else ",PRIMARY KEY (name)"}, type varchar(255))'
+            # Execute metadata version table creation
+            if is_async:
+                await executor(meta_version_sql)
+            else:
+                executor(meta_version_sql)
+                
+            # Create entity metadata table
+            meta_table_sql = f'CREATE TABLE IF NOT EXISTS {entity_name}_meta (name VARCHAR(255) {"PRIMARY KEY" if self.type() == "sqlite" else ",PRIMARY KEY (name)"}, type VARCHAR(255))'
             if is_async and self.type() == 'postgres':
                 meta_table_sql += f' -- {uuid.uuid4()}'
                 
-            await executor(meta_table_sql) if is_async else executor(meta_table_sql)
+            # Execute entity metadata table creation
+            if is_async:
+                await executor(meta_table_sql)
+            else:
+                executor(meta_table_sql)
             
-            create_sql = f"create table if not exists {entity_name} (id VARCHAR(255) {'PRIMARY KEY' if self.type() == 'sqlite' else ',PRIMARY KEY (id)'})"
+            # Create entity table
+            create_sql = f"CREATE TABLE IF NOT EXISTS {entity_name} (id VARCHAR(255) {'PRIMARY KEY' if self.type() == 'sqlite' else ',PRIMARY KEY (id)'})"
             if is_async and self.type() == 'postgres':
                 create_sql += f' -- {uuid.uuid4()}'
                 
-            await executor(create_sql) if is_async else executor(create_sql)
+            # Execute entity table creation
+            if is_async:
+                await executor(create_sql)
+            else:
+                executor(create_sql)
         except Exception as e:
             raise TrackError(e)
 
     def _ensure_tables_exist(self, entity_name: str) -> None:
+        """
+        Ensure required tables exist synchronously.
+        
+        Args:
+            entity_name: Name of the entity
+        """
         _run_sync(self._run_ensure_tables(entity_name, self.execute_sql, is_async=False))
 
     async def _ensure_tables_exist_async(self, entity_name: str) -> None:
+        """
+        Ensure required tables exist asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+        """
         await self._run_ensure_tables(entity_name, self.execute_sql_async, is_async=True)
 
     async def _run_deserialize(self, entity_name: str, values, keys, types, cast, fetch_keys_types):
+        """
+        Deserialize database values into entity dictionary.
+        
+        Args:
+            entity_name: Name of the entity
+            values: Values from database
+            keys: Entity field keys
+            types: Entity field types
+            cast: Whether to cast values to their types
+            fetch_keys_types: Function to get keys and types
+            
+        Returns:
+            Entity dictionary
+        """
         if keys is None or types is None:
             keys, types = await fetch_keys_types(entity_name) if asyncio.iscoroutinefunction(fetch_keys_types) else fetch_keys_types(entity_name)
         return {
@@ -177,6 +484,22 @@ class Database(ABC):
         }
 
     def _db_values_to_entity(self, entity_name, values, keys=None, types=None, cast=False):
+        """
+        Convert database values to entity dictionary synchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            values: Values from database
+            keys: Entity field keys
+            types: Entity field types
+            cast: Whether to cast values to their types
+            
+        Returns:
+            Entity dictionary
+            
+        Raises:
+            TrackError: On conversion errors
+        """
         try:
             entity_name = self._sanitize_identifier(entity_name)
             return _run_sync(self._run_deserialize(entity_name, values, keys, types, cast, self._get_keys_and_types))
@@ -184,6 +507,22 @@ class Database(ABC):
             raise TrackError(e)
 
     async def _db_values_to_entity_async(self, entity_name, values, keys=None, types=None, cast=False):
+        """
+        Convert database values to entity dictionary asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            values: Values from database
+            keys: Entity field keys
+            types: Entity field types
+            cast: Whether to cast values to their types
+            
+        Returns:
+            Entity dictionary
+            
+        Raises:
+            TrackError: On conversion errors
+        """
         try:
             entity_name = self._sanitize_identifier(entity_name)
             return await self._run_deserialize(entity_name, values, keys, types, cast, self._get_keys_and_types_async)
@@ -191,6 +530,21 @@ class Database(ABC):
             raise TrackError(e)
 
     async def _run_metadata_schema_check(self, entity_name: str, keys, sample_values, get_metadata, executor, bump_version, is_async: bool):
+        """
+        Check and update metadata schema for entity.
+        
+        Args:
+            entity_name: Name of the entity
+            keys: Entity field keys
+            sample_values: Sample values for type inference
+            get_metadata: Function to get metadata
+            executor: Function to execute SQL
+            bump_version: Function to bump version
+            is_async: Whether this is async mode
+            
+        Raises:
+            TrackError: On database errors
+        """
         try:
             pl = self.placeholder(is_async)
             meta = await get_metadata(entity_name) if is_async else get_metadata(entity_name)
@@ -225,6 +579,14 @@ class Database(ABC):
             raise TrackError(e)
     
     def _ensure_metadata_and_schema(self, entity_name, keys, sample_values):
+        """
+        Ensure metadata and schema match entity synchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            keys: Entity field keys
+            sample_values: Sample values for type inference
+        """
         _run_sync(self._run_metadata_schema_check(
             entity_name, keys, sample_values,
             self._get_entity_metadata, self.execute_sql, self._bump_entity_version,
@@ -232,6 +594,14 @@ class Database(ABC):
         ))
 
     async def _ensure_metadata_and_schema_async(self, entity_name, keys, sample_values):
+        """
+        Ensure metadata and schema match entity asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            keys: Entity field keys
+            sample_values: Sample values for type inference
+        """
         await self._run_metadata_schema_check(
             entity_name, keys, sample_values,
             self._get_entity_metadata_async, self.execute_sql_async, self._bump_entity_version_async,
@@ -239,6 +609,26 @@ class Database(ABC):
         )
 
     async def _run_fetch(self, entity_name, filter, single, cast, ensure_tables, get_keys_types, fetch_rows, convert_row, is_async):
+        """
+        Fetch entities from database.
+        
+        Args:
+            entity_name: Name of the entity
+            filter: SQL WHERE clause
+            single: Whether to return single entity
+            cast: Whether to cast values to their types
+            ensure_tables: Function to ensure tables exist
+            get_keys_types: Function to get keys and types
+            fetch_rows: Function to fetch rows
+            convert_row: Function to convert row to entity
+            is_async: Whether this is async mode
+            
+        Returns:
+            Entity or list of entities
+            
+        Raises:
+            TrackError: On database errors
+        """
         try:
             entity_name = self._sanitize_identifier(entity_name)
             await ensure_tables(entity_name) if is_async else ensure_tables(entity_name)
@@ -256,6 +646,18 @@ class Database(ABC):
             raise TrackError(e)
 
     def _fetch_data(self, entity_name, filter=None, single=False, cast=False):
+        """
+        Fetch entities from database synchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            filter: SQL WHERE clause
+            single: Whether to return single entity
+            cast: Whether to cast values to their types
+            
+        Returns:
+            Entity or list of entities
+        """
         return _run_sync(self._run_fetch(
             entity_name, filter, single, cast,
             self._ensure_tables_exist, self._get_keys_and_types,
@@ -263,6 +665,18 @@ class Database(ABC):
         ))
 
     async def _fetch_data_async(self, entity_name, filter=None, single=False, cast=False):
+        """
+        Fetch entities from database asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            filter: SQL WHERE clause
+            single: Whether to return single entity
+            cast: Whether to cast values to their types
+            
+        Returns:
+            Entity or list of entities
+        """
         return await self._run_fetch(
             entity_name, filter, single, cast,
             self._ensure_tables_exist_async, self._get_keys_and_types_async,
@@ -270,6 +684,22 @@ class Database(ABC):
         )
 
     async def _run_save_entities(self, entity_name, entities, chunk_size, ensure_tables, ensure_schema, executor, executemany, is_async):
+        """
+        Save entities to database.
+        
+        Args:
+            entity_name: Name of the entity
+            entities: List of entities to save
+            chunk_size: Size of chunks for batch operations
+            ensure_tables: Function to ensure tables exist
+            ensure_schema: Function to ensure schema
+            executor: Function to execute single SQL
+            executemany: Function to execute batch SQL
+            is_async: Whether this is async mode
+            
+        Raises:
+            TrackError: On database errors
+        """
         try:
             if not entities:
                 return
@@ -324,10 +754,17 @@ class Database(ABC):
     # region --- FINAL FUNCTIONS ------
     @final
     def __enter__(self) -> "Database":
+        """
+        Enter context manager.
+        
+        Returns:
+            Self for use in with statement
+        """
         return self
 
     @final
-    def __del__(self):       
+    def __del__(self):
+        """Close resources on object destruction."""
         # Only perform synchronous cleanup - don't try to use async methods
         try:
             if hasattr(self, '_close'):  # Check if attribute exists in case of partial initialization
@@ -337,7 +774,18 @@ class Database(ABC):
             print(f"Error during database cleanup: {e}")
 
     @final
-    def __exit__(self, exc_type, exc_value, traceback) -> None:      
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """
+        Exit context manager.
+        
+        Args:
+            exc_type: Exception type if raised
+            exc_value: Exception value if raised
+            traceback: Traceback if exception raised
+            
+        Returns:
+            False to propagate exceptions
+        """
         # Use synchronous close for context manager
         try:
             self.close(exc_type and exc_value)
@@ -350,7 +798,10 @@ class Database(ABC):
         """
         Close the connection safely.
         Also ensure any pending work is committed or rolled back appropriately.
-        """       
+        
+        Args:
+            error: Exception if closing due to error
+        """
         try:
             if error is None:
                 self.commit_transaction()
@@ -366,6 +817,9 @@ class Database(ABC):
         """
         Close the async connection safely.
         Also ensure any pending work is committed or rolled back appropriately.
+        
+        Args:
+            error: Exception if closing due to error
         """
         try:
             # Skip if event loop is closed
@@ -383,232 +837,3 @@ class Database(ABC):
             logger.debug(f"{self.alias()} async database closed")
         except Exception as e:
             logger.error(f'Error closing async connection for {self.alias()}: {e}')
-
-    @final
-    def env(self) -> str:
-        """
-        Returns the environment
-        """        
-        return self.__env        
-    
-    @final 
-    def alias(self) -> str:
-        """
-        Returns the alias
-        """
-        return self.__alias
-
-    @final
-    def database(self): 
-        return self.__database
-
-    @final
-    def config(self) -> dict:
-        """
-        Returns the database configuration dictionary (database, host, port, user, password)
-        """
-        return {
-        "host": self.__host,
-        "port": self.__port,
-        "database": self.__database,
-        "user": self.__user,
-        "password": self.__password,
-        }
-    
-    @final
-    def save_entities(self, entity_name, entities, chunk_size=500, auto_commit=True):
-        # Start a transaction if auto_commit is True
-        internal_transaction = auto_commit
-        try:
-            if internal_transaction:
-                self.begin_transaction()
-                
-            _run_sync(self._run_save_entities(
-                entity_name, entities, chunk_size,
-                self._ensure_tables_exist, self._ensure_metadata_and_schema,
-                self.execute_sql, self.executemany_sql, is_async=False
-            ))
-            
-            # Commit only if we started the transaction
-            if internal_transaction:
-                self.commit_transaction()
-        except Exception as e:
-            # Rollback only if we started the transaction
-            if internal_transaction:
-                self.rollback_transaction()
-            raise TrackError(e)
-
-    @final
-    async def save_entities_async(self, entity_name, entities, chunk_size=500, auto_commit=True):
-        # Start a transaction if auto_commit is True
-        internal_transaction = auto_commit
-        try:
-            if internal_transaction:
-                await self.begin_transaction_async()
-                
-            await self._run_save_entities(
-                entity_name, entities, chunk_size,
-                self._ensure_tables_exist_async, self._ensure_metadata_and_schema_async,
-                self.execute_sql_async, self.executemany_sql_async, is_async=True
-            )
-            
-            # Commit only if we started the transaction
-            if internal_transaction:
-                await self.commit_transaction_async()
-        except Exception as e:
-            # Rollback only if we started the transaction
-            if internal_transaction:
-                await self.rollback_transaction_async()
-            raise TrackError(e)
-
-    @final
-    def save_entity(self, entity_name, entity, auto_commit=True):
-        self.save_entities(
-            entity_name, 
-            [entity.__dict__ if not isinstance(entity, dict) else entity],
-            auto_commit=auto_commit
-        )
-
-    @final
-    async def save_entity_async(self, entity_name, entity, auto_commit=True):
-        await self.save_entities_async(
-            entity_name, 
-            [entity.__dict__ if not isinstance(entity, dict) else entity],
-            auto_commit=auto_commit
-        )
-
-    @final
-    def get_entity(self, entity_name, id, cast=False):
-        return self._fetch_data(entity_name, f"id = '{id}'", single=True, cast=cast)
-
-    @final
-    async def get_entity_async(self, entity_name, id, cast=False):
-        return await self._fetch_data_async(entity_name, f"id = '{id}'", single=True, cast=cast)
-
-    @final
-    def get_entities(self, entity_name, filter=None, cast=False):
-        return self._fetch_data(entity_name, filter, single=False, cast=cast)
-
-    @final
-    async def get_entities_async(self, entity_name, filter=None, cast=False):
-        return await self._fetch_data_async(entity_name, filter, single=False, cast=cast)
-    # endregion --- FINAL FUNCTIONS ---
-
-    # region --- ABSTRACT FUNCTIONS ---
-    @abstractmethod
-    def type(self) -> str:
-        """
-        Returns the type of database ('sqlite', 'mysql'...).
-        """
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    def placeholder(self, is_async: bool=True) -> str:
-        """
-        Returns the SQL placeholder for the given database.
-        """        
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    def clear_all(self) -> None:
-        """
-        Drop and recreate the entire database.
-        """
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    async def clear_all_async(self) -> None:
-        """
-        Drop and recreate the entire database.
-        """
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    def _close(self) -> None:
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    async def _close_async(self) -> None:
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    def begin_transaction(self) -> None:
-        """
-        Begin the transaction.
-        """
-        raise NotImplementedError("Subclasses must implement this method.")
-      
-    @abstractmethod
-    def commit_transaction(self) -> None:
-        """
-        Commit the transaction.
-        """
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    def rollback_transaction(self) -> None:
-        """
-        Rollback the transaction.
-        """
-        raise NotImplementedError("Subclasses must implement this method.")
-    
-    @abstractmethod
-    def execute_sql(self, sql: str, parameters: Tuple[Any, ...] = ()) -> List[Any]:
-        """
-        Internal method to execute a SQL query with optional parameters.
-        Handles errors by raising TrackError if a failure occurs.
-
-        Args:
-            sql (str): The SQL query to execute.
-            parameters (tuple): Parameters to safely inject into the query.
-
-        Returns:
-            list: Result of the query (typically rows from a SELECT query).
-
-        Raises:
-            TrackError: If there is a failure executing the query (rollback all pending sqls)
-        """
-        raise NotImplementedError("Subclasses must implement this method.")
-    
-    @abstractmethod
-    def executemany_sql(self, sql: str, parameters_list: List[Tuple[Any, ...]]) -> None:
-        """
-        Internal method to execute a SQL query with optional parameters.
-        Handles errors by raising TrackError if a failure occurs.
-
-        Assumes an open transaction is already active from the calling method.
-        Rolls back the entire transaction if this batch fails.
-
-        Args:
-            sql (str): The SQL query to execute.
-            parameters_list (List[Tuple]): List of parameters to safely inject into the query.
-
-        Returns:
-            None
-
-        Raises:
-            TrackError: If there is a failure executing the query (rollback all pending sqls)
-        """
-        raise NotImplementedError("Subclasses must implement this method.")        
-
-    @abstractmethod
-    async def begin_transaction_async(self) -> None:
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    async def commit_transaction_async(self) -> None:
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    async def rollback_transaction_async(self) -> None:
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    async def execute_sql_async(self, sql: str, parameters: Tuple[Any, ...] = ()) -> List[Any]:
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    async def executemany_sql_async(self, sql: str, parameters_list: List[Tuple[Any, ...]]) -> None:
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    # endregion -----------------------
