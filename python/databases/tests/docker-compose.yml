@@ -24,19 +24,20 @@ services:
       POSTGRES_PASSWORD: test
     ports:
       - "5433:5432"
+    command: >
+      bash -c "
+        docker-entrypoint.sh postgres &
+        until pg_isready -U test; do
+          echo 'Waiting for Postgres...';
+          sleep 1;
+        done;
+        psql -U test -d postgres -tc \"SELECT 1 FROM pg_database WHERE datname = 'testdb_postgres_async'\" | grep -q 1 || psql -U test -d postgres -c \"CREATE DATABASE testdb_postgres_async\";
+        wait
+      "
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U test"]
       interval: 5s
       timeout: 5s
-      retries: 10
-  redis:
-    image: redis:7
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 2s
-      timeout: 2s
       retries: 10
 volumes:
   mysql_data:  # Define the volume

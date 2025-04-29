@@ -1,17 +1,34 @@
 import asyncio
+import time
 import pymysql
 import aiomysql
-from typing import Tuple, Any, List, Optional
+from typing import Tuple, Any, List, Optional, Dict
 from ..errors import TrackError
 from ..log import logging as logger
 from .base import Database
 
 class MySqlDatabase(Database):
+    """MySQL database implementation supporting both sync and async operations."""
+    
+    # Class-level shared connection pool
     _pool: Optional[aiomysql.Pool] = None
     _pool_lock = asyncio.Lock()
     
-    def __init__(self, database: str, host: str=None, port: int=None, user: str=None, 
+    def __init__(self, database: str, host: str="localhost", port: int=3306, user: str=None, 
                  password: str=None, alias: str=None, env: str='prod', **kwargs):
+        """
+        Initialize a MySQL database connection.
+        
+        Args:
+            database: Database name
+            host: Database server hostname
+            port: Database server port
+            user: Username for authentication
+            password: Password for authentication
+            alias: Friendly name for this database connection
+            env: Environment name (prod, dev, test)
+            **kwargs: Additional connection parameters
+        """
         super().__init__(database, host, port, user, password, alias, env)
 
         # Additional connection options
@@ -21,26 +38,169 @@ class MySqlDatabase(Database):
         # Initialize with defaults
         self._conn = None
         self._cursor = None
+        self._sync_tx_active = False
+        self._async_conn = None  
+        self._async_tx_active = False  
         
         try:
             # Sync connection
             self._conn = pymysql.connect(**self._conn_config)
             self._cursor = self._conn.cursor()
-            self._sync_tx_active = False
             
             # Verify that we can select the database
             self._cursor.execute(f"USE {database}")
             logger.info(f"Successfully connected to MySQL database {database}")
         except Exception as e:
             logger.error(f"Error connecting to MySQL database {database}: {e}")
-            raise
+            raise TrackError(e)
+            
+    async def executemany_sql_async(self, sql: str, parameters_list: list) -> None:
+        """
+        Execute a SQL query multiple times with different parameters asynchronously.
+        
+        Args:
+            sql: SQL query
+            parameters_list: List of parameter tuples
+            
+        Raises:
+            TrackError: On database errors
+        """
+        if not await self._is_event_loop_valid():
+            raise TrackError(Exception(f"Cannot execute SQL: Event loop not valid for {self.alias()}"))
+            
+        if not await self._init_async():
+            raise TrackError(Exception(f"Failed to initialize async connection for {self.alias()}"))
+            
+        try:
+            async with self._async_conn.cursor() as cursor:
+                # Make sure the right database is selected
+                db_name = self.config().get("database")
+                await cursor.execute(f"USE {db_name}")
+                
+                # Execute the batch query
+                await cursor.executemany(sql, parameters_list)
+        except Exception as e:
+            logger.error(f"SQL executemany error for {self.alias()}: {e}, SQL: {sql}")
+            raise TrackError(e)
+
+    async def _close_async(self) -> None:
+        """
+        Release connections to the pool, but don't close the pool itself.
+        """
+        if not await self._is_event_loop_valid():
+            logger.debug(f"Cannot close connections: Event loop not valid for {self.alias()}")
+            return
+            
+        try:
+            # Handle transaction cleanup if needed
+            if self._async_conn and self._async_tx_active:
+                try:
+                    async with self._async_conn.cursor() as cursor:
+                        await cursor.execute("ROLLBACK")
+                    await self._async_conn.autocommit(True)
+                    self._async_tx_active = False
+                except Exception as e:
+                    logger.debug(f"Error rolling back transaction during close for {self.alias()}: {e}")
+                
+            # Handle regular connections
+            if self._async_conn and MySqlDatabase._pool:
+                try:
+                    MySqlDatabase._pool.release(self._async_conn)
+                    logger.debug(f"{self.alias()} async database connection released")
+                except Exception as e:
+                    logger.debug(f"Error releasing connection for {self.alias()}: {e}")
+                self._async_conn = None
+            
+            logger.debug(f"{self.alias()} async database closed")
+        except Exception as e:
+            logger.debug(f"Error during async connection cleanup for {self.alias()}: {e}")
+
+    async def clear_all_async(self) -> None:
+        """
+        Reset the database to a clean state asynchronously.
+        
+        Raises:
+            TrackError: On database errors
+        """
+        # Skip if event loop is not valid
+        if not await self._is_event_loop_valid():
+            logger.debug(f"{self.alias()} not cleared: event loop not valid")
+            return
+                
+        try:
+            # Make sure we have a connection
+            if not await self._init_async():
+                logger.debug(f"Cannot clear database {self.alias()}: connection initialization failed")
+                return
+                
+            # Clean up any existing transactions
+            if self._async_tx_active:
+                try:
+                    async with self._async_conn.cursor() as cursor:
+                        await cursor.execute("ROLLBACK")
+                    await self._async_conn.autocommit(True)
+                    self._async_tx_active = False
+                except Exception as e:
+                    logger.debug(f"Error rolling back transaction during cleanup for {self.alias()}: {e}")
+            
+            # Get all tables and drop them
+            async with self._async_conn.cursor() as cursor:
+                # Make sure we're in the right database
+                db_name = self.config().get("database")
+                await cursor.execute(f"USE {db_name}")
+                
+                # Get list of tables
+                await cursor.execute("SHOW TABLES")
+                tables = [row[0] for row in await cursor.fetchall()]
+                
+                # Drop each table
+                for table in tables:
+                    await cursor.execute(f"DROP TABLE IF EXISTS `{table}`")
+                
+                # Create required meta tables
+                await cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS _meta_version (
+                        entity_name VARCHAR(255) PRIMARY KEY,
+                        version INTEGER
+                    ) ENGINE=InnoDB
+                ''')
+                
+            logger.debug(f"Cleared database {self.alias()}")
+        except Exception as e:
+            logger.error(f"Failed to clear database {self.alias()}: {e}")
+            raise TrackError(e)
+            
+    @classmethod
+    async def close_pool(cls):
+        """
+        Close the shared connection pool.
+        
+        This should be called at application shutdown.
+        """
+        try:
+            if cls._pool:
+                try:
+                    cls._pool.close()
+                    await cls._pool.wait_closed()
+                    logger.info("MySQL connection pool closed")
+                except Exception as e:
+                    logger.error(f"Error closing MySQL connection pool: {e}")
+                finally:
+                    cls._pool = None
+        except Exception as e:
+            logger.error(f"Error in close_pool: {e}")
 
         # Async connection (init in async flow)
-        self._pool = None
-        self._async_conn = None
-        self._tx_active = False
+        cls._async_conn = None
+        cls._async_tx_active = False
 
     def is_connected(self) -> bool:
+        """
+        Check if the database connection is active.
+        
+        Returns:
+            True if connected, False otherwise
+        """
         try:
             self._conn.ping(reconnect=True)
             return True
@@ -49,14 +209,34 @@ class MySqlDatabase(Database):
             return False
 
     def type(self) -> str:
+        """
+        Get the database type.
+        
+        Returns:
+            'mysql'
+        """
         return "mysql"
 
     def placeholder(self, is_async: bool=True) -> str:
+        """
+        Get the parameter placeholder for MySQL.
+        
+        Args:
+            is_async: Whether this is for async operations (ignored for MySQL)
+            
+        Returns:
+            '%s' placeholder
+        """
         return "%s"
 
     # --- Sync methods ---
     def begin_transaction(self) -> None:
+        """Begin a new transaction."""
         try:
+            if self._sync_tx_active:
+                logger.debug(f"Transaction already active for {self.alias()}")
+                return
+                
             # Make sure we have the right database selected
             db_name = self.config().get("database")
             self._cursor.execute(f"USE {db_name}")
@@ -74,7 +254,11 @@ class MySqlDatabase(Database):
             raise TrackError(e)
 
     def commit_transaction(self) -> None:
+        """Commit the current transaction."""
         try:
+            if not self._sync_tx_active:
+                return
+                
             # Make sure we're in the right database
             db_name = self.config().get("database")
             self._cursor.execute(f"USE {db_name}")
@@ -88,7 +272,11 @@ class MySqlDatabase(Database):
             raise TrackError(e)
 
     def rollback_transaction(self) -> None:
+        """Roll back the current transaction."""
         try:
+            if not self._sync_tx_active:
+                return
+                
             # Make sure we're in the right database
             db_name = self.config().get("database")
             self._cursor.execute(f"USE {db_name}")
@@ -101,13 +289,23 @@ class MySqlDatabase(Database):
             logger.error(f"Error rolling back transaction for {self.alias()}: {e}")
 
     def execute_sql(self, sql: str, parameters=()) -> list:
+        """
+        Execute a SQL query with parameters.
+        
+        Args:
+            sql: SQL query
+            parameters: Query parameters
+            
+        Returns:
+            List of rows
+            
+        Raises:
+            TrackError: On database errors
+        """
         if not self.is_connected():
             raise TrackError(Exception(f"Lost MySQL connection for {self.alias()}"))
         
         try:
-
-            logger.debug(f"Inside execute_sql, transaction active: {self._sync_tx_active} sql: {sql[:40]}")
-
             # Always select the database before executing queries
             db_name = self.config().get("database")
             self._cursor.execute(f"USE {db_name}")
@@ -122,11 +320,20 @@ class MySqlDatabase(Database):
             raise TrackError(e)
 
     def executemany_sql(self, sql: str, parameters_list: list) -> None:
+        """
+        Execute a SQL query multiple times with different parameters.
+        
+        Args:
+            sql: SQL query
+            parameters_list: List of parameter tuples
+            
+        Raises:
+            TrackError: On database errors
+        """
         if not self.is_connected():
             raise TrackError(Exception(f"Lost MySQL connection for {self.alias()}"))
         
         try:
-            logger.debug(f"Inside executemany_sql, transaction active: {self._sync_tx_active}")
             # Always select the database before executing queries
             db_name = self.config().get("database")
             self._cursor.execute(f"USE {db_name}")
@@ -137,26 +344,45 @@ class MySqlDatabase(Database):
             raise TrackError(e)
 
     def _close(self) -> None:
+        """Close the synchronous database connection."""
         try:
+            if self._sync_tx_active:
+                try:
+                    self.rollback_transaction()
+                except Exception:
+                    pass
+                
             if self._cursor:
                 self._cursor.close()
+                self._cursor = None
+                
             if self._conn:
                 self._conn.close()
+                self._conn = None
+                
             self._sync_tx_active = False
         except Exception as e:
             logger.debug(f"Error closing synchronous connection for {self.alias()}: {e}")
     
-    def _o_ensure_tables_exist(self, entity_name: str) -> None:
-        """Override to create InnoDB tables for MySQL."""
+    def _ensure_tables_exist(self, entity_name: str) -> None:
+        """
+        Override to create InnoDB tables for MySQL.
+        
+        Args:
+            entity_name: Name of the entity
+            
+        Raises:
+            TrackError: On database errors
+        """
         entity_name = self._sanitize_identifier(entity_name)
         
         # Check if we're in a transaction
-        in_transaction = not getattr(self._conn, 'autocommit', True)
+        in_transaction = self._sync_tx_active
         if in_transaction:
             # Exit transaction to perform DDL operations
             logger.debug(f"Exiting transaction to create tables")
             self._cursor.execute("COMMIT")
-            self._conn.autocommit = True
+            self._sync_tx_active = False
             
             # Create tables with InnoDB engine
             self._cursor.execute("""
@@ -182,8 +408,7 @@ class MySqlDatabase(Database):
             """)
             
             # Restart transaction
-            self._conn.autocommit = False
-            self._cursor.execute("START TRANSACTION")
+            self.begin_transaction()
             logger.debug(f"Transaction restarted after table creation")
         else:
             # Create tables with InnoDB engine outside of transaction
@@ -210,7 +435,17 @@ class MySqlDatabase(Database):
             """)
 
     def clear_all(self) -> None:
-        try:            
+        """
+        Clear all data in the database.
+        
+        Raises:
+            TrackError: On database errors
+        """
+        try:
+            # Make sure existing transaction is ended
+            if self._sync_tx_active:
+                self.rollback_transaction()
+                
             # Make sure we're in the right database
             db_name = self.config().get("database")
             self._cursor.execute(f"USE {db_name}")
@@ -237,7 +472,12 @@ class MySqlDatabase(Database):
 
     # --- Async methods ---
     async def _is_event_loop_valid(self):
-        """Check if the current event loop is valid for async operations."""
+        """
+        Check if the current event loop is valid for async operations.
+        
+        Returns:
+            True if valid, False otherwise
+        """
         try:
             loop = asyncio.get_running_loop()
             return not loop.is_closed()
@@ -246,7 +486,15 @@ class MySqlDatabase(Database):
 
     @classmethod
     async def initialize_pool_if_needed(cls, config):
-        """Initialize the connection pool if it doesn't exist."""
+        """
+        Initialize the connection pool if it doesn't exist.
+        
+        Args:
+            config: Connection configuration
+            
+        Raises:
+            Exception: On pool initialization errors
+        """
         # First, check if existing pool is usable
         if cls._pool:
             try:
@@ -285,13 +533,18 @@ class MySqlDatabase(Database):
             raise
 
     async def _init_async(self):
-        """Initialize async connections for the database."""
+        """
+        Initialize async connections for the database.
+        
+        Returns:
+            True if successful, False otherwise
+        """
         # Verify event loop is usable
         if not await self._is_event_loop_valid():
             logger.debug(f"Event loop is not valid for {self.alias()}")
             return False
                 
-        try:
+        try:           
             # Initialize/verify pool
             if MySqlDatabase._pool is None:
                 await self.initialize_pool_if_needed(self.config())
@@ -321,7 +574,7 @@ class MySqlDatabase(Database):
             return False
 
     async def begin_transaction_async(self) -> None:
-        """Start a new transaction."""
+        """Begin a new transaction asynchronously."""
         # Skip if event loop is not valid
         if not await self._is_event_loop_valid():
             raise TrackError(Exception(f"Cannot begin transaction: Event loop not valid for {self.alias()}"))
@@ -332,6 +585,11 @@ class MySqlDatabase(Database):
                 raise TrackError(Exception(f"Failed to initialize async connection for {self.alias()}"))
         
         try:
+            # Skip if transaction already active
+            if self._async_tx_active:
+                logger.debug(f"Async transaction already active for {self.alias()}")
+                return
+                
             # Make sure the right database is selected
             async with self._async_conn.cursor() as cursor:
                 # Set isolation level to ensure consistency
@@ -342,7 +600,7 @@ class MySqlDatabase(Database):
                 
                 # Start the transaction explicitly
                 await cursor.execute("START TRANSACTION")
-                self._tx_active = True
+                self._async_tx_active = True
                 
                 logger.debug(f"Async transaction started for {self.alias()}")
         except Exception as e:
@@ -350,12 +608,12 @@ class MySqlDatabase(Database):
             raise TrackError(e)
 
     async def commit_transaction_async(self) -> None:
-        """Commit the current transaction."""
+        """Commit the current transaction asynchronously."""
         if not await self._is_event_loop_valid():
             logger.debug(f"Cannot commit transaction: Event loop not valid for {self.alias()}")
             return
             
-        if not self._async_conn or not self._tx_active:
+        if not self._async_conn or not self._async_tx_active:
             return
             
         try:
@@ -368,14 +626,14 @@ class MySqlDatabase(Database):
                 await cursor.execute("COMMIT")
             
             await self._async_conn.autocommit(True)
-            self._tx_active = False
+            self._async_tx_active = False
             logger.debug(f"Async transaction committed for {self.alias()}")
         except Exception as e:
             logger.error(f"Error during commit for {self.alias()}: {e}")
             raise TrackError(e)
 
     async def rollback_transaction_async(self) -> None:
-        """Rollback the current transaction."""
+        """Roll back the current transaction asynchronously."""
         if not await self._is_event_loop_valid():
             logger.debug(f"Cannot rollback transaction: Event loop not valid for {self.alias()}")
             return
@@ -396,23 +654,31 @@ class MySqlDatabase(Database):
                 
             # Reset state
             await self._async_conn.autocommit(True)
-            self._tx_active = False
+            self._async_tx_active = False
             logger.debug(f"Async transaction rolled back for {self.alias()}")
         except Exception as e:
             logger.error(f"Error during async rollback for {self.alias()}: {e}")
 
     async def _ensure_tables_exist_async(self, entity_name: str) -> None:
-        """Override to create InnoDB tables for MySQL."""
+        """
+        Override to create InnoDB tables for MySQL asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            
+        Raises:
+            TrackError: On database errors
+        """
         entity_name = self._sanitize_identifier(entity_name)
         
         # Check if we're in a transaction
-        if self._tx_active:
+        if self._async_tx_active:
             # Exit transaction to perform DDL operations
             logger.debug(f"Exiting async transaction to create tables")
             async with self._async_conn.cursor() as cursor:
                 await cursor.execute("COMMIT")
             await self._async_conn.autocommit(True)
-            self._tx_active = False
+            self._async_tx_active = False
             
             # Create tables with InnoDB engine
             async with self._async_conn.cursor() as cursor:
@@ -443,7 +709,7 @@ class MySqlDatabase(Database):
             async with self._async_conn.cursor() as cursor:
                 await cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE")
                 await cursor.execute("START TRANSACTION")
-            self._tx_active = True
+            self._async_tx_active = True
             logger.debug(f"Async transaction restarted after table creation")
         else:
             # Create tables with InnoDB engine outside of transaction
@@ -471,7 +737,19 @@ class MySqlDatabase(Database):
                 """)
 
     async def execute_sql_async(self, sql: str, parameters=()) -> list:
-        """Execute a SQL query and return results."""
+        """
+        Execute a SQL query and return results asynchronously.
+        
+        Args:
+            sql: SQL query
+            parameters: Query parameters
+            
+        Returns:
+            List of rows
+            
+        Raises:
+            TrackError: On database errors
+        """
         if not await self._is_event_loop_valid():
             raise TrackError(Exception(f"Cannot execute SQL: Event loop not valid for {self.alias()}"))
             
@@ -492,119 +770,3 @@ class MySqlDatabase(Database):
         except Exception as e:
             logger.error(f"SQL execution error for {self.alias()}: {e}, SQL: {sql}")
             raise TrackError(e)
-
-    async def executemany_sql_async(self, sql: str, parameters_list: list) -> None:
-        """Execute a SQL query multiple times with different parameters."""
-        if not await self._is_event_loop_valid():
-            raise TrackError(Exception(f"Cannot execute SQL: Event loop not valid for {self.alias()}"))
-            
-        if not await self._init_async():
-            raise TrackError(Exception(f"Failed to initialize async connection for {self.alias()}"))
-            
-        try:
-            async with self._async_conn.cursor() as cursor:
-                # Make sure the right database is selected
-                db_name = self.config().get("database")
-                await cursor.execute(f"USE {db_name}")
-                
-                # Execute the batch query
-                await cursor.executemany(sql, parameters_list)
-        except Exception as e:
-            logger.error(f"SQL executemany error for {self.alias()}: {e}, SQL: {sql}")
-            raise TrackError(e)
-
-    async def _close_async(self) -> None:
-        """Release connections to the pool, but don't close the pool itself."""
-        if not await self._is_event_loop_valid():
-            logger.debug(f"Cannot close connections: Event loop not valid for {self.alias()}")
-            return
-            
-        try:
-            # Handle transaction cleanup if needed
-            if self._async_conn and self._tx_active:
-                try:
-                    async with self._async_conn.cursor() as cursor:
-                        await cursor.execute("ROLLBACK")
-                    await self._async_conn.autocommit(True)
-                    self._tx_active = False
-                except Exception as e:
-                    logger.debug(f"Error rolling back transaction during close for {self.alias()}: {e}")
-                
-            # Handle regular connections
-            if self._async_conn and MySqlDatabase._pool:
-                try:
-                    await MySqlDatabase._pool.release(self._async_conn)
-                    logger.debug(f"{self.alias()} async database connection released")
-                except Exception as e:
-                    logger.debug(f"Error releasing connection for {self.alias()}: {e}")
-                self._async_conn = None
-            
-            logger.debug(f"{self.alias()} async database closed")
-        except Exception as e:
-            logger.debug(f"Error during async connection cleanup for {self.alias()}: {e}")
-
-    async def clear_all_async(self) -> None:
-        """Reset the database to a clean state."""
-        # Skip if event loop is not valid
-        if not await self._is_event_loop_valid():
-            logger.debug(f"{self.alias()} not cleared: event loop not valid")
-            return
-                
-        try:
-            # Make sure we have a connection
-            if not await self._init_async():
-                logger.debug(f"Cannot clear database {self.alias()}: connection initialization failed")
-                return
-                
-            # Clean up any existing transactions
-            if self._tx_active:
-                try:
-                    async with self._async_conn.cursor() as cursor:
-                        await cursor.execute("ROLLBACK")
-                    await self._async_conn.autocommit(True)
-                    self._tx_active = False
-                except Exception as e:
-                    logger.debug(f"Error rolling back transaction during cleanup for {self.alias()}: {e}")
-            
-            # Get all tables and drop them
-            async with self._async_conn.cursor() as cursor:
-                # Make sure we're in the right database
-                db_name = self.config().get("database")
-                await cursor.execute(f"USE {db_name}")
-                
-                # Get list of tables
-                await cursor.execute("SHOW TABLES")
-                tables = [row[0] for row in await cursor.fetchall()]
-                
-                # Drop each table
-                for table in tables:
-                    await cursor.execute(f"DROP TABLE IF EXISTS `{table}`")
-                
-                # Create required meta tables
-                await cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS _meta_version (
-                        entity_name VARCHAR(255) PRIMARY KEY,
-                        version INTEGER
-                    ) ENGINE=InnoDB
-                ''')
-                
-            logger.debug(f"Cleared database {self.alias()}")
-        except Exception as e:
-            logger.error(f"Failed to clear database {self.alias()}: {e}")
-            raise TrackError(e)
-            
-    @classmethod
-    async def close_pool(cls):
-        """Close the shared connection pool."""
-        try:
-            if cls._pool:
-                try:
-                    cls._pool.close()
-                    await cls._pool.wait_closed()
-                    logger.info("MySQL connection pool closed")
-                except Exception as e:
-                    logger.error(f"Error closing MySQL connection pool: {e}")
-                finally:
-                    cls._pool = None
-        except Exception as e:
-            logger.error(f"Error in close_pool: {e}")

@@ -41,10 +41,3 @@ class AppConfig(BaseModel):
     redis: Optional[RedisConfig] = Field(None, description="Redis configuration")
     opensearch: Optional[OpenSearchConfig] = Field(None, description="OpenSearch configuration")
     deployment: DeploymentConfig = Field(default_factory=DeploymentConfig, description="Deployment configuration")
-    
-    # You can add validators to ensure configuration consistency
-    @validator('redis', always=True)
-    def validate_redis(cls, v, values):
-        if v is None:
-            return RedisConfig(enabled=False)
-        return v

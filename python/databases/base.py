@@ -1,11 +1,9 @@
-# Fix for the Database base class (python/databases/base.py)
-# Focus on improving connection handling and transaction safety
-
 import os
 import uuid
 import asyncio
 import contextlib
-from typing import Callable, Awaitable, Optional, Tuple, List, Any, final
+import functools
+from typing import Callable, Awaitable, Optional, Tuple, List, Any, Dict, final, Union
 import nest_asyncio
 import re
 from abc import ABC, abstractmethod
@@ -68,6 +66,123 @@ class Database(ABC):
         # Transaction state tracking
         self._tx_active = False
         self._tx_depth = 0  # For nested transactions
+
+    def config(self):
+        """Return the database configuration dict"""
+        return {
+            'host': self.__host,
+            'port': self.__port,
+            'database': self.__database,
+            'user': self.__user,
+            'password': self.__password
+        }
+    
+    def database(self):
+        """Return the database name"""
+        return self.__database
+    
+    def alias(self):
+        """Return the database alias"""
+        return self.__alias
+    
+    def host(self):
+        """Return the database host"""
+        return self.__host
+    
+    def port(self):
+        """Return the database port"""
+        return self.__port
+    
+    def env(self):
+        """Return the database environment"""
+        return self.__env
+    
+    @abstractmethod
+    def type(self) -> str:
+        """Return the database type (sqlite, mysql, postgres, etc.)"""
+        pass
+
+    @abstractmethod
+    def placeholder(self, is_async: bool=True) -> str:
+        """Return the placeholder string for parameterized queries"""
+        pass
+    
+    # Abstract methods that must be implemented by subclasses
+    @abstractmethod
+    def is_connected(self) -> bool:
+        """Check if the database connection is active"""
+        pass
+    
+    @abstractmethod
+    def begin_transaction(self) -> None:
+        """Begin a new database transaction"""
+        pass
+    
+    @abstractmethod
+    def commit_transaction(self) -> None:
+        """Commit the current transaction"""
+        pass
+    
+    @abstractmethod
+    def rollback_transaction(self) -> None:
+        """Roll back the current transaction"""
+        pass
+    
+    @abstractmethod
+    def execute_sql(self, sql: str, parameters=()) -> list:
+        """Execute a SQL query with parameters"""
+        pass
+    
+    @abstractmethod
+    def executemany_sql(self, sql: str, parameters_list: list) -> None:
+        """Execute a SQL query multiple times with different parameters"""
+        pass
+    
+    @abstractmethod
+    def _close(self) -> None:
+        """Close the database connection"""
+        pass
+    
+    @abstractmethod
+    def clear_all(self) -> None:
+        """Clear all data in the database"""
+        pass
+    
+    # Async methods that must be implemented by subclasses
+    @abstractmethod
+    async def begin_transaction_async(self) -> None:
+        """Begin a new database transaction async"""
+        pass
+    
+    @abstractmethod
+    async def commit_transaction_async(self) -> None:
+        """Commit the current transaction async"""
+        pass
+    
+    @abstractmethod
+    async def rollback_transaction_async(self) -> None:
+        """Roll back the current transaction async"""
+        pass
+    
+    @abstractmethod
+    async def execute_sql_async(self, sql: str, parameters=()) -> list:
+        """Execute a SQL query with parameters async"""
+        pass
+    
+    @abstractmethod
+    async def executemany_sql_async(self, sql: str, parameters_list: list) -> None:
+        """Execute a SQL query multiple times with different parameters async"""
+        pass
+    
+    @abstractmethod
+    async def _close_async(self) -> None:
+        """Close the database connection async"""
+        pass
+    
+    @abstractmethod
+    async def clear_all_async(self) -> None:
+        """Clear all data in the database async"""
+        pass
     
     # region --- CONTEXT MANAGERS ---
     @contextlib.contextmanager
@@ -285,8 +400,8 @@ class Database(ABC):
             # Get fresh metadata
             query = f"SELECT name, type FROM {entity_name}_meta"
             if is_async:
-                # Add comment with UUID for PostgreSQL query cache busting
-                query += f" -- {uuid.uuid4()}"
+                if self.type() == 'postgres':
+                    query += f" -- {uuid.uuid4()}"
                 rows = await executor(query)
             else:
                 rows = executor(query)
@@ -344,7 +459,7 @@ class Database(ABC):
             sql = f"""
                 INSERT INTO _meta_version (entity_name, version)
                 VALUES ({pl}, 1)
-                ON DUPLICATE KEY UPDATE version = version + 1
+                AS new ON DUPLICATE KEY UPDATE version = new.version + 1
                 """
         elif self.type() == 'postgres':
             # For PostgreSQL, qualify the column reference to avoid ambiguity
@@ -358,7 +473,7 @@ class Database(ABC):
             # For SQLite, use REPLACE
             sql = f"""
                 INSERT OR REPLACE INTO _meta_version (entity_name, version)
-                VALUES ({pl}, COALESCE((SELECT version FROM _meta_version WHERE entity_name = {pl}) + 1, 1))
+                VALUES ({pl}, COALESCE((SELECT version FROM _meta_version WHERE entity_name = '{entity_name}') + 1, 1))
                 """
             
         try:
@@ -545,36 +660,42 @@ class Database(ABC):
         Raises:
             TrackError: On database errors
         """
-        try:
-            pl = self.placeholder(is_async)
+        try:            
             meta = await get_metadata(entity_name) if is_async else get_metadata(entity_name)
+
+            changes_made = False  # Track if we made any schema changes
 
             for key in keys:
                 sample_value = sample_values.get(key)
                 if key not in meta and sample_value is not None:
                     typ = str(type(sample_value))
-                    
-                    # Build SQL based on database type
+
                     if self.type() == 'sqlite':
                         insert_sql = f"INSERT OR REPLACE INTO {entity_name}_meta VALUES ({self.placeholders(2, is_async)})"
                     elif self.type() == 'postgres':
                         insert_sql = f"INSERT INTO {entity_name}_meta VALUES ({self.placeholders(2, is_async)}) ON CONFLICT(name) DO UPDATE SET type=EXCLUDED.type -- {uuid.uuid4()}"
-                    else:  # mysql
-                        insert_sql = f"INSERT INTO {entity_name}_meta VALUES ({self.placeholders(2, is_async)}) ON DUPLICATE KEY UPDATE type=VALUES(type)"
-                    
-                    if is_async:                 
+                    else:
+                        insert_sql = f"INSERT INTO {entity_name}_meta VALUES ({self.placeholders(2, is_async)}) AS new ON DUPLICATE KEY UPDATE type=new.type"
+
+                    if is_async:
                         await executor(insert_sql, (key, typ))
                         if key != 'id':
                             alter_sql = f"ALTER TABLE {entity_name} ADD {key} TEXT"
-                            if is_async and self.type() == 'postgres':
+                            if self.type() == 'postgres':
                                 alter_sql += f" -- {uuid.uuid4()}"
                             await executor(alter_sql)
-                        await bump_version(entity_name)
                     else:
                         executor(insert_sql, (key, typ))
                         if key != 'id':
                             executor(f"ALTER TABLE {entity_name} ADD {key} TEXT")
-                        bump_version(entity_name)
+
+                    changes_made = True
+
+            if changes_made:
+                await bump_version(entity_name) if is_async else bump_version(entity_name)
+                # Only reload metadata if there were changes
+                meta = await get_metadata(entity_name) if is_async else get_metadata(entity_name)
+
         except Exception as e:
             raise TrackError(e)
     
@@ -608,13 +729,13 @@ class Database(ABC):
             is_async=True
         )
 
-    async def _run_fetch(self, entity_name, filter, single, cast, ensure_tables, get_keys_types, fetch_rows, convert_row, is_async):
+    async def _run_fetch(self, entity_name, filter_clause, single, cast, ensure_tables, get_keys_types, fetch_rows, convert_row, is_async, parameters=()):
         """
         Fetch entities from database.
         
         Args:
             entity_name: Name of the entity
-            filter: SQL WHERE clause
+            filter_clause: SQL WHERE clause
             single: Whether to return single entity
             cast: Whether to cast values to their types
             ensure_tables: Function to ensure tables exist
@@ -622,6 +743,7 @@ class Database(ABC):
             fetch_rows: Function to fetch rows
             convert_row: Function to convert row to entity
             is_async: Whether this is async mode
+            parameters: Query parameters
             
         Returns:
             Entity or list of entities
@@ -633,54 +755,70 @@ class Database(ABC):
             entity_name = self._sanitize_identifier(entity_name)
             await ensure_tables(entity_name) if is_async else ensure_tables(entity_name)
             keys, types = await get_keys_types(entity_name) if is_async else get_keys_types(entity_name)
-            where_clause = f"WHERE {filter}" if filter else ''
+            where_clause = f"WHERE {filter_clause}" if filter_clause else ''
             sql = f"SELECT {','.join(keys)} FROM {entity_name} {where_clause}"
             if is_async and self.type() == 'postgres':
                 sql += f" -- {uuid.uuid4()}"
-            rows = await fetch_rows(sql) if is_async else fetch_rows(sql)
-            results = [await convert_row(entity_name, row, keys, types, cast) if is_async else convert_row(entity_name, row, keys, types, cast) for row in rows]
-            if single and len(results) == 0:
-                return None
-            return results[0] if single and results else results
+                
+            # Handle query parameters
+            if parameters:
+                rows = await fetch_rows(sql, parameters) if is_async else fetch_rows(sql, parameters)
+            else:
+                rows = await fetch_rows(sql) if is_async else fetch_rows(sql)
+                
+            # Process results
+            results = []
+            for row in rows:
+                entity = await convert_row(entity_name, row, keys, types, cast) if is_async else convert_row(entity_name, row, keys, types, cast)
+                results.append(entity)
+                
+            # Return appropriate result
+            if single:
+                return results[0] if results else None
+            return results
         except Exception as e:
             raise TrackError(e)
 
-    def _fetch_data(self, entity_name, filter=None, single=False, cast=False):
+    def _fetch_data(self, entity_name, filter_clause=None, single=False, cast=False, parameters=()):
         """
         Fetch entities from database synchronously.
         
         Args:
             entity_name: Name of the entity
-            filter: SQL WHERE clause
+            filter_clause: SQL WHERE clause
             single: Whether to return single entity
             cast: Whether to cast values to their types
+            parameters: Query parameters
             
         Returns:
             Entity or list of entities
         """
         return _run_sync(self._run_fetch(
-            entity_name, filter, single, cast,
+            entity_name, filter_clause, single, cast,
             self._ensure_tables_exist, self._get_keys_and_types,
-            self.execute_sql, self._db_values_to_entity, is_async=False
+            lambda sql, params=parameters: self.execute_sql(sql, params) if params else self.execute_sql(sql), 
+            self._db_values_to_entity, is_async=False, parameters=parameters
         ))
 
-    async def _fetch_data_async(self, entity_name, filter=None, single=False, cast=False):
+    async def _fetch_data_async(self, entity_name, filter_clause=None, single=False, cast=False, parameters=()):
         """
         Fetch entities from database asynchronously.
         
         Args:
             entity_name: Name of the entity
-            filter: SQL WHERE clause
+            filter_clause: SQL WHERE clause
             single: Whether to return single entity
             cast: Whether to cast values to their types
+            parameters: Query parameters
             
         Returns:
             Entity or list of entities
         """
         return await self._run_fetch(
-            entity_name, filter, single, cast,
+            entity_name, filter_clause, single, cast,
             self._ensure_tables_exist_async, self._get_keys_and_types_async,
-            self.execute_sql_async, self._db_values_to_entity_async, is_async=True
+            lambda sql, params=parameters: self.execute_sql_async(sql, params) if params else self.execute_sql_async(sql), 
+            self._db_values_to_entity_async, is_async=True, parameters=parameters
         )
 
     async def _run_save_entities(self, entity_name, entities, chunk_size, ensure_tables, ensure_schema, executor, executemany, is_async):
@@ -735,8 +873,9 @@ class Database(ABC):
                 # Only update non-created fields
                 update_keys = [key for key in keys if key != 'created']
                 if update_keys:  # Only add the clause if we have keys to update
-                    duplicates = [f'{key}=VALUES({key})' for key in update_keys]
-                    insert_sql += f" ON DUPLICATE KEY UPDATE {', '.join(duplicates)}"
+                    alias = "new"
+                    duplicates = [f'{key}={alias}.{key}' for key in update_keys]
+                    insert_sql += f" AS {alias} ON DUPLICATE KEY UPDATE {', '.join(duplicates)}"
 
             values_list = [tuple(str(e.get(k, '')) for k in keys) for e in entities]
 
@@ -749,7 +888,394 @@ class Database(ABC):
                         await executor(insert_sql, row) if is_async else executor(insert_sql, row)
         except Exception as e:
             raise TrackError(e)
+            
+    def delete_entity(self, entity_name: str, entity_id: str, auto_commit: bool = True) -> bool:
+        """
+        Delete an entity by ID.
+        
+        Args:
+            entity_name: Name of the entity
+            entity_id: ID of the entity to delete
+            auto_commit: Whether to auto-commit the transaction
+            
+        Returns:
+            True if entity was deleted, False if entity not found
+            
+        Raises:
+            TrackError: On database errors
+        """
+        try:
+            entity_name = self._sanitize_identifier(entity_name)
+            
+            # Make sure the table exists
+            self._ensure_tables_exist(entity_name)
+            
+            # Use transaction if requested
+            cm = self.transaction() if auto_commit else contextlib.nullcontext()
+            with cm:
+                # Delete the entity
+                result = self.execute_sql(
+                    f"DELETE FROM {entity_name} WHERE id = {self.placeholder(False)}", 
+                    (entity_id,)
+                )
+                # For some database implementations like SQLite, 
+                # execute_sql doesn't return affected rows, so we check manually
+                check = self.get_entity(entity_name, entity_id)
+                return check is None
+        except Exception as e:
+            raise TrackError(e)
+    
+    async def delete_entity_async(self, entity_name: str, entity_id: str, auto_commit: bool = True) -> bool:
+        """
+        Delete an entity by ID asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            entity_id: ID of the entity to delete
+            auto_commit: Whether to auto-commit the transaction
+            
+        Returns:
+            True if entity was deleted, False if entity not found
+            
+        Raises:
+            TrackError: On database errors
+        """
+        try:
+            entity_name = self._sanitize_identifier(entity_name)
+            
+            # Make sure the table exists
+            await self._ensure_tables_exist_async(entity_name)
+            
+            # Delete function with transaction
+            @self.async_transaction
+            async def _delete_with_transaction():
+                await self.execute_sql_async(
+                    f"DELETE FROM {entity_name} WHERE id = {self.placeholder(True)}", 
+                    (entity_id,)
+                )
+                check = await self.get_entity_async(entity_name, entity_id)
+                return check is None
+                
+            # Delete function without transaction
+            async def _delete_without_transaction():
+                await self.execute_sql_async(
+                    f"DELETE FROM {entity_name} WHERE id = {self.placeholder(True)}", 
+                    (entity_id,)
+                )
+                check = await self.get_entity_async(entity_name, entity_id)
+                return check is None
+                
+            # Use appropriate function based on auto_commit
+            return await _delete_with_transaction() if auto_commit else await _delete_without_transaction()
+        except Exception as e:
+            raise TrackError(e)
+    
+    def delete_entities(self, entity_name: str, filter_clause: str = None, parameters: tuple = (), auto_commit: bool = True) -> int:
+        """
+        Delete entities matching a filter.
+        
+        Args:
+            entity_name: Name of the entity
+            filter_clause: SQL WHERE clause (if None, deletes all entities)
+            parameters: Query parameters for the filter
+            auto_commit: Whether to auto-commit the transaction
+            
+        Returns:
+            Number of entities deleted (approximate)
+            
+        Raises:
+            TrackError: On database errors
+        """
+        try:
+            entity_name = self._sanitize_identifier(entity_name)
+            
+            # Make sure the table exists
+            self._ensure_tables_exist(entity_name)
+            
+            # Count entities before deletion for return value
+            count_query = f"SELECT COUNT(*) FROM {entity_name}"
+            if filter_clause:
+                count_query += f" WHERE {filter_clause}"
+                
+            count_result = self.execute_sql(count_query, parameters)
+            count = count_result[0][0] if count_result else 0
+            
+            # Use transaction if requested
+            cm = self.transaction() if auto_commit else contextlib.nullcontext()
+            with cm:
+                # Delete entities
+                delete_query = f"DELETE FROM {entity_name}"
+                if filter_clause:
+                    delete_query += f" WHERE {filter_clause}"
+                    
+                self.execute_sql(delete_query, parameters)
+                
+            return count
+        except Exception as e:
+            raise TrackError(e)
+            
+    async def delete_entities_async(self, entity_name: str, filter_clause: str = None, parameters: tuple = (), auto_commit: bool = True) -> int:
+        """
+        Delete entities matching a filter asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            filter_clause: SQL WHERE clause (if None, deletes all entities)
+            parameters: Query parameters for the filter
+            auto_commit: Whether to auto-commit the transaction
+            
+        Returns:
+            Number of entities deleted (approximate)
+            
+        Raises:
+            TrackError: On database errors
+        """
+        try:
+            entity_name = self._sanitize_identifier(entity_name)
+            
+            # Make sure the table exists
+            await self._ensure_tables_exist_async(entity_name)
+            
+            # Count entities before deletion for return value
+            count_query = f"SELECT COUNT(*) FROM {entity_name}"
+            if filter_clause:
+                count_query += f" WHERE {filter_clause}"
+                
+            if self.type() == 'postgres':
+                count_query += f" -- {uuid.uuid4()}"
+                
+            count_result = await self.execute_sql_async(count_query, parameters)
+            count = count_result[0][0] if count_result else 0
+            
+            # Delete function with transaction
+            @self.async_transaction
+            async def _delete_with_transaction():
+                delete_query = f"DELETE FROM {entity_name}"
+                if filter_clause:
+                    delete_query += f" WHERE {filter_clause}"
+                    
+                if self.type() == 'postgres':
+                    delete_query += f" -- {uuid.uuid4()}"
+                    
+                await self.execute_sql_async(delete_query, parameters)
+                return count
+                
+            # Delete function without transaction
+            async def _delete_without_transaction():
+                delete_query = f"DELETE FROM {entity_name}"
+                if filter_clause:
+                    delete_query += f" WHERE {filter_clause}"
+                    
+                if self.type() == 'postgres':
+                    delete_query += f" -- {uuid.uuid4()}"
+                    
+                await self.execute_sql_async(delete_query, parameters)
+                return count
+                
+            # Use appropriate function based on auto_commit
+            return await _delete_with_transaction() if auto_commit else await _delete_without_transaction()
+        except Exception as e:
+            raise TrackError(e)
+    
+    def count_entities(self, entity_name: str, filter_clause: str = None, parameters: tuple = ()) -> int:
+        """
+        Count entities matching a filter.
+        
+        Args:
+            entity_name: Name of the entity
+            filter_clause: SQL WHERE clause (if None, counts all entities)
+            parameters: Query parameters for the filter
+            
+        Returns:
+            Number of entities matching the filter
+            
+        Raises:
+            TrackError: On database errors
+        """
+        try:
+            entity_name = self._sanitize_identifier(entity_name)
+            
+            # Make sure the table exists
+            self._ensure_tables_exist(entity_name)
+            
+            # Build and execute query
+            count_query = f"SELECT COUNT(*) FROM {entity_name}"
+            if filter_clause:
+                count_query += f" WHERE {filter_clause}"
+                
+            count_result = self.execute_sql(count_query, parameters)
+            return count_result[0][0] if count_result else 0
+        except Exception as e:
+            raise TrackError(e)
+            
+    async def count_entities_async(self, entity_name: str, filter_clause: str = None, parameters: tuple = ()) -> int:
+        """
+        Count entities matching a filter asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            filter_clause: SQL WHERE clause (if None, counts all entities)
+            parameters: Query parameters for the filter
+            
+        Returns:
+            Number of entities matching the filter
+            
+        Raises:
+            TrackError: On database errors
+        """
+        try:
+            entity_name = self._sanitize_identifier(entity_name)
+            
+            # Make sure the table exists
+            await self._ensure_tables_exist_async(entity_name)
+            
+            # Build and execute query
+            count_query = f"SELECT COUNT(*) FROM {entity_name}"
+            if filter_clause:
+                count_query += f" WHERE {filter_clause}"
+                
+            if self.type() == 'postgres':
+                count_query += f" -- {uuid.uuid4()}"
+                
+            count_result = await self.execute_sql_async(count_query, parameters)
+            return count_result[0][0] if count_result else 0
+        except Exception as e:
+            raise TrackError(e)
     # endregion --------------------------------------
+
+    # region --- PUBLIC API METHODS ---
+    # Public API methods for entity operations
+    def save_entity(self, entity_name: str, entity: dict, auto_commit: bool = True) -> None:
+        """
+        Save an entity to the database.
+        
+        Args:
+            entity_name: Name of the entity
+            entity: Entity data
+            auto_commit: Whether to auto-commit the transaction
+        """
+        self.save_entities(entity_name, [entity], auto_commit)
+    
+    def save_entities(self, entity_name: str, entities: list, auto_commit: bool = True, chunk_size: int = 100) -> None:
+        """
+        Save multiple entities to the database.
+        
+        Args:
+            entity_name: Name of the entity
+            entities: List of entity data
+            auto_commit: Whether to auto-commit the transaction
+            chunk_size: Size of chunks for batch operations
+        """
+        if not entities:
+            return
+            
+        with self.transaction() if auto_commit else contextlib.nullcontext():
+            _run_sync(self._run_save_entities(
+                entity_name, entities, chunk_size,
+                self._ensure_tables_exist, self._ensure_metadata_and_schema,
+                self.execute_sql, self.executemany_sql, is_async=False
+            ))
+    
+    async def save_entity_async(self, entity_name: str, entity: dict, auto_commit: bool = True) -> None:
+        """
+        Save an entity to the database asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            entity: Entity data
+            auto_commit: Whether to auto-commit the transaction
+        """
+        await self.save_entities_async(entity_name, [entity], auto_commit)
+    
+    async def save_entities_async(self, entity_name: str, entities: list, auto_commit: bool = True, chunk_size: int = 100) -> None:
+        """
+        Save multiple entities to the database asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            entities: List of entity data
+            auto_commit: Whether to auto-commit the transaction
+            chunk_size: Size of chunks for batch operations
+        """
+        if not entities:
+            return
+            
+        # Use the async transaction context manager for safety
+        @self.async_transaction
+        async def _save_with_transaction():
+            await self._run_save_entities(
+                entity_name, entities, chunk_size,
+                self._ensure_tables_exist_async, self._ensure_metadata_and_schema_async,
+                self.execute_sql_async, self.executemany_sql_async, is_async=True
+            )
+            
+        if auto_commit:
+            await _save_with_transaction()
+        else:
+            await self._run_save_entities(
+                entity_name, entities, chunk_size,
+                self._ensure_tables_exist_async, self._ensure_metadata_and_schema_async,
+                self.execute_sql_async, self.executemany_sql_async, is_async=True
+            )
+    
+    def get_entity(self, entity_name: str, entity_id: str, cast: bool = False) -> dict:
+        """
+        Get a single entity by ID.
+        
+        Args:
+            entity_name: Name of the entity
+            entity_id: ID of the entity
+            cast: Whether to cast values to their types
+            
+        Returns:
+            Entity dictionary or None if not found
+        """
+        return self._fetch_data(entity_name, f"id = {self.placeholder(False)}", True, cast, (entity_id,))
+    
+    def get_entities(self, entity_name: str, filter_clause: str = None, cast: bool = False, parameters: tuple = ()) -> list:
+        """
+        Get entities matching a filter.
+        
+        Args:
+            entity_name: Name of the entity
+            filter_clause: SQL WHERE clause
+            cast: Whether to cast values to their types
+            parameters: Query parameters for the filter
+            
+        Returns:
+            List of entity dictionaries
+        """
+        return self._fetch_data(entity_name, filter_clause, False, cast, parameters)
+    
+    async def get_entity_async(self, entity_name: str, entity_id: str, cast: bool = False) -> dict:
+        """
+        Get a single entity by ID asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            entity_id: ID of the entity
+            cast: Whether to cast values to their types
+            
+        Returns:
+            Entity dictionary or None if not found
+        """
+        return await self._fetch_data_async(entity_name, f"id = {self.placeholder(True)}", True, cast, (entity_id,))
+    
+    async def get_entities_async(self, entity_name: str, filter_clause: str = None, cast: bool = False, parameters: tuple = ()) -> list:
+        """
+        Get entities matching a filter asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            filter_clause: SQL WHERE clause
+            cast: Whether to cast values to their types
+            parameters: Query parameters for the filter
+            
+        Returns:
+            List of entity dictionaries
+        """
+        return await self._fetch_data_async(entity_name, filter_clause, False, cast, parameters)
+    # endregion -----------------------------------
 
     # region --- FINAL FUNCTIONS ------
     @final
@@ -837,3 +1363,4 @@ class Database(ABC):
             logger.debug(f"{self.alias()} async database closed")
         except Exception as e:
             logger.error(f'Error closing async connection for {self.alias()}: {e}')
+    # endregion --- FINAL FUNCTIONS ------
