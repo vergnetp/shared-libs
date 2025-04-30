@@ -663,3 +663,298 @@ LINE 1: SELECT * FROM non_existent_table
 2025-04-29 11:05:48.223 [INFO] [INFO] PostgreSQL connection pool initialized
 2025-04-29 11:05:48.500 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
 2025-04-29 11:05:48.556 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:10:06.157 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:10:06.639 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:10:06.713 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:10:07.237 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:10:07.788 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:10:08.762 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:10:08.834 [ERROR] [ERROR] SQL execution error for testdb_mysql: (1146, "Table 'testdb_mysql.non_existent_table' doesn't exist"), SQL: SELECT * FROM non_existent_table
+2025-04-29 11:10:09.166 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:10:09.778 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:10:09.791 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:10:10.164 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:10:10.172 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:10:10.732 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:10:10.744 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:10:11.310 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:10:11.318 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:10:11.905 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:10:11.915 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:10:12.133 [ERROR] [ERROR] SQL execution error for test_mysql_async: (1146, "Table 'testdb_mysql.non_existent_table' doesn't exist"), SQL: SELECT * FROM non_existent_table
+2025-04-29 11:10:12.449 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:10:12.459 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:10:13.019 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:10:13.593 [ERROR] [ERROR] SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 11:10:13.827 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:10:13.889 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:10:14.090 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:10:14.154 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:10:14.351 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:10:14.406 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:10:14.672 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:10:14.731 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:11:38.629 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:11:40.050 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:11:40.132 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:11:40.652 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:11:41.253 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:11:42.377 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:11:42.464 [ERROR] [ERROR] SQL execution error for testdb_mysql: (1146, "Table 'testdb_mysql.non_existent_table' doesn't exist"), SQL: SELECT * FROM non_existent_table
+2025-04-29 11:11:42.832 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:11:43.389 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:11:43.401 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:11:43.770 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:11:43.778 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:11:44.321 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:11:44.330 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:11:44.847 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:11:44.855 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:11:45.426 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:11:45.438 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:11:45.615 [ERROR] [ERROR] SQL execution error for test_mysql_async: (1146, "Table 'testdb_mysql.non_existent_table' doesn't exist"), SQL: SELECT * FROM non_existent_table
+2025-04-29 11:11:45.840 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:11:45.848 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:11:46.425 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:11:47.037 [ERROR] [ERROR] SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 11:11:47.285 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:11:47.342 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:11:47.554 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:11:47.607 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:11:47.809 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:11:47.864 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:11:48.157 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:11:48.213 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:27:25.777 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:27:26.266 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:27:26.353 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:27:26.986 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:27:27.540 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:27:28.502 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:27:28.635 [ERROR] [ERROR] SQL execution error for testdb_mysql: (1146, "Table 'testdb_mysql.non_existent_table' doesn't exist"), SQL: SELECT * FROM non_existent_table
+2025-04-29 11:27:28.960 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:27:29.492 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:27:29.505 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:27:29.855 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:27:29.864 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:27:30.381 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:27:30.393 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:27:30.965 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:27:30.973 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:27:31.579 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:27:31.595 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:27:31.999 [ERROR] [ERROR] SQL execution error for test_mysql_async: (1146, "Table 'testdb_mysql.non_existent_table' doesn't exist"), SQL: SELECT * FROM non_existent_table
+2025-04-29 11:27:32.396 [INFO] [INFO] Successfully connected to MySQL database testdb_mysql
+2025-04-29 11:27:32.407 [INFO] [INFO] MySQL connection pool initialized
+2025-04-29 11:27:33.378 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:27:34.161 [ERROR] [ERROR] SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 11:27:34.442 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:27:34.502 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:27:34.793 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:27:34.849 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:27:35.224 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:27:35.282 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:27:35.750 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:27:35.806 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:31:19.242 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:31:20.040 [ERROR] [ERROR] SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 11:31:20.277 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:31:20.342 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:31:20.599 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:31:20.680 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:31:20.898 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:31:20.954 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:31:21.244 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:31:21.311 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:32:48.702 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:32:49.600 [ERROR] [ERROR] SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 11:32:49.837 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:32:49.897 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:32:50.125 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:32:50.183 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:32:50.385 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:32:50.444 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:32:50.939 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:32:51.002 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:34:55.912 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:34:56.790 [ERROR] [ERROR] SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 11:34:57.019 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:34:57.082 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:34:57.312 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:34:57.370 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:34:57.572 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:34:57.627 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 11:34:57.915 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 11:34:57.972 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:06:44.318 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:06:45.323 [ERROR] [ERROR] SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 15:06:45.596 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:06:45.660 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:06:45.847 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:06:45.911 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:06:46.023 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:06:46.079 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:06:46.324 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:06:46.405 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:09:58.816 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:09:59.804 [ERROR] [ERROR] SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 15:10:00.092 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:10:00.167 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:10:00.354 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:10:00.418 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:10:00.530 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:10:00.593 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:10:00.840 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:10:00.927 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:15:33.796 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:15:34.663 [ERROR] [ERROR] SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 15:15:34.728 [ERROR] [ERROR] Error beginning Postgres transaction for testdb_postgres: SET TRANSACTION ISOLATION LEVEL must be called before any query
+
+2025-04-29 15:15:34.897 [ERROR] [ERROR] Error beginning Postgres transaction for testdb_postgres: SET TRANSACTION ISOLATION LEVEL must be called before any query
+
+2025-04-29 15:15:34.986 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:15:35.043 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:15:35.200 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:15:35.259 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:15:35.379 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:15:35.435 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:15:35.662 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:15:35.721 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:18:24.612 [ERROR] [ERROR] Error connecting to PostgreSQL database testdb_postgres: connection to server at "localhost" (::1), port 5433 failed: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+2025-04-29 15:18:26.651 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:18:27.315 [ERROR] [ERROR] SQL execution error: column "age" does not exist
+LINE 1: SELECT  FROM users WHERE CAST(age AS INTEGER) > 28
+                                      ^
+, SQL: SELECT  FROM users WHERE CAST(age AS INTEGER) > 28, Parameters: ()
+2025-04-29 15:18:28.054 [ERROR] [ERROR] SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 15:18:28.577 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:18:28.664 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:18:28.874 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:18:28.957 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:18:29.183 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:18:29.266 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:18:29.559 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:18:29.641 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:19:00.007 [ERROR] [ERROR] Error connecting to PostgreSQL database testdb_postgres: connection to server at "localhost" (::1), port 5433 failed: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+2025-04-29 15:19:02.044 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:19:02.627 [ERROR] [ERROR] SQL execution error: column "age" does not exist
+LINE 1: SELECT  FROM users WHERE CAST(age AS INTEGER) > 28
+                                      ^
+, SQL: SELECT  FROM users WHERE CAST(age AS INTEGER) > 28, Parameters: ()
+2025-04-29 15:19:03.229 [ERROR] [ERROR] SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 15:19:03.752 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:19:03.827 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:19:03.999 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:19:04.068 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:19:04.183 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:19:04.248 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:19:04.519 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:19:04.587 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:22:47.761 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:22:48.387 [ERROR] [ERROR] SQL execution error: column "age" does not exist
+LINE 1: SELECT  FROM users WHERE CAST(age AS INTEGER) > 28
+                                      ^
+, SQL: SELECT  FROM users WHERE CAST(age AS INTEGER) > 28, Parameters: ()
+2025-04-29 15:22:48.885 [ERROR] [ERROR] SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 15:22:49.352 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:22:49.418 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:22:49.575 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:22:49.634 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:22:49.760 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:22:49.829 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:22:50.092 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:22:50.158 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:23:00.413 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:23:00.954 [ERROR] [ERROR] SQL execution error: column "age" does not exist
+LINE 1: SELECT  FROM users WHERE CAST(age AS INTEGER) > 28
+                                      ^
+, SQL: SELECT  FROM users WHERE CAST(age AS INTEGER) > 28, Parameters: ()
+2025-04-29 15:23:01.434 [ERROR] [ERROR] SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 15:23:01.814 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:23:01.874 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:23:02.039 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:23:02.097 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:23:02.205 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:23:02.264 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:23:02.494 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:23:02.556 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:24:51.751 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:24:52.220 [ERROR] [ERROR] SQL execution error: column "age" does not exist
+LINE 1: SELECT  FROM users WHERE CAST(age AS INTEGER) > 28
+                                      ^
+, SQL: SELECT  FROM users WHERE CAST(age AS INTEGER) > 28, Parameters: ()
+2025-04-29 15:24:52.702 [ERROR] [ERROR] SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 15:24:53.069 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:24:53.130 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:24:53.285 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:24:53.338 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:24:53.447 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:24:53.504 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:24:53.731 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:24:53.793 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:26:55.614 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:26:56.099 [ERROR] [ERROR] Postgres SQL execution error: column "age" does not exist
+LINE 1: SELECT  FROM users WHERE CAST(age AS INTEGER) > 28
+                                      ^
+, SQL: SELECT  FROM users WHERE CAST(age AS INTEGER) > 28, Parameters: ()
+2025-04-29 15:26:56.592 [ERROR] [ERROR] Postgres SQL execution error: relation "non_existent_table" does not exist
+LINE 1: SELECT * FROM non_existent_table
+                      ^
+, SQL: SELECT * FROM non_existent_table, Parameters: ()
+2025-04-29 15:26:56.986 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:26:57.050 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:26:57.216 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:26:57.311 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:26:57.453 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:26:57.540 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:26:57.774 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres
+2025-04-29 15:26:57.831 [INFO] [INFO] PostgreSQL connection pool initialized
+2025-04-29 15:33:02.464 [INFO] [INFO] Successfully connected to PostgreSQL database testdb_postgres

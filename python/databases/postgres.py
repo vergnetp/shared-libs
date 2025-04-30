@@ -54,20 +54,14 @@ class PostgresDatabase(Database):
             
             # Turn off autocommit for transaction control
             self._conn.autocommit = False
-            
-            # Transaction state tracking
-            self._sync_tx_active = False
-            
+           
             logger.info(f"Successfully connected to PostgreSQL database {database}")
         except Exception as e:
             logger.error(f"Error connecting to PostgreSQL database {database}: {e}")
             raise TrackError(e)
 
         # Async connection setup (initialize on demand)
-        self._async_conn = None
-        self._async_tx = None
-        self._async_tx_active = False
-        self._tx_id = 0
+        self._async_conn = None 
 
     def is_connected(self) -> bool:
         """
@@ -104,46 +98,33 @@ class PostgresDatabase(Database):
         return '$1' if is_async else "%s"
 
     # --- Sync methods ---
-    def begin_transaction(self) -> None:
-        """Begin a new transaction."""
-        if self._sync_tx_active:
-            logger.debug(f"Transaction already active for {self.alias()}")
-            return
-            
-        # If there's an existing transaction in wrong state, roll it back
-        if self._conn.get_transaction_status() != psycopg2.extensions.TRANSACTION_STATUS_IDLE:
-            self._conn.rollback()
-        
-        # Set isolation level and start transaction
-        self._cursor.execute("SET search_path TO public")
-        self._cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-        self._sync_tx_active = True
-        logger.debug(f"Transaction started for {self.alias()}")
-        
-    def commit_transaction(self) -> None:
-        """Commit the current transaction."""
-        if not self._sync_tx_active:
-            return
-            
+    def begin_transaction_real(self) -> None:
         try:
-            self._conn.commit()
-            self._sync_tx_active = False
-            logger.debug(f"Transaction committed for {self.alias()}")
+            if self._conn.get_transaction_status() != psycopg2.extensions.TRANSACTION_STATUS_IDLE:
+                self._conn.rollback()
+            self._cursor.execute("SET search_path TO public")
+            self._cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+            self._cursor.execute("BEGIN")
+            logger.debug(f"Postgres Transaction started for {self.alias()}")
         except Exception as e:
-            logger.error(f"Error committing transaction for {self.alias()}: {e}")
+            logger.error(f"Error beginning Postgres transaction for {self.alias()}: {e}")
+            raise TrackError(e)
+        
+    def commit_transaction_real(self) -> None:
+        try:
+            self._conn.commit()           
+            logger.debug(f"Postgres transaction committed for {self.alias()}")
+        except Exception as e:
+            logger.error(f"Error committing Postgres transaction for {self.alias()}: {e}")
             raise TrackError(e)
 
-    def rollback_transaction(self) -> None:
-        """Roll back the current transaction."""
-        if not self._sync_tx_active:
-            return
-            
+    def rollback_transaction_real(self) -> None:
         try:
-            self._conn.rollback()
-            self._sync_tx_active = False
-            logger.debug(f"Transaction rolled back for {self.alias()}")
+            self._conn.rollback()           
+            logger.debug(f"Postgres transaction rolled back for {self.alias()}")
         except Exception as e:
-            logger.error(f"Error rolling back transaction for {self.alias()}: {e}")
+            logger.error(f"Error rolling back Postgres transaction for {self.alias()}: {e}")
+            raise TrackError(e)
 
     def execute_sql(self, sql: str, parameters: Tuple[Any, ...] = ()) -> list:
         """
@@ -160,14 +141,16 @@ class PostgresDatabase(Database):
             TrackError: On database errors
         """
         if not self.is_connected():
-            raise TrackError(Exception("Lost PostgreSQL connection"))
+            self._conn.reset()  # Try resetting instead of failing outright
+            self._cursor = self._conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
             
         try:
+            logger.debug(f"Postgres SQL: {sql}, Parameters: {parameters}")
             self._cursor.execute("SET search_path TO public")
             self._cursor.execute(sql, parameters)
             return self._cursor.fetchall() if self._cursor.description else []
         except Exception as e:
-            logger.error(f"SQL execution error: {e}, SQL: {sql}, Parameters: {parameters}")
+            logger.error(f"Postgres SQL execution error: {e}, SQL: {sql}, Parameters: {parameters}")
             raise TrackError(e)
 
     def executemany_sql(self, sql: str, parameters_list: List[Tuple[Any, ...]]) -> None:
@@ -185,6 +168,7 @@ class PostgresDatabase(Database):
             raise TrackError(Exception("Lost PostgreSQL connection"))
             
         try:
+            logger.debug(f"Postgres SQL: {sql}, Parameters: many")
             self._cursor.execute("SET search_path TO public")
             self._cursor.executemany(sql, parameters_list)
         except Exception as e:
@@ -194,22 +178,17 @@ class PostgresDatabase(Database):
     def _close(self) -> None:
         """Close the synchronous database connection."""
         try:
-            # Close any active transaction
-            if self._sync_tx_active:
-                try:
-                    self.rollback_transaction()
-                except Exception:
-                    pass
-                    
+            # Close any active transaction           
+            try:
+                self.rollback_transaction()
+            except Exception:
+                pass                    
             if self._cursor:
                 self._cursor.close()
-                self._cursor = None
-                
+                self._cursor = None                
             if self._conn:
                 self._conn.close()
-                self._conn = None
-                
-            self._sync_tx_active = False
+                self._conn = None 
             logger.debug(f"{self.alias()} database closed")
         except Exception as e:
             logger.debug(f"Error closing synchronous connection: {e}")
@@ -222,12 +201,11 @@ class PostgresDatabase(Database):
             TrackError: On database errors
         """
         try:
-            # Roll back any existing transaction
-            if self._sync_tx_active:
-                try:
-                    self.rollback_transaction()
-                except Exception:
-                    pass
+            # Roll back any existing transaction            
+            try:
+                self.rollback_transaction()
+            except Exception:
+                pass
 
             try:
                 # If transaction still somehow active, force rollback
@@ -356,183 +334,52 @@ class PostgresDatabase(Database):
             logger.error(f"Error initializing async connection for {self.alias()}: {e}")
             return False
 
-    async def begin_transaction_async(self) -> None:
-        """Begin a new transaction asynchronously."""
+    async def begin_transaction_real_async(self) -> None:
         # Skip if event loop is not valid
         if not await self._is_event_loop_valid():
             raise TrackError(Exception("Cannot begin transaction: Event loop is not valid"))
             
         # Ensure we have a valid connection
         if not await self._init_async():
-            # Try one more time with a fresh pool
-            if PostgresDatabase._pool:
-                try:
-                    await PostgresDatabase._pool.close()
-                except Exception:
-                    pass
-                PostgresDatabase._pool = None
-                
-            if not await self._init_async():
-                raise TrackError(Exception(f"Failed to initialize async connection for {self.alias()}"))
+            raise TrackError(Exception(f"Failed to initialize async connection for {self.alias()}"))
         
         try:
-            # Skip if transaction already active
-            if self._async_tx_active:
-                logger.debug(f"Async transaction already active for {self.alias()}")
-                return
-                
-            # Clean up any existing transaction
-            if self._async_tx:
-                await self.rollback_transaction_async()
-                
-            # Get a new transaction connection
-            self._tx_id += 1
-            try:
-                self._async_tx = await PostgresDatabase._pool.acquire()
-                
-                await self._async_tx.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-                await self._async_tx.execute("BEGIN")
-                self._async_tx_active = True
-                await self._async_tx.execute("SET search_path TO public")
-                
-                logger.debug(f"Async transaction started for {self.alias()}")
-            except Exception as e:
-                # Handle failed transaction setup
-                if self._async_tx:
-                    try:
-                        await PostgresDatabase._pool.release(self._async_tx)
-                    except Exception as release_error:
-                        logger.debug(f"Failed to release transaction connection: {release_error}")
-                    self._async_tx = None
-                raise e
+            await self._async_conn.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+            await self._async_conn.execute("BEGIN")
+            await self._async_conn.execute("SET search_path TO public")
         except Exception as e:
             logger.error(f"Failed to begin transaction for {self.alias()}: {e}")
             raise TrackError(e)
 
-    async def commit_transaction_async(self) -> None:
-        """Commit the current transaction asynchronously."""
+    async def commit_transaction_real_async(self) -> None:
+        # Skip if event loop is not valid
         if not await self._is_event_loop_valid():
-            logger.debug(f"Cannot commit transaction: Event loop not valid for {self.alias()}")
-            return
+            raise TrackError(Exception("Cannot begin transaction: Event loop is not valid"))
             
-        if not self._async_tx or not self._async_tx_active:
-            return
-            
-        try:
-            await self._async_tx.execute("COMMIT")
-            self._async_tx_active = False
-            logger.debug(f"Async transaction committed for {self.alias()}")
+        # Ensure we have a valid connection
+        if not await self._init_async():
+            raise TrackError(Exception(f"Failed to initialize async connection for {self.alias()}"))
+        
+        try:  
+            await self._async_conn.execute("COMMIT")
         except Exception as e:
-            logger.error(f"Error during commit for {self.alias()}: {e}")
+            logger.error(f"Failed to begin transaction for {self.alias()}: {e}")
             raise TrackError(e)
-        finally:
-            # Always release transaction connection
-            if self._async_tx and PostgresDatabase._pool:
-                try:
-                    await PostgresDatabase._pool.release(self._async_tx)
-                except Exception as e:
-                    logger.debug(f"Error releasing transaction connection for {self.alias()}: {e}")
-            self._async_tx = None
 
-    async def rollback_transaction_async(self) -> None:
-        """Roll back the current transaction asynchronously."""
+    async def rollback_transaction_real_async(self) -> None:
+        # Skip if event loop is not valid
         if not await self._is_event_loop_valid():
-            logger.debug(f"Cannot rollback transaction: Event loop not valid for {self.alias()}")
-            return
+            raise TrackError(Exception("Cannot begin transaction: Event loop is not valid"))
             
-        if not self._async_tx:
-            return
-            
+        # Ensure we have a valid connection
+        if not await self._init_async():
+            raise TrackError(Exception(f"Failed to initialize async connection for {self.alias()}"))
+        
         try:
-            if self._async_tx_active:
-                await self._async_tx.execute("ROLLBACK")
-                self._async_tx_active = False
-                logger.debug(f"Async transaction rolled back for {self.alias()}")
+            await self._async_conn.execute("ROLLBACK")
         except Exception as e:
-            logger.debug(f"Error during rollback for {self.alias()}: {e}")
-        finally:
-            # Always clean up resources
-            if self._async_tx and PostgresDatabase._pool:
-                try:
-                    await PostgresDatabase._pool.release(self._async_tx)
-                except Exception as e:
-                    logger.debug(f"Error releasing transaction connection for {self.alias()}: {e}")
-            self._async_tx = None
-
-    async def _ensure_tables_exist_async(self, entity_name: str) -> None:
-        """
-        Override to create tables for PostgreSQL asynchronously.
-        
-        Args:
-            entity_name: Name of the entity
-            
-        Raises:
-            TrackError: On database errors
-        """
-        entity_name = self._sanitize_identifier(entity_name)
-        
-        # Set connection for operation
-        conn = self._async_tx if self._async_tx_active else self._async_conn
-        
-        # Check if we're in a transaction
-        if self._async_tx_active:
-            # Exit transaction to perform DDL operations
-            logger.debug(f"Exiting async transaction to create tables")
-            await self._async_tx.execute("COMMIT")
-            self._async_tx_active = False
-            
-            # Create tables
-            await conn.execute("""
-                CREATE TABLE IF NOT EXISTS _meta_version (
-                    entity_name VARCHAR(255) PRIMARY KEY,
-                    version INTEGER
-                )
-            """)
-            
-            await conn.execute(f"""
-                CREATE TABLE IF NOT EXISTS {entity_name}_meta (
-                    name VARCHAR(255),
-                    type VARCHAR(255),
-                    PRIMARY KEY (name)
-                )
-            """)
-            
-            await conn.execute(f"""
-                CREATE TABLE IF NOT EXISTS {entity_name} (
-                    id VARCHAR(255),
-                    PRIMARY KEY (id)
-                )
-            """)
-            
-            # Restart transaction
-            await self._async_tx.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-            await self._async_tx.execute("BEGIN")
-            self._async_tx_active = True
-            await self._async_tx.execute("SET search_path TO public")
-            logger.debug(f"Async transaction restarted after table creation")
-        else:
-            # Create tables outside of transaction
-            await conn.execute("""
-                CREATE TABLE IF NOT EXISTS _meta_version (
-                    entity_name VARCHAR(255) PRIMARY KEY,
-                    version INTEGER
-                )
-            """)
-            
-            await conn.execute(f"""
-                CREATE TABLE IF NOT EXISTS {entity_name}_meta (
-                    name VARCHAR(255),
-                    type VARCHAR(255),
-                    PRIMARY KEY (name)
-                )
-            """)
-            
-            await conn.execute(f"""
-                CREATE TABLE IF NOT EXISTS {entity_name} (
-                    id VARCHAR(255),
-                    PRIMARY KEY (id)
-                )
-            """)
+            logger.error(f"Failed to begin transaction for {self.alias()}: {e}")
+            raise TrackError(e)
 
     async def execute_sql_async(self, sql: str, parameters: Tuple[Any, ...] = ()) -> list:
         """
@@ -559,7 +406,7 @@ class PostgresDatabase(Database):
             parameters = list(parameters) if parameters else []
             
             # Use transaction connection if in transaction
-            conn = self._async_tx if self._async_tx_active else self._async_conn
+            conn = self._async_conn
             
             # Ensure proper schema
             await conn.execute('SET search_path TO public')
@@ -592,7 +439,7 @@ class PostgresDatabase(Database):
             
         try:
             # Use transaction connection if in transaction
-            conn = self._async_tx if self._async_tx_active else self._async_conn
+            conn = self._async_conn
             await conn.execute('SET search_path TO public')
             
             # Add UUID comment for query cache busting in PostgreSQL
@@ -615,20 +462,7 @@ class PostgresDatabase(Database):
             logger.debug(f"Cannot close connections: Event loop not valid for {self.alias()}")
             return
             
-        try:
-            # Handle transaction connections
-            if self._async_tx:
-                try:
-                    if self._async_tx_active:
-                        await self._async_tx.execute("ROLLBACK")
-                        self._async_tx_active = False
-                    if PostgresDatabase._pool:
-                        await PostgresDatabase._pool.release(self._async_tx)
-                except Exception as e:
-                    logger.debug(f"Error releasing transaction connection for {self.alias()}: {e}")
-                finally:
-                    self._async_tx = None
-                
+        try:    
             # Handle regular connections
             if self._async_conn and PostgresDatabase._pool:
                 try:
@@ -655,14 +489,6 @@ class PostgresDatabase(Database):
             return
                 
         try:
-            # Clean up any existing transactions
-            if self._async_tx:
-                try:
-                    await self.rollback_transaction_async()
-                except Exception as e:
-                    logger.debug(f"Error rolling back transaction during cleanup: {e}")
-            
-            # Only proceed if we can get a connection
             if await self._init_async():
                 # Check if public schema exists
                 exists = await self._async_conn.fetchval(

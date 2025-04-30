@@ -4,7 +4,7 @@ import asyncio
 def test_postgres_save_and_fetch(postgres_db):
     postgres_db.clear_all()
     entity = {"id": "1", "name": "Alice"}
-    postgres_db.save_entity("clients", entity)
+    postgres_db.save_entity("clients", entity, True)
     result = postgres_db.get_entities("clients")
     assert any(row["id"] == "1" and row["name"] == "Alice" for row in result)
 
@@ -12,6 +12,7 @@ def test_postgres_transactions(postgres_db):
     postgres_db.clear_all()
     postgres_db.begin_transaction()
     postgres_db.save_entity("clients", {"id": "2", "name": "Bob"}, False)
+    postgres_db.save_entity("clients", {"id": "3", "name": "Bob3", "age": 24}, False)
     postgres_db.rollback_transaction()
     result = postgres_db.get_entities("clients")
     assert not any(row["id"] == "2" for row in result)

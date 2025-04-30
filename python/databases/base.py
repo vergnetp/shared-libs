@@ -62,11 +62,14 @@ class Database(ABC):
         self.__keys_cache = {}
         self.__types_cache = {}
         self.__meta_versions = {}
-        
-        # Transaction state tracking
-        self._tx_active = False
-        self._tx_depth = 0  # For nested transactions
 
+        # Buffered transaction support
+        self._tx_active = False
+        self._tx_started = False
+        self._tx_buffer = []
+        self._tx_buffer_async = []
+        
+        
     def config(self):
         """Return the database configuration dict"""
         return {
@@ -106,28 +109,12 @@ class Database(ABC):
     def placeholder(self, is_async: bool=True) -> str:
         """Return the placeholder string for parameterized queries"""
         pass
-    
-    # Abstract methods that must be implemented by subclasses
+       
     @abstractmethod
     def is_connected(self) -> bool:
         """Check if the database connection is active"""
         pass
-    
-    @abstractmethod
-    def begin_transaction(self) -> None:
-        """Begin a new database transaction"""
-        pass
-    
-    @abstractmethod
-    def commit_transaction(self) -> None:
-        """Commit the current transaction"""
-        pass
-    
-    @abstractmethod
-    def rollback_transaction(self) -> None:
-        """Roll back the current transaction"""
-        pass
-    
+  
     @abstractmethod
     def execute_sql(self, sql: str, parameters=()) -> list:
         """Execute a SQL query with parameters"""
@@ -137,33 +124,7 @@ class Database(ABC):
     def executemany_sql(self, sql: str, parameters_list: list) -> None:
         """Execute a SQL query multiple times with different parameters"""
         pass
-    
-    @abstractmethod
-    def _close(self) -> None:
-        """Close the database connection"""
-        pass
-    
-    @abstractmethod
-    def clear_all(self) -> None:
-        """Clear all data in the database"""
-        pass
-    
-    # Async methods that must be implemented by subclasses
-    @abstractmethod
-    async def begin_transaction_async(self) -> None:
-        """Begin a new database transaction async"""
-        pass
-    
-    @abstractmethod
-    async def commit_transaction_async(self) -> None:
-        """Commit the current transaction async"""
-        pass
-    
-    @abstractmethod
-    async def rollback_transaction_async(self) -> None:
-        """Roll back the current transaction async"""
-        pass
-    
+
     @abstractmethod
     async def execute_sql_async(self, sql: str, parameters=()) -> list:
         """Execute a SQL query with parameters async"""
@@ -173,7 +134,17 @@ class Database(ABC):
     async def executemany_sql_async(self, sql: str, parameters_list: list) -> None:
         """Execute a SQL query multiple times with different parameters async"""
         pass
+   
+    @abstractmethod
+    def _close(self) -> None:
+        """Close the database connection"""
+        pass
     
+    @abstractmethod
+    def clear_all(self) -> None:
+        """Clear all data in the database"""
+        pass
+
     @abstractmethod
     async def _close_async(self) -> None:
         """Close the database connection async"""
@@ -183,7 +154,98 @@ class Database(ABC):
     async def clear_all_async(self) -> None:
         """Clear all data in the database async"""
         pass
+
+
+    @abstractmethod
+    def begin_transaction_real(self):
+        pass
+
+    @abstractmethod
+    def rollback_transaction_real(self):
+        pass
+
+    @abstractmethod
+    def commit_transaction_real(self):
+        pass
+
+    def begin_transaction(self):
+        if self._tx_active:
+            raise RuntimeError("Nested transactions are not supported.")
+        self._tx_active = True
+        self._tx_started = False
+        self._tx_buffer = []
+
+    def commit_transaction(self):
+        if not self._tx_active:
+            return
+        if not self._tx_started:
+            self.begin_transaction_real()
+            self._tx_started = True
+        for entity_name, entity in self._tx_buffer:
+            self.save_entities(entity_name, [entity], auto_commit=False)
+        self.commit_transaction_real()
+        self._tx_buffer.clear()
+        self._tx_active = False
+        self._tx_started = False
+
+    def rollback_transaction(self):
+        if not self._tx_active:
+            return
+        if self._tx_started:
+            self.rollback_transaction_real()
+        self._tx_buffer.clear()
+        self._tx_active = False
+        self._tx_started = False
+
+
+ 
+
+
+
+    async def begin_transaction_async(self) -> None:
+        if self._tx_active:
+            raise RuntimeError("Nested transactions are not supported.")
+        self._tx_active = True
+        self._tx_started = False
+        self._tx_buffer_async = []
+
+    @abstractmethod
+    async def begin_transaction_real_async(self):
+        pass
     
+    @abstractmethod
+    async def commit_transaction_real_async(self):
+        pass
+
+    async def commit_transaction_async(self) -> None:
+        if not self._tx_active:
+            return
+        if not self._tx_started:
+            await self.begin_transaction_real_async()
+            self._tx_started = True
+        for entity_name, entity in self._tx_buffer_async:
+            await self.save_entities_async(entity_name, [entity], auto_commit=False)
+        await self.commit_transaction_real_async()
+        self._tx_buffer_async.clear()
+        self._tx_active = False
+        self._tx_started = False
+    
+    async def rollback_transaction_async(self) -> None:
+        if not self._tx_active:
+            return
+        if self._tx_started:
+            await self.rollback_transaction_real_async()
+        self._tx_buffer_async.clear()
+        self._tx_active = False
+        self._tx_started = False
+
+    @abstractmethod
+    async def rollback_transaction_real_async(self):
+        pass
+    
+
+
+
     # region --- CONTEXT MANAGERS ---
     @contextlib.contextmanager
     def transaction(self):
@@ -198,52 +260,16 @@ class Database(ABC):
         If any operation within the block fails, the transaction is rolled back.
         Otherwise, it is committed when exiting the block.
         """
-        outer_tx = self._tx_active
-        
-        if not outer_tx:
-            self.begin_transaction()
-            
-        self._tx_depth += 1
-        
+        if self._tx_active:
+            raise RuntimeError("Nested transactions are not supported.")
+        self.begin_transaction()
         try:
             yield self
-        except Exception as e:
-            # Only roll back if this is the outermost transaction
-            if self._tx_depth == 1:
-                self.rollback_transaction()
-            self._tx_depth = max(0, self._tx_depth - 1)
-            raise e
-        else:
-            self._tx_depth = max(0, self._tx_depth - 1)
-            # Only commit if this is the outermost transaction
-            if self._tx_depth == 0 and not outer_tx:
-                self.commit_transaction()
-    
-    @staticmethod
-    async def _async_transaction_cm(db, func, *args, **kwargs):
-        """Helper for async_transaction context manager"""
-        outer_tx = db._tx_active
-        
-        if not outer_tx:
-            await db.begin_transaction_async()
-            
-        db._tx_depth += 1
-        
-        try:
-            result = await func(*args, **kwargs)
-            return result
-        except Exception as e:
-            # Only roll back if this is the outermost transaction
-            if db._tx_depth == 1:
-                await db.rollback_transaction_async()
-            db._tx_depth = max(0, db._tx_depth - 1)
-            raise e
-        finally:
-            db._tx_depth = max(0, db._tx_depth - 1)
-            # Only commit if this is the outermost transaction
-            if db._tx_depth == 0 and not outer_tx:
-                await db.commit_transaction_async()
-    
+            self.commit_transaction()
+        except Exception:
+            self.rollback_transaction()
+            raise  
+
     def async_transaction(self, func):
         """
         Decorator for async functions to run within a transaction.
@@ -259,27 +285,16 @@ class Database(ABC):
         """
         @contextlib.asynccontextmanager
         async def async_transaction_context():
-            outer_tx = self._tx_active
-            
-            if not outer_tx:
-                await self.begin_transaction_async()
-                
-            self._tx_depth += 1
-            
+            if self._tx_active:
+                raise RuntimeError("Nested transactions are not supported.")
+            await self.begin_transaction_async()
             try:
                 yield self
-            except Exception as e:
-                # Only roll back if this is the outermost transaction
-                if self._tx_depth == 1:
-                    await self.rollback_transaction_async()
-                self._tx_depth = max(0, self._tx_depth - 1)
-                raise e
-            finally:
-                self._tx_depth = max(0, self._tx_depth - 1)
-                # Only commit if this is the outermost transaction
-                if self._tx_depth == 0 and not outer_tx:
-                    await self.commit_transaction_async()
-                    
+                await self.commit_transaction_async()
+            except Exception:
+                await self.rollback_transaction_async()
+                raise
+                            
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             async with async_transaction_context():
@@ -306,7 +321,7 @@ class Database(ABC):
             raise ValueError(f"Unsafe SQL identifier: {name}")
         return name
 
-    def placeholders(self, count: int, is_async: bool=True) -> str:
+    def _placeholders(self, count: int, is_async: bool=True) -> str:
         """
         Generate SQL placeholders for parameterized queries.
         
@@ -514,7 +529,9 @@ class Database(ABC):
         Raises:
             TrackError: On database errors
         """
-        try:
+        if is_async:
+            logger.debug("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+        try:            
             entity_name = self._sanitize_identifier(entity_name)
             
             # Create _meta_version table if needed
@@ -671,11 +688,11 @@ class Database(ABC):
                     typ = str(type(sample_value))
 
                     if self.type() == 'sqlite':
-                        insert_sql = f"INSERT OR REPLACE INTO {entity_name}_meta VALUES ({self.placeholders(2, is_async)})"
+                        insert_sql = f"INSERT OR REPLACE INTO {entity_name}_meta VALUES ({self._placeholders(2, is_async)})"
                     elif self.type() == 'postgres':
-                        insert_sql = f"INSERT INTO {entity_name}_meta VALUES ({self.placeholders(2, is_async)}) ON CONFLICT(name) DO UPDATE SET type=EXCLUDED.type -- {uuid.uuid4()}"
+                        insert_sql = f"INSERT INTO {entity_name}_meta VALUES ({self._placeholders(2, is_async)}) ON CONFLICT(name) DO UPDATE SET type=EXCLUDED.type -- {uuid.uuid4()}"
                     else:
-                        insert_sql = f"INSERT INTO {entity_name}_meta VALUES ({self.placeholders(2, is_async)}) AS new ON DUPLICATE KEY UPDATE type=new.type"
+                        insert_sql = f"INSERT INTO {entity_name}_meta VALUES ({self._placeholders(2, is_async)}) AS new ON DUPLICATE KEY UPDATE type=new.type"
 
                     if is_async:
                         await executor(insert_sql, (key, typ))
@@ -683,6 +700,7 @@ class Database(ABC):
                             alter_sql = f"ALTER TABLE {entity_name} ADD {key} TEXT"
                             if self.type() == 'postgres':
                                 alter_sql += f" -- {uuid.uuid4()}"
+                            logger.debug(f"[DDL] Running ALTER TABLE: {alter_sql}")
                             await executor(alter_sql)
                     else:
                         executor(insert_sql, (key, typ))
@@ -853,7 +871,7 @@ class Database(ABC):
             await ensure_schema(entity_name, keys, sample_values) if is_async else ensure_schema(entity_name, keys, sample_values)
 
             or_replace = 'OR REPLACE' if self.type() == 'sqlite' else ''
-            insert_sql = f"INSERT {or_replace} INTO {entity_name} ({','.join(keys)}) VALUES({self.placeholders(len(keys), is_async)})"
+            insert_sql = f"INSERT {or_replace} INTO {entity_name} ({','.join(keys)}) VALUES({self._placeholders(len(keys), is_async)})"
             
             # Add appropriate upsert clause for database type
             if self.type() == 'sqlite':
@@ -888,7 +906,139 @@ class Database(ABC):
                         await executor(insert_sql, row) if is_async else executor(insert_sql, row)
         except Exception as e:
             raise TrackError(e)
+    # endregion --------------------------------------
+
+    # region --- PUBLIC API METHODS ---
+    # Public API methods for entity operations
+    def save_entity(self, entity_name: str, entity: dict, auto_commit: bool = True) -> None:
+        """
+        Save an entity to the database.
+        
+        Args:
+            entity_name: Name of the entity
+            entity: Entity data
+            auto_commit: Whether to auto-commit the transaction
+        """
+        if self._tx_active and not self._tx_started:
+            self._tx_buffer.append((entity_name, entity))
+            return
+        self.save_entities(entity_name, [entity], auto_commit)
+    
+    def save_entities(self, entity_name: str, entities: list, auto_commit: bool = True, chunk_size: int = 100) -> None:
+        """
+        Save multiple entities to the database.
+        
+        Args:
+            entity_name: Name of the entity
+            entities: List of entity data
+            auto_commit: Whether to auto-commit the transaction
+            chunk_size: Size of chunks for batch operations
+        """
+        if not entities:
+            return
             
+        with self.transaction() if auto_commit else contextlib.nullcontext():
+            _run_sync(self._run_save_entities(
+                entity_name, entities, chunk_size,
+                self._ensure_tables_exist, self._ensure_metadata_and_schema,
+                self.execute_sql, self.executemany_sql, is_async=False
+            ))
+    
+    async def save_entity_async(self, entity_name: str, entity: dict, auto_commit: bool = True) -> None:
+        if self._tx_active and not self._tx_started:
+            self._tx_buffer_async.append((entity_name, entity))
+            return
+        await self.save_entities_async(entity_name, [entity], auto_commit)
+    
+    async def save_entities_async(self, entity_name: str, entities: list, auto_commit: bool = True, chunk_size: int = 100) -> None:
+        """
+        Save multiple entities to the database asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            entities: List of entity data
+            auto_commit: Whether to auto-commit the transaction
+            chunk_size: Size of chunks for batch operations
+        """
+        if not entities:
+            return
+            
+        # Use the async transaction context manager for safety
+        @self.async_transaction
+        async def _save_with_transaction():
+            await self._run_save_entities(
+                entity_name, entities, chunk_size,
+                self._ensure_tables_exist_async, self._ensure_metadata_and_schema_async,
+                self.execute_sql_async, self.executemany_sql_async, is_async=True
+            )
+            
+        if auto_commit:
+            await _save_with_transaction()
+        else:
+            await self._run_save_entities(
+                entity_name, entities, chunk_size,
+                self._ensure_tables_exist_async, self._ensure_metadata_and_schema_async,
+                self.execute_sql_async, self.executemany_sql_async, is_async=True
+            )
+    
+    def get_entity(self, entity_name: str, entity_id: str, cast: bool = False) -> dict:
+        """
+        Get a single entity by ID.
+        
+        Args:
+            entity_name: Name of the entity
+            entity_id: ID of the entity
+            cast: Whether to cast values to their types
+            
+        Returns:
+            Entity dictionary or None if not found
+        """
+        return self._fetch_data(entity_name, f"id = {self.placeholder(False)}", True, cast, (entity_id,))
+    
+    def get_entities(self, entity_name: str, filter_clause: str = None, cast: bool = False, parameters: tuple = ()) -> list:
+        """
+        Get entities matching a filter.
+        
+        Args:
+            entity_name: Name of the entity
+            filter_clause: SQL WHERE clause
+            cast: Whether to cast values to their types
+            parameters: Query parameters for the filter
+            
+        Returns:
+            List of entity dictionaries
+        """
+        return self._fetch_data(entity_name, filter_clause, False, cast, parameters)
+    
+    async def get_entity_async(self, entity_name: str, entity_id: str, cast: bool = False) -> dict:
+        """
+        Get a single entity by ID asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            entity_id: ID of the entity
+            cast: Whether to cast values to their types
+            
+        Returns:
+            Entity dictionary or None if not found
+        """
+        return await self._fetch_data_async(entity_name, f"id = {self.placeholder(True)}", True, cast, (entity_id,))
+    
+    async def get_entities_async(self, entity_name: str, filter_clause: str = None, cast: bool = False, parameters: tuple = ()) -> list:
+        """
+        Get entities matching a filter asynchronously.
+        
+        Args:
+            entity_name: Name of the entity
+            filter_clause: SQL WHERE clause
+            cast: Whether to cast values to their types
+            parameters: Query parameters for the filter
+            
+        Returns:
+            List of entity dictionaries
+        """
+        return await self._fetch_data_async(entity_name, filter_clause, False, cast, parameters)
+   
     def delete_entity(self, entity_name: str, entity_id: str, auto_commit: bool = True) -> bool:
         """
         Delete an entity by ID.
@@ -1141,140 +1291,6 @@ class Database(ABC):
             return count_result[0][0] if count_result else 0
         except Exception as e:
             raise TrackError(e)
-    # endregion --------------------------------------
-
-    # region --- PUBLIC API METHODS ---
-    # Public API methods for entity operations
-    def save_entity(self, entity_name: str, entity: dict, auto_commit: bool = True) -> None:
-        """
-        Save an entity to the database.
-        
-        Args:
-            entity_name: Name of the entity
-            entity: Entity data
-            auto_commit: Whether to auto-commit the transaction
-        """
-        self.save_entities(entity_name, [entity], auto_commit)
-    
-    def save_entities(self, entity_name: str, entities: list, auto_commit: bool = True, chunk_size: int = 100) -> None:
-        """
-        Save multiple entities to the database.
-        
-        Args:
-            entity_name: Name of the entity
-            entities: List of entity data
-            auto_commit: Whether to auto-commit the transaction
-            chunk_size: Size of chunks for batch operations
-        """
-        if not entities:
-            return
-            
-        with self.transaction() if auto_commit else contextlib.nullcontext():
-            _run_sync(self._run_save_entities(
-                entity_name, entities, chunk_size,
-                self._ensure_tables_exist, self._ensure_metadata_and_schema,
-                self.execute_sql, self.executemany_sql, is_async=False
-            ))
-    
-    async def save_entity_async(self, entity_name: str, entity: dict, auto_commit: bool = True) -> None:
-        """
-        Save an entity to the database asynchronously.
-        
-        Args:
-            entity_name: Name of the entity
-            entity: Entity data
-            auto_commit: Whether to auto-commit the transaction
-        """
-        await self.save_entities_async(entity_name, [entity], auto_commit)
-    
-    async def save_entities_async(self, entity_name: str, entities: list, auto_commit: bool = True, chunk_size: int = 100) -> None:
-        """
-        Save multiple entities to the database asynchronously.
-        
-        Args:
-            entity_name: Name of the entity
-            entities: List of entity data
-            auto_commit: Whether to auto-commit the transaction
-            chunk_size: Size of chunks for batch operations
-        """
-        if not entities:
-            return
-            
-        # Use the async transaction context manager for safety
-        @self.async_transaction
-        async def _save_with_transaction():
-            await self._run_save_entities(
-                entity_name, entities, chunk_size,
-                self._ensure_tables_exist_async, self._ensure_metadata_and_schema_async,
-                self.execute_sql_async, self.executemany_sql_async, is_async=True
-            )
-            
-        if auto_commit:
-            await _save_with_transaction()
-        else:
-            await self._run_save_entities(
-                entity_name, entities, chunk_size,
-                self._ensure_tables_exist_async, self._ensure_metadata_and_schema_async,
-                self.execute_sql_async, self.executemany_sql_async, is_async=True
-            )
-    
-    def get_entity(self, entity_name: str, entity_id: str, cast: bool = False) -> dict:
-        """
-        Get a single entity by ID.
-        
-        Args:
-            entity_name: Name of the entity
-            entity_id: ID of the entity
-            cast: Whether to cast values to their types
-            
-        Returns:
-            Entity dictionary or None if not found
-        """
-        return self._fetch_data(entity_name, f"id = {self.placeholder(False)}", True, cast, (entity_id,))
-    
-    def get_entities(self, entity_name: str, filter_clause: str = None, cast: bool = False, parameters: tuple = ()) -> list:
-        """
-        Get entities matching a filter.
-        
-        Args:
-            entity_name: Name of the entity
-            filter_clause: SQL WHERE clause
-            cast: Whether to cast values to their types
-            parameters: Query parameters for the filter
-            
-        Returns:
-            List of entity dictionaries
-        """
-        return self._fetch_data(entity_name, filter_clause, False, cast, parameters)
-    
-    async def get_entity_async(self, entity_name: str, entity_id: str, cast: bool = False) -> dict:
-        """
-        Get a single entity by ID asynchronously.
-        
-        Args:
-            entity_name: Name of the entity
-            entity_id: ID of the entity
-            cast: Whether to cast values to their types
-            
-        Returns:
-            Entity dictionary or None if not found
-        """
-        return await self._fetch_data_async(entity_name, f"id = {self.placeholder(True)}", True, cast, (entity_id,))
-    
-    async def get_entities_async(self, entity_name: str, filter_clause: str = None, cast: bool = False, parameters: tuple = ()) -> list:
-        """
-        Get entities matching a filter asynchronously.
-        
-        Args:
-            entity_name: Name of the entity
-            filter_clause: SQL WHERE clause
-            cast: Whether to cast values to their types
-            parameters: Query parameters for the filter
-            
-        Returns:
-            List of entity dictionaries
-        """
-        return await self._fetch_data_async(entity_name, filter_clause, False, cast, parameters)
     # endregion -----------------------------------
 
     # region --- FINAL FUNCTIONS ------
@@ -1364,3 +1380,4 @@ class Database(ABC):
         except Exception as e:
             logger.error(f'Error closing async connection for {self.alias()}: {e}')
     # endregion --- FINAL FUNCTIONS ------
+
