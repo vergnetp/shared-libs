@@ -811,7 +811,7 @@ def debug(message: str, indent: int = 0, context: Dict[str, Any] = None):
 def info(message: str, indent: int = 0, context: Dict[str, Any] = None):
     _log(LogLevel.INFO, "[INFO]", message, indent, context)
 
-def warn(message: str, indent: int = 0, context: Dict[str, Any] = None):
+def warning(message: str, indent: int = 0, context: Dict[str, Any] = None):
     _log(LogLevel.WARN, "[WARN]", message, indent, context)
 
 def error(message: str, indent: int = 0, context: Dict[str, Any] = None):

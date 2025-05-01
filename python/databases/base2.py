@@ -1,9 +1,12 @@
 import sys
+import os
 import json
+import time
 import hashlib
 import asyncio
 import contextlib
-from typing import Callable, Awaitable, Optional, Tuple, List, Any, Dict, final, Union
+import inspect
+from typing import Set, Awaitable, Callable, Optional, Tuple, List, Any, Dict, final, Union
 from abc import ABC, abstractmethod
 from ..errors import TrackError
 from .. import log as logger
@@ -190,6 +193,155 @@ class SyncConnection(ABC):
         """
         pass
 
+from abc import ABC, abstractmethod
+from typing import Any, Dict, Optional, Tuple, List
+
+class ConnectionPool(ABC):
+    """
+    Abstract connection pool interface that standardizes behavior across database drivers.
+    
+    This interface provides a consistent API for connection pool operations, regardless
+    of the underlying database driver. It abstracts away driver-specific details and
+    ensures that all pools implement the core functionality needed by the connection
+    management system.
+    
+    Implementation Requirements:
+        - Must handle timeout properly in acquire()
+        - Must properly track connection state
+        - Must handle force close behavior appropriately
+        - Must implement health checking for pool vitality
+    """
+    
+    @abstractmethod
+    async def acquire(self, timeout: Optional[float] = None) -> Any:
+        """
+        Acquires a connection from the pool with optional timeout.
+        
+        Args:
+            timeout (Optional[float]): Maximum time in seconds to wait for a connection.
+                                      If None, use the pool's default timeout.
+        
+        Returns:
+            Any: A database connection specific to the underlying driver.
+            
+        Raises:
+            TimeoutError: If the acquisition times out.
+            Exception: For other acquisition errors.
+        """
+        pass
+        
+    @abstractmethod
+    async def release(self, connection: Any) -> None:
+        """
+        Releases a connection back to the pool.
+        
+        Args:
+            connection: The connection to release, specific to the underlying driver.
+            
+        Raises:
+            Exception: If the connection cannot be released.
+        """
+        pass
+        
+    @abstractmethod
+    async def close(self, force: bool = False, timeout: Optional[float] = None) -> None:
+        """
+        Closes the pool and all connections.
+        
+        Args:
+            force (bool): If True, forcibly close connections, potentially 
+                          interrupting operations in progress.
+            timeout (Optional[float]): Maximum time in seconds to wait for graceful shutdown
+                                      when force=False. If None, wait indefinitely.
+                          
+        Notes:
+            - When force=False, wait for all connections to be released naturally
+            - When force=True, terminate any executing operations (may cause data loss)
+        """
+        pass
+    
+    @abstractmethod
+    async def health_check(self) -> bool:
+        """
+        Checks if the pool is healthy by testing a connection.
+        
+        Returns:
+            bool: True if the pool is healthy, False otherwise.
+        """
+        pass
+    
+    @property
+    @abstractmethod
+    def min_size(self) -> int:
+        """
+        Gets the minimum number of connections the pool maintains.
+        
+        Returns:
+            int: The minimum pool size.
+        """
+        pass
+    
+    @property
+    @abstractmethod
+    def max_size(self) -> int:
+        """
+        Gets the maximum number of connections the pool can create.
+        
+        Returns:
+            int: The maximum pool size.
+        """
+        pass
+    
+    @property
+    @abstractmethod
+    def size(self) -> int:
+        """
+        Gets the current number of connections in the pool.
+        
+        Returns:
+            int: The total number of connections (both in-use and idle).
+        """
+        pass
+    
+    @property
+    @abstractmethod
+    def in_use(self) -> int:
+        """
+        Gets the number of connections currently in use.
+        
+        Returns:
+            int: The number of connections currently checked out from the pool.
+        """
+        pass
+    
+    @property
+    @abstractmethod
+    def idle(self) -> int:
+        """
+        Gets the number of idle connections in the pool.
+        
+        Returns:
+            int: The number of connections currently available for checkout.
+        """
+        pass
+
+    @abstractmethod
+    async def execute_on_pool(self, sql: str, params: Optional[Tuple] = None) -> Any:
+        """
+        Convenience method to execute a query without explicitly acquiring/releasing a connection.
+        
+        This method acquires a connection, executes the query, and releases the connection
+        in a single operation, making it more efficient for simple queries.
+        
+        Args:
+            sql (str): The SQL query to execute.
+            params (Optional[Tuple]): Query parameters.
+            
+        Returns:
+            Any: The query result.
+        """
+        pass
+
 class DatabaseConfig:
     """
     Holds database connection configuration parameters.
@@ -309,14 +461,9 @@ class AsyncPoolManager(ABC):
     """
     Abstract base class to manage the lifecycle of asynchronous connection pools.
     
-    This class implements a shared connection pool management system based on
-    database configuration. Pools are created lazily, shared across instances
-    with the same configuration, and can be properly closed during application
-    shutdown.
+    This class implements a shared connection pool management system based on database configuration. Pools are created lazily, shared across instances with the same configuration, and can be properly closed during application shutdown.
     
-    Subclasses must also inherit from `DatabaseConfig` or provide compatible
-    `hash()` and `alias()` methods, and must implement the abstract method
-    `_create_pool()` to create a backend-specific connection pool.
+    Subclasses must also inherit from `DatabaseConfig` or provide compatible `hash()` and `alias()` methods, and must implement the abstract method `_create_pool()` to create a backend-specific connection pool.
     
     Key Features:
         - Pools are shared across instances with the same database configuration
@@ -336,10 +483,113 @@ class AsyncPoolManager(ABC):
     Class Attributes:
         _shared_pools (Dict[str, Any]): Dictionary mapping config hashes to pool instances
         _shared_locks (Dict[str, asyncio.Lock]): Locks for thread-safe pool initialization
+        _active_connections (Dict[str, Set[AsyncConnection]]): Keep track of active connections
     """
     _shared_pools: Dict[str, Any] = {}
     _shared_locks: Dict[str, asyncio.Lock] = {}
+    _active_connections: Dict[str, Set[AsyncConnection]] = {}
+    _shutting_down: Dict[str, bool] = {}  # to track shutdown state per pool
+    _metrics: Dict[str, Dict[str, int]] = {}
+    
+    def _track_metrics(self, is_new: bool=True, error: Exception=None, is_timeout: bool=False):       
+        k = self.hash()
+        if k not in self._metrics:
+            self._metrics[k] = {
+                'total_acquired': 1 if is_new and not error and not is_timeout else 0,
+                'total_released': 0,
+                'current_active': 1 if is_new and not error and not is_timeout else 0,
+                'peak_active': 1 if is_new and not error and not is_timeout else 0,
+                'errors': 0 if not error else 1,
+                'timeouts': 0 if not is_timeout else 1,
+                'last_timeout_timestamp': time.time() if is_timeout else None,
+                'avg_acquisition_time': 0.0,  # We'll calculate this as a running average
+            }
+        else:
+            # Update existing metrics
+            metrics = self._metrics[k]
+            if is_timeout:
+                metrics['timeouts'] += 1
+                metrics['last_timeout_timestamp'] = time.time()
+            elif error:
+                metrics['errors'] += 1
+            else:
+                if is_new:
+                    metrics['total_acquired'] += 1
+                    metrics['current_active'] += 1
+                else:
+                    metrics['total_released'] += 1
+                    metrics['current_active'] = max(0, metrics['current_active'] - 1)  # Avoid negative
+                
+                # Update peak value
+                metrics['peak_active'] = max(metrics['peak_active'], metrics['current_active'])
+        
+        try:
+            logger.info(f"Pool status:\n{json.dumps(self.get_pool_status())}")
+        except Exception as e:
+            logger.warning(f"Error logging metrics: {e}")
 
+    def get_pool_status(self) -> Dict[str, Any]:
+        """
+        Gets comprehensive status information about the connection pool.
+        
+        Returns:
+            Dict[str, Any]: Dictionary containing detailed pool status.
+        """
+        if not self._pool:
+            return {
+                "initialized": False,
+                "alias": self.alias(),
+                "hash": self.hash()
+            }
+            
+        metrics = self._metrics.get(self.hash(), {})
+        
+        return {
+            "initialized": True,
+            "alias": self.alias(),
+            "hash": self.hash(),     
+            "min_size": self._pool.min_size,
+            "max_size": self._pool.max_size,
+            "current_size": self._pool.size,
+            "in_use": self._pool.in_use,
+            "idle": self._pool.idle,
+            "active_connections": len(self._connections),
+            "shutting_down": self._shutting_down.get(self.hash(), False),
+            "metrics": {
+                "total_acquired": metrics.get("total_acquired", 0),
+                "total_released": metrics.get("total_released", 0),
+                "current_active": metrics.get("current_active", 0),
+                "peak_active": metrics.get("peak_active", 0),
+                "errors": metrics.get("errors", 0),
+                "timeouts": metrics.get("timeouts", 0),
+                "last_timeout": metrics.get("last_timeout_timestamp"),
+                "avg_acquisition_time": metrics.get("avg_acquisition_time", 0),
+            }
+        }
+    
+    @classmethod
+    async def health_check_all_pools(cls) -> Dict[str, bool]:
+        """
+        Checks the health of all connection pools.
+        
+        Returns:
+            Dict[str, bool]: Dictionary mapping pool keys to health status.
+        """
+        results = {}
+        for key, pool in cls._shared_pools.items():
+            try:
+                is_healthy = await pool.health_check()
+                results[key] = is_healthy
+            except Exception:
+                results[key] = False
+        return results    
+
+    @classmethod
+    def get_pool_metrics(cls, config_hash=None):
+        if config_hash:
+            return cls._metrics.get(config_hash, {})
+        return cls._metrics
+    
     @property
     def _pool(self) -> Optional[Any]:
         """
@@ -386,14 +636,85 @@ class AsyncPoolManager(ABC):
         if k not in self._shared_locks:
             self._shared_locks[k] = asyncio.Lock()
         return self._shared_locks[k]
-  
+
+    @property
+    def _connections(self) -> Set[AsyncConnection]:
+        """Gets the set of active connections for this instance's configuration."""
+        k = self.hash()
+        if k not in self._active_connections:
+            self._active_connections[k] = set()
+        return self._active_connections[k]
+      
+    async def _get_connection_from_pool(self, wrap_raw_connection: Callable) -> AsyncConnection:
+        """
+        Acquires a connection from the pool with timeout handling.
+        """
+        if self._shutting_down.get(self.hash(), False):
+            raise RuntimeError(f"Cannot acquire new connections: pool for {self.alias()} is shutting down")
+        
+        if not self._pool:
+            await self._initialize_pool_if_needed()
+        if not self._pool:
+            raise Exception(f"Cannot get a connection from the pool as the pool could not be initialized for {self.alias()} - {self.hash()}")
+        
+        # Define a timeout for connection acquisition (in seconds)
+        acquisition_timeout = getattr(self, 'connection_acquisition_timeout', 10.0)
+        
+        try:
+            start_time = time.time()
+            # Use the ConnectionPool interface to acquire with timeout
+            try:
+                # No need for asyncio.wait_for - our interface handles timeout
+                raw_conn = await self._pool.acquire(timeout=acquisition_timeout)
+                acquisition_time = time.time() - start_time
+                logger.debug(f"Connection acquired from {self.alias()} pool in {acquisition_time:.2f}s")
+                self._track_metrics(True)
+            except TimeoutError as e:
+                acquisition_time = time.time() - start_time
+                logger.warning(f"Timeout acquiring connection from {self.alias()} pool after {acquisition_time:.2f}s")
+                self._track_metrics(is_new=False, error=None, is_timeout=True)
+                raise  # Re-raise the TimeoutError
+                
+        except Exception as e:
+            if isinstance(e, TimeoutError):
+                # Re-raise the timeout
+                raise
+                
+            # Other errors
+            pool_info = {
+                'active_connections': len(self._connections),
+                'pool_exists': self._pool is not None,
+            }
+            logger.error(f"Connection acquisition failed for {self.alias()} pool: {e}, pool info: {pool_info}")
+            self._track_metrics(True, e)           
+            raise
+        
+        async_conn = wrap_raw_connection(raw_conn)
+        self._connections.add(async_conn)
+        return async_conn
+
+    async def _release_connection_to_pool(self, async_conn: AsyncConnection) -> None:
+        try:
+            start_time = time.time()
+            # Use the ConnectionPool interface
+            await self._pool.release(async_conn.get_raw_connection())
+            logger.debug(f"Connection released back to {self.alias()} pool in {(time.time() - start_time):.2f}s")
+            self._track_metrics(False)
+        except Exception as e:
+            pool_info = {
+                'active_connections': len(self._connections),
+                'pool_exists': self._pool is not None,
+            }
+            logger.error(f"Connection release failed for {self.alias()} pool: {e}, pool info: {pool_info}")
+            self._track_metrics(False, e)
+            raise
+        self._connections.discard(async_conn)
+
     async def _initialize_pool_if_needed(self) -> None:
         """
         Initializes the connection pool if it doesn't exist or isn't usable.
         
-        This method first checks if a pool already exists and is usable by
-        attempting to acquire a connection and run a test query. If the pool
-        doesn't exist or isn't usable, a new pool is created.
+        This method first checks if a pool already exists and is usable by attempting to acquire a connection and run a test query. If the pool doesn't exist or isn't usable, a new pool is created.
         
         Thread Safety:
             - Pool creation is protected by a per-configuration lock
@@ -405,14 +726,16 @@ class AsyncPoolManager(ABC):
             - Safe for multiple concurrent calls from the same event loop
             - Database connections are tested with a simple SELECT 1 query
             - Failed pools are properly closed before recreating them
+            - Connections acquired for testing are properly released back to the pool
         """
         # Check if existing pool is usable
         if self._pool:
+            is_healthy = False
             try:
-                async with self._pool.acquire() as conn:
-                    await self._test_connection(conn)
-                return
+                is_healthy = await self._pool.health_check()
             except Exception as e:
+                pass
+            if not is_healthy:
                 logger.debug(f"Existing pool unusable for {self.alias()} - {self.hash()}: {e}")
                 try:
                     await self._pool.close()
@@ -424,8 +747,9 @@ class AsyncPoolManager(ABC):
         async with self._pool_lock:
             if self._pool is None:
                 try:
+                    start_time = time.time()
                     self._pool = await self._create_pool(self)
-                    logger.info(f"{self.alias()} - {self.hash()} async pool initialized")
+                    logger.info(f"{self.alias()} - {self.hash()} async pool initialized in {(time.time() - start_time):.2f}s")
                 except Exception as e:
                     logger.error(f"{self.alias()} - {self.hash()} async pool creation failed: {e}")
                     self._pool = None
@@ -445,50 +769,106 @@ class AsyncPoolManager(ABC):
             await conn.execute("SELECT 1")
         except Exception:
             raise
+    
+    @classmethod
+    async def _cleanup_connection(cls, async_conn: AsyncConnection):
+        try:            
+            try:
+                await async_conn.commit_transaction_async()
+            except Exception as e:
+                logger.warning(f"Error committing transaction during cleanup: {e}")
 
+            try:      
+                raw_conn = async_conn.get_raw_connection()
+                for key, conn_set in cls._active_connections.items():
+                    if async_conn in conn_set:
+                        pool = cls._shared_pools.get(key)
+                        if pool:
+                            await pool.release(raw_conn)
+                        conn_set.discard(async_conn)
+                        break
+            except Exception as e:
+                logger.warning(f"Error releasing connection during cleanup: {e}")
+        except Exception as e:
+            logger.error(f"Error during connection cleanup: {e}")
 
     @classmethod
-    async def close_pool(cls, config_hash: Optional[str] = None) -> None:
+    async def _release_pending_connections(cls, key, timeout):
+        # Handle active connections first
+        active_conns = cls._active_connections.get(key, set())
+        if active_conns:
+            logger.info(f"Cleaning up {len(active_conns)} active connections for pool {key}")
+            
+            # Process each tracked connection with a timeout
+            cleanup_tasks = []
+            for conn in list(active_conns):
+                task = asyncio.create_task(cls._cleanup_connection(conn))
+                cleanup_tasks.append(task)
+            
+            # Wait for all connections to be cleaned up with timeout
+            if cleanup_tasks:
+                try:
+                    await asyncio.wait_for(asyncio.gather(*cleanup_tasks), timeout=timeout)
+                except asyncio.TimeoutError:
+                    logger.warning(f"Timeout waiting for connections to be released for pool {key}")
+
+    @classmethod
+    async def close_pool(cls, config_hash: Optional[str] = None, timeout: Optional[float]=60) -> None:
         """
-        Closes one or all shared connection pools.
-        
+        Closes one or all shared connection pools with proper cleanup.
+
         This method should be called during application shutdown to properly
-        release database resources.
-        
+        release database resources. It first prevents new connections from being acquired,
+        then attempts to gracefully commit and release all active connections before
+        closing the pool.
+
         Args:
             config_hash (Optional[str], optional): Hash of the configuration
                 for the pool to close. If None, all pools will be closed.
                 Defaults to None.
+            timeout (Optional[float]): The number of seconds to wait before
+                canceling the proper commit+release of pending connections. 
+                If timeout is reached, will forcibly close connections (losing active transactions) (at least for Postgres, MySql and Sqlite)
         """
         keys = [config_hash] if config_hash else list(cls._shared_pools.keys())
+        
+        # First mark all specified pools as shutting down
         for key in keys:
-            pool = cls._shared_pools.get(key)
-            if pool:
-                try:
-                    await pool.close()
-                    logger.info(f"Pool for {key} closed")
-                except Exception as e:
-                    logger.error(f"Error closing pool for {key}: {e}")
-                finally:
-                    cls._shared_pools.pop(key, None)
-                    cls._shared_locks.pop(key, None)
+            cls._shutting_down[key] = True
+            logger.info(f"Pool {key} marked as shutting down, no new connections allowed")
+        
+        # Then process each pool
+        for key in keys:
+            try:
+                await AsyncPoolManager._release_pending_connections(key, timeout)
+                pool = cls._shared_pools.get(key)
+                if pool:
+                    try:
+                        # Use the ConnectionPool interface force parameter
+                        await pool.close(force=True)
+                        logger.info(f"Pool for {key} closed")
+                    except Exception as e:
+                        logger.error(f"Error closing pool for {key}: {e}")
+            finally:
+                # Clean up all references to this pool
+                cls._shared_pools.pop(key, None)
+                cls._shared_locks.pop(key, None)
+                cls._active_connections.pop(key, None)
+                cls._shutting_down.pop(key, None)
 
     @abstractmethod
-    async def _create_pool(self, config: Dict) -> Any:
+    async def _create_pool(self, config: Dict) -> ConnectionPool:
         """
         Creates a new connection pool.
         
         This abstract method must be implemented by subclasses to create a
-        connection pool specific to the database backend being used.
+        ConnectionPool implementation specific to the database backend being used.
         
         Args:
             config (Dict): Database configuration dictionary.
             
         Returns:
-            Any: A new connection pool object compatible with:
-                - acquire() method to get a connection
-                - close() method to shutdown the pool
-                - Connections support execute("SELECT 1") for health checks
+            ConnectionPool: A connection pool that implements the ConnectionPool interface.
         """
         raise NotImplementedError()
 
@@ -496,10 +876,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
     """
     Manages synchronized and asynchronous database connection lifecycles.
     
-    This class provides a unified interface for obtaining both sync and async
-    database connections, with proper resource management through context managers.
-    It handles connection pooling for async connections and caching for sync
-    connections.
+    This class provides a unified interface for obtaining both sync and async database connections, with proper resource management through context managers. It handles connection pooling for async connections and caching for sync connections.
     
     Features:
         - Synchronous connection caching with automatic cleanup
@@ -563,9 +940,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
         """
         Returns a synchronized database connection.
         
-        This method returns an existing connection if one is already cached,
-        or creates a new one if needed. The connection is wrapped in the
-        SyncConnection interface for standardized access.
+        This method returns an existing connection if one is already cached, or creates a new one if needed. The connection is wrapped in the SyncConnection interface for standardized access.
         
         Thread Safety:
             - NOT thread-safe: the cached connection is per-instance
@@ -576,11 +951,15 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
             SyncConnection: A database connection for synchronous operations.
             
         Note:
-            The connection should be closed with release_sync_connection()
-            or by using the sync_connection() context manager.
+            The connection should be closed with release_sync_connection() or by using the sync_connection() context manager.
         """
         if self._sync_conn is None:
-            raw_conn = self._create_sync_connection(self.config())
+            try:
+                start_time = time.time()
+                raw_conn = self._create_sync_connection(self.config())
+                logger.info(f"Sync connection created and cached for {self.alias()} in {(time.time() - start_time):.2f}s")
+            except Exception as e:
+                logger.error(f"Could not create a sync connection for {self.alias()}")
             self._sync_conn = self._wrap_sync_connection(raw_conn)
         return self._sync_conn     
 
@@ -644,9 +1023,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
         """
         Acquires an asynchronous connection from the pool.
         
-        This method ensures the connection pool is initialized, then acquires
-        a connection from it and wraps it in the AsyncConnection interface
-        for standardized access.
+        This method ensures the connection pool is initialized, then acquires a connection from it and wraps it in the AsyncConnection interface for standardized access.
         
         Thread Safety:
             - Safe to call from multiple coroutines in the same event loop
@@ -662,12 +1039,11 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
             AsyncConnection: A database connection for asynchronous operations.
             
         Note:
-            The connection should be released with release_async_connection()
-            or by using the async_connection() context manager.
+            The connection should be released with release_async_connection() or by using the async_connection() context manager.
         """
         await self._initialize_pool_if_needed()
-        raw_conn = await self._pool.acquire() 
-        return self._wrap_async_connection(raw_conn)
+        async_conn = await self._get_connection_from_pool(self._wrap_async_connection)
+        return async_conn
 
     async def release_async_connection(self, async_conn: AsyncConnection):
         """
@@ -680,8 +1056,8 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
             async_conn (AsyncConnection): The connection to release.
         """
         if async_conn and self._pool:
-            try:
-                await self._pool.release(async_conn.get_raw_connection())
+            try:                
+                await self._release_connection_to_pool(async_conn)
             except Exception as e:
                 logger.warning(f"{self.alias()} failed to release async connection: {e}")
 
@@ -722,7 +1098,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
         Returns:
             SyncConnection: A wrapped connection implementing the SyncConnection interface.
         """
-        raise NotImplementedError()
+        raise Exception("Derived class must implement this")
 
     @abstractmethod
     def _wrap_async_connection(self, raw_conn: Any) -> AsyncConnection:
@@ -738,7 +1114,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
         Returns:
             AsyncConnection: A wrapped connection implementing the AsyncConnection interface.
         """
-        raise NotImplementedError()
+        raise Exception("Derived class must implement this")
 
     @abstractmethod
     def _create_sync_connection(self, config: Dict) -> Any:
@@ -757,17 +1133,14 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
         Example implementation:
             return pymysql.connect(**config)
         """
-        raise NotImplementedError() 
+        raise Exception("Derived class must implement this")  
 
 
 class BaseDatabase(DatabaseConnectionManager):
     '''
     Base class for all database implementations.
     
-    This class inherits from DatabaseConnectionManager to provide connection
-    management functionality. Specific database implementations (PostgreSQL,
-    MySQL, SQLite) should inherit from this class and implement the required
-    abstract methods.
+    This class inherits from DatabaseConnectionManager to provide connection management functionality. Specific database implementations (PostgreSQL, MySQL, SQLite) should inherit from this class and implement the required abstract methods.
     
     Public API:
         - get_sync_connection() / release_sync_connection(): Manage sync connections
@@ -807,7 +1180,11 @@ class BaseDatabase(DatabaseConnectionManager):
         env (str, optional): Environment label (e.g. prod, dev, test). Defaults to "prod".
     '''
     def __init__(self, database: str, host: str="localhost", port: int=5432, user: str=None, 
-                 password: str=None, alias: str=None, env: str='prod', *args, **kwargs):
+                 password: str=None, alias: str=None, env: str='prod', 
+                 connection_acquisition_timeout: float=10.0, *args, **kwargs):
+        # Store the timeout value
+        self.connection_acquisition_timeout = connection_acquisition_timeout
+        
         # Forward all named parameters
         super().__init__(
             database=database, 
@@ -820,6 +1197,17 @@ class BaseDatabase(DatabaseConnectionManager):
             *args, 
             **kwargs
         )
+
+    def _calculate_pool_size(self) -> Tuple[int, int]:
+        """Calculate optimal pool size based on environment"""        
+        if self.env() == 'prod':
+            cpus = os.cpu_count() or 1
+            min_size = max(2, cpus // 4)
+            max_size = cpus * 2
+        else:
+            min_size = 1
+            max_size = 5
+        return min_size, max_size
 
 
 class PostgresSyncConnection(SyncConnection):
@@ -999,6 +1387,143 @@ class PostgresAsyncConnection(AsyncConnection):
         """
         await self._conn.close()
 
+
+class PostgresConnectionPool(ConnectionPool):
+    """
+    PostgreSQL implementation of ConnectionPool using asyncpg.
+    
+    This class wraps asyncpg's connection pool to provide a standardized interface
+    and additional functionality for connection management.
+    
+    Attributes:
+        _pool: The underlying asyncpg pool
+        _timeout: Default timeout for connection acquisition
+        _last_health_check: Timestamp of the last health check
+        _health_check_interval: Minimum time between health checks in seconds
+        _healthy: Current known health state
+    """
+    
+    def __init__(self, pool, timeout: float = 10.0):
+        """
+        Initialize a PostgreSQL connection pool wrapper.
+        
+        Args:
+            pool: The underlying asyncpg pool
+            timeout: Default timeout for connection acquisition in seconds
+        """
+        self._pool = pool
+        self._timeout = timeout
+        self._last_health_check = 0
+        self._health_check_interval = 5.0  # Check at most every 5 seconds
+        self._healthy = True
+    
+    async def acquire(self, timeout: Optional[float] = None) -> Any:
+        """
+        Acquires a connection from the pool with timeout.
+        
+        Args:
+            timeout: Maximum time to wait for connection, defaults to pool default
+            
+        Returns:
+            The raw asyncpg connection
+            
+        Raises:
+            TimeoutError: If connection acquisition times out
+        """
+        timeout = timeout if timeout is not None else self._timeout
+        try:
+            return await asyncio.wait_for(self._pool.acquire(), timeout=timeout)
+        except asyncio.TimeoutError:
+            raise TimeoutError(f"Timed out waiting for PostgreSQL connection after {timeout}s")
+    
+    async def release(self, connection: Any) -> None:
+        """
+        Releases a connection back to the pool.
+        
+        Args:
+            connection: The asyncpg connection to release
+        """
+        await self._pool.release(connection)
+    
+    async def close(self, force: bool = False, timeout: Optional[float] = None) -> None:
+        """
+        Closes the pool and all connections.
+        
+        Args:
+            force: If True, forcibly terminate connections
+            timeout: Maximum time to wait for graceful shutdown when force=False
+        """
+        # asyncpg.Pool.close() has a cancel_tasks parameter that maps to our force parameter
+        await self._pool.close(cancel_tasks=force)
+    
+    async def health_check(self) -> bool:
+        """
+        Checks if the pool is healthy by testing a connection.
+        
+        To avoid excessive health checks, this caches the result for a short time.
+        
+        Returns:
+            True if the pool is healthy, False otherwise
+        """
+        now = time.time()
+        if now - self._last_health_check < self._health_check_interval and self._healthy:
+            return self._healthy
+            
+        self._last_health_check = now
+        try:
+            conn = await self.acquire()
+            try:
+                await conn.execute("SELECT 1")
+                self._healthy = True
+                return True
+            finally:
+                await self.release(conn)
+        except Exception:
+            self._healthy = False
+            return False
+    
+    @property
+    def min_size(self) -> int:
+        """Gets the minimum number of connections the pool maintains."""
+        return self._pool._minsize
+    
+    @property
+    def max_size(self) -> int:
+        """Gets the maximum number of connections the pool can create."""
+        return self._pool._maxsize
+    
+    @property
+    def size(self) -> int:
+        """Gets the current number of connections in the pool."""
+        return len(self._pool._holders)
+    
+    @property
+    def in_use(self) -> int:
+        """Gets the number of connections currently in use."""
+        return len([h for h in self._pool._holders if h._in_use])
+    
+    @property
+    def idle(self) -> int:
+        """Gets the number of idle connections in the pool."""
+        return len([h for h in self._pool._holders if not h._in_use])
+    
+    async def execute_on_pool(self, sql: str, params: Optional[Tuple] = None) -> Any:
+        """
+        Executes a query on a temporary connection from the pool.
+        
+        Args:
+            sql: The SQL query to execute
+            params: Query parameters
+            
+        Returns:
+            The query result
+        """
+        conn = await self.acquire()
+        try:
+            return await conn.execute(sql, *(params or []))
+        finally:
+            await self.release(conn)
+
 class PostgresDatabase(BaseDatabase):
     """
     PostgreSQL implementation of the BaseDatabase.
@@ -1037,17 +1562,27 @@ class PostgresDatabase(BaseDatabase):
         """
         return psycopg2.connect(**config)
        
-    async def _create_pool(self, config: Dict) -> Any:
+    async def _create_pool(self, config: Dict) -> ConnectionPool:
         """
-        Creates an asyncpg connection pool.
+        Creates a PostgreSQL connection pool wrapped in our interface.
         
         Args:
             config (Dict): Database configuration dictionary.
             
         Returns:
-            An asyncpg connection pool with configured limits and timeouts.
+            ConnectionPool: A PostgreSQL-specific pool implementation.
         """
-        return await asyncpg.create_pool(min_size=1, max_size=10, command_timeout=60.0, **config) 
+        min_size, max_size = self._calculate_pool_size()
+        raw_pool = await asyncpg.create_pool(
+            min_size=min_size, 
+            max_size=max_size, 
+            command_timeout=60.0, 
+            **config
+        )
+        return PostgresConnectionPool(
+            raw_pool, 
+            timeout=self.connection_acquisition_timeout
+        )
     
     def _wrap_async_connection(self, raw_conn):
         """
@@ -1288,9 +1823,10 @@ class MySqlDatabase(BaseDatabase):
             aiomysql expects the database name as 'db' instead of 'database',
             so the configuration is adjusted accordingly.
         """
+        min_size, max_size = self._calculate_pool_size()
         cfg = config.copy()
         cfg["db"] = cfg.pop("database")  # aiomysql expects "db"
-        return await aiomysql.create_pool(minsize=1, maxsize=10, **cfg)
+        return await aiomysql.create_pool(minsize=min_size, maxsize=max_size, **cfg)
     
     def _wrap_async_connection(self, raw_conn):
         """
@@ -1532,7 +2068,7 @@ class SqliteDatabase(BaseDatabase):
             
         Returns:
             A simple pool wrapper for an aiosqlite connection.
-        """
+        """        
         db_path = config["database"]
         conn = await aiosqlite.connect(db_path)
         return SqliteDatabase._SimplePool(conn)
@@ -1665,3 +2201,17 @@ class MetadataCacheMixin:
             self._meta_cache[entity] = meta
             self._keys_cache[entity] = list(meta.keys())
             self._types_cache[entity] = list(meta.values())
+
+
+class DatabaseFactory:
+    @staticmethod
+    def create_database(db_type: str, db_config: DatabaseConfig) -> BaseDatabase:
+        """Factory method to create the appropriate database instance"""
+        if db_type.lower() == 'postgres':
+            return PostgresDatabase(**db_config.config())
+        elif db_type.lower() == 'mysql':
+            return MySqlDatabase(**db_config.config())
+        elif db_type.lower() == 'sqlite':
+            return SqliteDatabase(**db_config.config())
+        else:
+            raise ValueError(f"Unsupported database type: {db_type}")

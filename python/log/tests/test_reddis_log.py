@@ -426,7 +426,7 @@ async def test_multiple_log_levels(capsys):
     # Send messages at different log levels
     mylog.debug(debug_message)
     mylog.info(info_message)
-    mylog.warn(warn_message)
+    mylog.warning(warn_message)
     mylog.error(error_message)
     mylog.critical(critical_message)
     
@@ -472,7 +472,7 @@ async def test_log_filtering_by_level(test_log_dir, patched_utils, capsys):
     # Use the global logging functions which should use our singleton instance
     mylog.debug(debug_message)
     mylog.info(info_message)
-    mylog.warn(warn_message)
+    mylog.warning(warn_message)
     mylog.error(error_message)
     
     # Wait for processing
