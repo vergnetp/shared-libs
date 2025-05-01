@@ -78,8 +78,72 @@ class SqliteConverter(SqlParameterConverter):
     """Converter for SQLite placeholders (?)"""    
     def convert_query(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
         return sql, params
+
+class BaseConnection:
+    """
+    Base class for database connections.
+    """
     
-class AsyncConnection(ABC):
+    @property
+    @abstractmethod
+    def parameter_converter(self) -> SqlParameterConverter:
+        """Returns the parameter converter for this connection."""
+        pass
+
+    def _normalize_result(self, raw_result: Any) -> List[Tuple]:
+        """
+        Default implementation to normalize results to a list of tuples.
+        
+        This handles common result types:
+        - None/empty results → empty list
+        - Cursor objects → fetch all results as tuples
+        - List of tuples → returned as is
+        - List of dict-like objects → converted to tuples
+        - Single scalar result → wrapped in a list with a single tuple
+        
+        Subclasses can override for database-specific behavior.
+        """
+        # Handle None/empty results
+        if raw_result is None:
+            return []
+        
+        # Handle cursor objects (common in sync drivers)
+        if hasattr(raw_result, 'fetchall') and callable(getattr(raw_result, 'fetchall')):
+            return raw_result.fetchall()
+        
+        # Already a list of tuples
+        if (isinstance(raw_result, list) and 
+            (not raw_result or isinstance(raw_result[0], tuple))):
+            return raw_result
+        
+        # Handle Oracle/SQL Server specific cursor result types
+        if hasattr(raw_result, 'rowcount') and hasattr(raw_result, 'description'):
+            try:
+                return list(raw_result)  # Many cursor objects are iterable
+            except (TypeError, ValueError):
+                if hasattr(raw_result, 'fetchall'):
+                    return raw_result.fetchall()
+        
+        # List of dict-like objects (e.g., asyncpg Records)
+        if (isinstance(raw_result, list) and raw_result and
+            hasattr(raw_result[0], 'keys') and 
+            callable(getattr(raw_result[0], 'keys'))):
+            # Convert each record to a tuple
+            return [tuple(record.values()) for record in raw_result]
+        
+        # Single scalar result
+        if not isinstance(raw_result, (list, tuple)):
+            return [(raw_result,)]
+        
+        # Default case - try to convert to a list of tuples
+        try:
+            return [tuple(row) if not isinstance(row, tuple) else row 
+                  for row in raw_result]
+        except (TypeError, ValueError):
+            # If conversion fails, wrap in a list with single tuple
+            return [(raw_result,)]
+            
+class AsyncConnection(BaseConnection, ABC):
     """
     Abstract base class defining the interface for asynchronous database connections.
     
@@ -88,13 +152,7 @@ class AsyncConnection(ABC):
     specific database systems (PostgreSQL, MySQL, SQLite, etc.).
     
     All methods are abstract and must be implemented by derived classes.
-    """
-
-    @property
-    @abstractmethod
-    def parameter_converter(self) -> SqlParameterConverter:
-        """Returns the parameter converter for this connection."""
-        pass
+    """ 
 
     @abstractmethod
     def get_raw_connection(self) -> Any:
@@ -126,7 +184,7 @@ class AsyncConnection(ABC):
         """
         pass
 
-    async def execute_async(self, sql: str, params: Optional[tuple] = None) -> Any:
+    async def execute_async(self, sql: str, params: Optional[tuple] = None) -> List[Tuple]:
         """
         Asynchronously executes a SQL query with standard ? placeholders.
         
@@ -135,13 +193,14 @@ class AsyncConnection(ABC):
             params: Parameters for the query
             
         Returns:
-            Query result
+            List[Tuple]: Result rows as tuples
         """
         converted_sql, converted_params = self.parameter_converter.convert_query(sql, params)
-        return await self._execute_async_raw(converted_sql, converted_params)
+        raw_result = await self._execute_async(converted_sql, converted_params)
+        return self._normalize_result(raw_result)
 
     @abstractmethod
-    async def executemany_async(self, sql: str, param_list: List[tuple]) -> Any:
+    async def _executemany_async(self, sql: str, param_list: List[tuple]) -> Any:
         """
         Asynchronously executes a SQL query multiple times with different parameters.
         
@@ -156,6 +215,22 @@ class AsyncConnection(ABC):
             Any: Query result, format depends on the database backend.
         """
         pass
+
+    async def executemany_async(self, sql: str, param_list: List[tuple]) -> List[Tuple]:
+        """
+        Asynchronously executes a SQL query multiple times with different parameters.
+        
+        Args:
+            sql: SQL query with ? placeholders
+            param_list: List of parameter tuples, one for each execution
+            
+        Returns:
+            List[Tuple]: Result rows as tuples
+        """
+        converted_sql, _ = self.parameter_converter.convert_query(sql)
+        # Note: we're only converting the SQL, not the parameters list
+        raw_result = await self._executemany_async(converted_sql, param_list)
+        return self._normalize_result(raw_result)
 
     @abstractmethod
     async def begin_transaction_async(self) -> None:
@@ -207,12 +282,6 @@ class SyncConnection(ABC):
     All methods are abstract and must be implemented by derived classes.
     """
 
-    @property
-    @abstractmethod
-    def parameter_converter(self) -> SqlParameterConverter:
-        """Returns the parameter converter for this connection."""
-        pass
-
     @abstractmethod
     def _execute(self, sql: str, params: Optional[tuple] = None) -> Any:
         """
@@ -230,7 +299,7 @@ class SyncConnection(ABC):
         """
         pass
 
-    def execute(self, sql: str, params: Optional[tuple] = None) -> Any:
+    def execute(self, sql: str, params: Optional[tuple] = None) -> list[Tuple]:
         """
         Executes a SQL query with standard ? placeholders.
         
@@ -239,13 +308,14 @@ class SyncConnection(ABC):
             params: Parameters for the query
             
         Returns:
-            Query result
+            List[Tuple]: Result rows as tuples
         """
         converted_sql, converted_params = self.parameter_converter.convert_query(sql, params)
-        return self._execute_raw(converted_sql, converted_params)
+        raw_result = self._execute(converted_sql, converted_params)
+        return self._normalize_result(raw_result)
     
     @abstractmethod
-    def executemany(self, sql: str, param_list: List[tuple]) -> Any:
+    def _executemany(self, sql: str, param_list: List[tuple]) -> Any:
         """
         Executes a SQL query multiple times with different parameters.
         
@@ -260,6 +330,21 @@ class SyncConnection(ABC):
             Any: Query result, format depends on the database backend.
         """
         pass
+
+    def executemany(self, sql: str, param_list: List[tuple]) -> List[Tuple]:
+        """
+        Executes a SQL query multiple times with different parameters.
+        
+        Args:
+            sql: SQL query with ? placeholders
+            param_list: List of parameter tuples, one for each execution
+            
+        Returns:
+            List[Tuple]: Result rows as tuples
+        """
+        converted_sql, _ = self.parameter_converter.convert_query(sql)
+        raw_result = self._executemany(converted_sql, param_list)
+        return self._normalize_result(raw_result)
 
     @abstractmethod
     def begin_transaction(self) -> None:
@@ -1414,7 +1499,7 @@ class PostgresSyncConnection(SyncConnection):
         """
         return self._cursor.execute(sql, params or ())
 
-    def executemany(self, sql, param_list) -> Any:
+    def _executemany(self, sql, param_list) -> Any:
         """
         Executes a SQL query multiple times with different parameters.
         
@@ -1508,23 +1593,20 @@ class PostgresAsyncConnection(AsyncConnection):
             Any: The query result from asyncpg.
         """
         return await self._conn.execute(sql, *(params or []))
-
-    async def executemany_async(self, sql, param_list) -> Any:
+    
+    async def _executemany_async(self, sql: str, param_list: List[tuple]) -> Any:
         """
-        Asynchronously executes a SQL query multiple times with different parameters.
-        
+        Executes a SQL query multiple times with different parameters.
         Since asyncpg doesn't have a direct executemany equivalent, this method
         executes the query in a loop for each parameter set.
-        
-        Args:
-            sql (str): SQL query with $1, $2, etc. placeholders.
-            param_list (List[tuple]): List of parameter tuples, one for each execution.
-            
-        Returns:
-            Any: Result of the last execution.
         """
+        results = []
         for params in param_list:
-            await self._conn.execute(sql, *params)
+            # Note: asyncpg expects parameters as separate arguments
+            result = await self._conn.execute(sql, *params)
+            if result:
+                results.append(result)
+        return results
 
     async def begin_transaction_async(self):
         """
@@ -1825,7 +1907,7 @@ class MysqlSyncConnection(SyncConnection):
         """
         return self._cursor.execute(sql, params or ())
 
-    def executemany(self, sql, param_list) -> Any:
+    def _executemany(self, sql, param_list) -> Any:
         """
         Executes a SQL query multiple times with different parameters.
         
@@ -1916,7 +1998,7 @@ class MysqlAsyncConnection(AsyncConnection):
             await cur.execute(sql, params or ())
             return await cur.fetchall()
 
-    async def executemany_async(self, sql, param_list) -> Any:
+    async def _executemany_async(self, sql, param_list) -> Any:
         """
         Asynchronously executes a SQL query multiple times with different parameters.
         
@@ -2237,7 +2319,7 @@ class SqliteSyncConnection(SyncConnection):
         """
         return self._cursor.execute(sql, params or ())
 
-    def executemany(self, sql, param_list) -> Any:
+    def _executemany(self, sql, param_list) -> Any:
         """
         Executes a SQL query multiple times with different parameters.
         
@@ -2327,7 +2409,7 @@ class SqliteAsyncConnection(AsyncConnection):
         async with self._conn.execute(sql, params or ()) as cursor:
             return await cursor.fetchall()
 
-    async def executemany_async(self, sql, param_list) -> Any:
+    async def _executemany_async(self, sql, param_list) -> None:
         """
         Asynchronously executes a SQL query multiple times with different parameters.
         
