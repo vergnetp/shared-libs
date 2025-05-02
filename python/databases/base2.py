@@ -570,6 +570,21 @@ class SqlParameterConverter(ABC):
         """
         return None
 
+    def make_comment_sql(self, tags: Optional[Dict[str, Any]]) -> Optional[str]:
+        """
+        Return SQL comment with tags if supported by database.
+
+        Args:
+            tags (Optional[Dict[str, Any]]): Tags to include as comment.
+
+        Returns:
+            Optional[str]: SQL comment or None.
+        """
+        if tags:
+            parts = [f"{k}={v}" for k, v in tags.items()]
+            return f"/* {' '.join(parts)} */"
+        return None
+        
 class PostgresAsyncConverter(SqlParameterConverter):
     """Converter for PostgreSQL numeric placeholders ($1, $2, etc.)"""    
     def convert_query(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
@@ -815,7 +830,7 @@ class AsyncConnection(BaseConnection, ABC):
 
     @circuit_breaker(name="async_execute")
     @track_slow_method
-    async def execute_async(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None) -> List[Tuple]:
+    async def execute_async(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Asynchronously executes a SQL query with standard ? placeholders.
         
@@ -826,14 +841,20 @@ class AsyncConnection(BaseConnection, ABC):
             sql: SQL query with ? placeholders
             params: Parameters for the query
             timout (float, optional): a timeout, in second, after which a TimeoutError is raised
+            tags: optional dictionary of tags to inject to the sql as comment
             
         Returns:
             List[Tuple]: Result rows as tuples
         """
         stmt = await self._get_statement_async(sql)
+        
         timeout_sql = self.parameter_converter.make_timeout_sql(timeout)
         if timeout_sql:
             await self._execute_statement_async(timeout_sql)
+
+        comment_sql = self.parameter_converter.make_comment_sql(tags)
+        if comment_sql:
+            await self._execute_statement_async(comment_sql)
         
         if timeout:
             raw_result = await asyncio.wait_for(self._execute_statement_async(stmt, params), timeout=timeout)
@@ -943,7 +964,7 @@ class SyncConnection(ABC, BaseConnection):
     All methods are abstract and must be implemented by derived classes.
     """
     @circuit_breaker(name="sync_execute")
-    def execute_sync(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None) -> List[Tuple]:
+    def execute_sync(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Synchronously executes a SQL query with standard ? placeholders.
         
@@ -954,11 +975,17 @@ class SyncConnection(ABC, BaseConnection):
             sql: SQL query with ? placeholders
             params: Parameters for the query
             timeout: optional timeout in seconds after which a TimeoutError is raised
+            tags: optional dictionary of tags to inject as sql comments
+            
         Returns:
             List[Tuple]: Result rows as tuples
         """
         stmt = self._get_statement_sync(sql)
 
+        comment_sql = self.parameter_converter.make_comment_sql(tags)
+        if comment_sql:
+            self._execute_statement_sync(comment_sql)
+        
         timeout_sql = self.parameter_converter.make_timeout_sql(timeout)
         if timeout_sql:
             self._execute_statement_sync(timeout_sql)
