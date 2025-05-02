@@ -451,7 +451,7 @@ class StatementCache:
         self._resize_interval = 300  # Check resize every 5 minutes
     
     @property
-    def hit_ratio(self):
+    def hit_ratio(self) -> float:
         """Calculate the cache hit ratio"""
         total = self._hits + self._misses
         return self._hits / total if total > 0 else 0
@@ -503,7 +503,7 @@ class StatementCache:
             self._hits = int(self._hits * 0.5)
             self._misses = int(self._misses * 0.5)
     
-    def get(self, sql_hash):
+    def get(self, sql_hash) -> Optional[Tuple[Any, str]]:
         """Get a prepared statement from the cache in a thread-safe manner"""
         with self._lock:
             if sql_hash in self._cache:
@@ -1198,7 +1198,7 @@ class DatabaseConfig:
         self.__env = env
         self.__alias = alias or database or f'database'
 
-    def config(self) -> Dict:
+    def config(self) -> Dict[str, Any]:
         """
         Returns the database configuration as a dictionary.
         
@@ -1413,7 +1413,7 @@ class AsyncPoolManager(ABC):
         return results    
 
     @classmethod
-    def get_pool_metrics(cls, config_hash=None):
+    def get_pool_metrics(cls, config_hash=None) -> Dict:
         if config_hash:
             return cls._metrics.get(config_hash, {})
         return cls._metrics
@@ -1558,7 +1558,7 @@ class AsyncPoolManager(ABC):
             raise
         self._connections.discard(async_conn)
 
-    async def check_for_leaked_connections(self, threshold_seconds=300):
+    async def check_for_leaked_connections(self, threshold_seconds=300) -> List[Tuple[AsyncConnection, float, str]]:
         """
         Check for connections that have been active for longer than the threshold.
         Returns a list of (connection, duration, stack) tuples for leaked connections.
@@ -1911,7 +1911,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
             self._local._sync_conn = None
 
     @contextlib.contextmanager
-    async def sync_connection(self):
+    def sync_connection(self) -> -> Iterator[SyncConnection]:
         """
         Context manager for safe synchronous connection usage.
         
@@ -2010,7 +2010,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
                 pass
 
     @contextlib.asynccontextmanager
-    async def async_connection(self):
+    async def async_connection(self) -> Iterator[AsyncConnection]:
         """
         Async context manager for safe asynchronous connection usage.
         
