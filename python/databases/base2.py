@@ -558,6 +558,18 @@ class SqlParameterConverter(ABC):
         """
         pass
 
+    def make_timeout_sql(self, timeout: Optional[float]) -> Optional[str]:
+        """
+        Return a SQL statement to enforce query timeout (if applicable).
+
+        Args:
+            timeout (Optional[float]): Timeout in seconds.
+
+        Returns:
+            Optional[str]: SQL statement to enforce timeout, or None if not supported.
+        """
+        return None
+
 class PostgresAsyncConverter(SqlParameterConverter):
     """Converter for PostgreSQL numeric placeholders ($1, $2, etc.)"""    
     def convert_query(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
@@ -569,6 +581,11 @@ class PostgresAsyncConverter(SqlParameterConverter):
         
         return new_sql, params
 
+    def make_timeout_sql(self, timeout: Optional[float]) -> Optional[str]:
+        if timeout:
+            return f"SET LOCAL statement_timeout = {int(timeout * 1000)}"
+        return None
+        
 class PostgresSyncConverter(SqlParameterConverter):
     """Converter for PostgreSQL percent placeholders (%s)"""    
     def convert_query(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
@@ -793,7 +810,7 @@ class AsyncConnection(BaseConnection, ABC):
 
     @circuit_breaker(name="async_execute")
     @track_slow_method
-    async def execute_async(self, sql: str, params: Optional[tuple] = None) -> List[Tuple]:
+    async def execute_async(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None) -> List[Tuple]:
         """
         Asynchronously executes a SQL query with standard ? placeholders.
         
@@ -803,12 +820,21 @@ class AsyncConnection(BaseConnection, ABC):
         Args:
             sql: SQL query with ? placeholders
             params: Parameters for the query
+            timout (float, optional): a timeout, in second, after which a TimeoutError is raised
             
         Returns:
             List[Tuple]: Result rows as tuples
         """
         stmt = await self._get_statement_async(sql)
-        raw_result = await self._execute_statement_async(stmt, params)
+        timeout_sql = self.parameter_converter.make_timeout_sql(timeout)
+        if timeout_sql:
+            await self._execute_statement_async(timeout_sql)
+        
+        if timeout:
+            raw_result = await asyncio.wait_for(self._execute_statement_async(stmt, params), timeout=timeout)
+        else:
+            raw_result = await self._execute_statement_async(stmt, params)
+
         return self._normalize_result(raw_result)
 
     @circuit_breaker(name="async_executemany")
@@ -912,7 +938,7 @@ class SyncConnection(ABC, BaseConnection):
     All methods are abstract and must be implemented by derived classes.
     """
     @circuit_breaker(name="sync_execute")
-    def execute_sync(self, sql: str, params: Optional[tuple] = None) -> List[Tuple]:
+    def execute_sync(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None) -> List[Tuple]:
         """
         Synchronously executes a SQL query with standard ? placeholders.
         
@@ -922,20 +948,31 @@ class SyncConnection(ABC, BaseConnection):
         Args:
             sql: SQL query with ? placeholders
             params: Parameters for the query
-            
+            timeout: optional timeout in seconds after which a TimeoutError is raised
         Returns:
             List[Tuple]: Result rows as tuples
         """
         stmt = self._get_statement_sync(sql)
 
+        timeout_sql = self.parameter_converter.make_timeout_sql(timeout)
+        if timeout_sql:
+            self._execute_statement_sync(timeout_sql)
+
+        # Define Python soft timeout (slightly lower)
+        soft_timeout = (timeout - 0.5) if timeout and timeout > 1 else None
+
         start = time.time()
         raw_result = self._execute_statement_sync(stmt, params)
         elapsed = time.time() - start
+
+        if soft_timeout and elapsed > soft_timeout:
+            raise TimeoutError(f"Query exceeded soft timeout of {soft_timeout}s (took {elapsed:.2f}s): {sql}")
 
         if elapsed > 2.0:
             logger.warning(f"Slow query ({elapsed:.2f}s): {sql} params={params}")
 
         return self._normalize_result(raw_result)
+
 
     @circuit_breaker(name="sync_executemany")
     @overridable
