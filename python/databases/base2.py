@@ -1,13 +1,17 @@
 import sys
 import os
 import json
+import random
 import time
 import hashlib
 import asyncio
 import contextlib
 import traceback
-from typing import Set, Awaitable, Callable, Optional, Tuple, List, Any, Dict, final, Union
-from typing import AsyncIterator, Iterator
+from typing import Set, Awaitable, Callable, Optional, Tuple, List, Any, Dict, final, Union, ClassVar, Final, AsyncIterator, Iterator
+import itertools
+import threading
+import enum
+import functools
 from abc import ABC, abstractmethod
 from ..errors import TrackError
 from .. import log as logger
@@ -21,8 +25,511 @@ import pymysql
 import aiomysql
 
 
-from abc import ABC, abstractmethod
-from typing import Tuple, List, Any, Optional
+class CircuitState(enum.Enum):
+    CLOSED = 'closed'      # Normal operation, requests go through
+    OPEN = 'open'          # Service unavailable, short-circuits requests
+    HALF_OPEN = 'half-open'  # Testing if the service is back
+
+class CircuitBreaker:
+    """
+    Circuit breaker implementation that can be used as a decorator for sync and async methods.
+    """
+    # Class-level dictionary to store circuit breakers by name
+    _breakers = {}
+    _lock = threading.RLock()
+    
+    @classmethod
+    def get_or_create(cls, name, failure_threshold=5, recovery_timeout=30.0, 
+                     half_open_max_calls=3, window_size=60.0):
+        """Get an existing circuit breaker or create a new one"""
+        with cls._lock:
+            if name not in cls._breakers:
+                cls._breakers[name] = CircuitBreaker(
+                    name, failure_threshold, recovery_timeout, 
+                    half_open_max_calls, window_size
+                )
+            return cls._breakers[name]
+    
+    def __init__(self, name, failure_threshold=5, recovery_timeout=30.0, 
+                half_open_max_calls=3, window_size=60.0):
+        """
+        Initialize a new circuit breaker.
+        
+        Args:
+            name (str): Unique name for this circuit breaker
+            failure_threshold (int): Number of failures before opening the circuit
+            recovery_timeout (float): Seconds to wait before attempting recovery
+            half_open_max_calls (int): Max calls to allow in half-open state
+            window_size (float): Time window in seconds to track failures
+        """
+        self.name = name
+        self._state = CircuitState.CLOSED
+        self._failure_count = 0
+        self._last_failure_time = 0
+        self._last_state_change_time = time.time()
+        self._half_open_calls = 0
+        self._half_open_successes = 0
+        
+        self._failure_threshold = failure_threshold
+        self._recovery_timeout = recovery_timeout
+        self._half_open_max_calls = half_open_max_calls
+        self._window_size = window_size
+        
+        self._recent_failures = []  # Track failures with timestamps
+        self._lock = threading.RLock()  # For thread safety 
+    
+    @property
+    def state(self):
+        """Get the current state of the circuit breaker."""
+        with self._lock:
+            self._check_state_transitions()
+            return self._state
+    
+    def _check_state_transitions(self):
+        """Check and apply state transitions based on timing."""
+        now = time.time()
+        
+        # Clean up old failures outside the window
+        self._recent_failures = [t for t in self._recent_failures 
+                              if now - t <= self._window_size]
+        
+        # Update failure count
+        self._failure_count = len(self._recent_failures)
+        
+        # Check for state transitions
+        if self._state == CircuitState.OPEN:
+            if now - self._last_state_change_time >= self._recovery_timeout:
+                self._state = CircuitState.HALF_OPEN
+                self._half_open_calls = 0
+                self._half_open_successes = 0
+                self._last_state_change_time = now
+                logger.info(f"Circuit {self.name} transitioning from OPEN to HALF_OPEN")
+        
+        elif self._state == CircuitState.HALF_OPEN:
+            if self._half_open_successes >= self._half_open_max_calls:
+                # Enough test calls succeeded, close the circuit
+                self._state = CircuitState.CLOSED
+                self._failure_count = 0
+                self._recent_failures = []
+                self._last_state_change_time = now
+                logger.info(f"Circuit {self.name} transitioning from HALF_OPEN to CLOSED")
+    
+    def record_success(self):
+        """Record a successful call through the circuit breaker."""
+        with self._lock:
+            if self._state == CircuitState.HALF_OPEN:
+                self._half_open_successes += 1
+                self._check_state_transitions()
+    
+    def record_failure(self):
+        """Record a failed call through the circuit breaker."""
+        now = time.time()
+        with self._lock:
+            self._last_failure_time = now
+            self._recent_failures.append(now)
+            
+            # Check if we need to open the circuit
+            if self._state == CircuitState.CLOSED and len(self._recent_failures) >= self._failure_threshold:
+                self._state = CircuitState.OPEN
+                self._last_state_change_time = now
+                logger.warning(f"Circuit {self.name} transitioning from CLOSED to OPEN after {self._failure_count} failures")
+            
+            elif self._state == CircuitState.HALF_OPEN:
+                # Any failure in half-open reverts to open
+                self._state = CircuitState.OPEN
+                self._last_state_change_time = now
+                logger.warning(f"Circuit {self.name} transitioning from HALF_OPEN back to OPEN due to failure")
+    
+    def allow_request(self):
+        """
+        Check if a request should be allowed through the circuit breaker.
+        
+        Returns:
+            bool: True if the request should be allowed, False otherwise
+        """
+        with self._lock:
+            self._check_state_transitions()
+            
+            if self._state == CircuitState.CLOSED:
+                return True
+            
+            if self._state == CircuitState.HALF_OPEN and self._half_open_calls < self._half_open_max_calls:
+                self._half_open_calls += 1
+                return True
+            
+            return False
+
+
+def circuit_breaker(name=None, failure_threshold=5, recovery_timeout=30.0, 
+                   half_open_max_calls=3, window_size=60.0):
+    """
+    Decorator that applies circuit breaker pattern to a function.
+
+    The circuit breaker pattern prevents cascading system failures by monitoring error rates. 
+    If too many failures occur within a time window, the circuit 'opens' and immediately rejects new requests without attempting to call the failing service. 
+    After a recovery timeout period, the circuit transitions to 'half-open' state, allowing a few test requests through. 
+    If these succeed, the circuit 'closes' and normal operation resumes; if they fail, the circuit opens again to protect system resources (and the previous steps repeat)
+    
+    Args:
+        name (str, optional): Name for this circuit breaker. If not provided, 
+                             the function name will be used.
+        failure_threshold (int): Number of failures before opening the circuit
+        recovery_timeout (float): Seconds to wait before attempting recovery
+        half_open_max_calls (int): Max calls to allow in half-open state
+        window_size (float): Time window in seconds to track failures
+        
+    Usage:
+        @circuit_breaker(name="db_operations")
+        async def database_operation():
+            # ...
+    """
+    def decorator(func):
+        breaker_name = name or f"{func.__module__}.{func.__qualname__}"
+        breaker = CircuitBreaker.get_or_create(
+            breaker_name, failure_threshold, recovery_timeout, 
+            half_open_max_calls, window_size
+        )
+        
+        @functools.wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            if not breaker.allow_request():
+                raise CircuitOpenError(f"Circuit {breaker_name} is OPEN")
+            
+            try:
+                result = await func(*args, **kwargs)
+                breaker.record_success()
+                return result
+            except Exception as e:
+                breaker.record_failure()
+                raise
+        
+        @functools.wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            if not breaker.allow_request():
+                raise CircuitOpenError(f"Circuit {breaker_name} is OPEN")
+            
+            try:
+                result = func(*args, **kwargs)
+                breaker.record_success()
+                return result
+            except Exception as e:
+                breaker.record_failure()
+                raise
+        
+        # Choose the appropriate wrapper based on whether the function is async or not
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        else:
+            return sync_wrapper
+    
+    return decorator
+
+
+class CircuitOpenError(Exception):
+    """Exception raised when a circuit breaker prevents an operation"""
+    pass
+
+
+def retry_with_backoff(max_retries=3, base_delay=0.1, max_delay=10.0, 
+                      exceptions=None, total_timeout=30.0):
+    """
+    Decorator for retrying functions with exponential backoff on specified exceptions.
+    
+    Args:
+        max_retries (int): Maximum number of retry attempts
+        base_delay (float): Initial delay in seconds
+        max_delay (float): Maximum delay between retries in seconds
+        exceptions (tuple, optional): Exception types to catch and retry. If None,
+                                     defaults to common database exceptions.
+        total_timeout (float, optional): Maximum total time for all retries in seconds.
+                                        Default is 30.0 seconds. Set to None to disable.
+    """
+    # Default common database exceptions to catch
+    if exceptions is None:
+        exceptions = (
+            # Generic exception types that work across drivers
+            ConnectionError,
+            TimeoutError,
+            # Combined list of common errors from various DB drivers
+            # These are string names to avoid import errors if a driver isn't installed
+            'OperationalError',
+            'InterfaceError',
+            'InternalError',
+            'PoolError',
+            'DatabaseError'
+        )
+    
+    # Convert string exception names to actual exception classes if available
+    exception_classes = []
+    for exc in exceptions:
+        if isinstance(exc, str):
+            # Look for exception in common database modules
+            for module in [sqlite3, psycopg2, asyncpg, pymysql, aiomysql, aiosqlite]:
+                if hasattr(module, exc):
+                    exception_classes.append(getattr(module, exc))
+        else:
+            exception_classes.append(exc)
+    
+    if exception_classes:
+        exceptions = tuple(exception_classes)
+    
+    def decorator(func):
+        @functools.wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            retries = 0
+            delay = base_delay
+            start_time = time.time()
+            
+            while True:
+                # Check total timeout if set
+                if total_timeout is not None and time.time() - start_time > total_timeout:
+                    method_name = getattr(args[0].__class__ if args else None, '__name__', 'unknown') + '.' + func.__name__
+                    logger.warning(f"Total timeout of {total_timeout}s exceeded for {method_name}")
+                    raise TimeoutError(f"Operation timed out after {total_timeout}s for {method_name}")
+                
+                try:
+                    return await func(*args, **kwargs)
+                except exceptions as e:
+                    retries += 1
+                    if retries > max_retries:
+                        logger.warning(f"Max retries ({max_retries}) exceeded for {func.__name__}: {e}")
+                        raise
+                    
+                    # Calculate delay with jitter to avoid thundering herd
+                    jitter = random.uniform(0.8, 1.2)
+                    sleep_time = min(delay * jitter, max_delay)
+                    
+                    # Check if next sleep would exceed total timeout
+                    if total_timeout is not None:
+                        elapsed = time.time() - start_time
+                        remaining = total_timeout - elapsed
+                        if remaining <= sleep_time:
+                            # If we can't do a full sleep, either do a shorter one or just timeout now
+                            if remaining > 0.1:  # Only sleep if we have a meaningful amount of time left
+                                sleep_time = remaining * 0.9  # Leave a little margin
+                                logger.debug(f"Adjusting sleep time to {sleep_time:.2f}s to respect total timeout")
+                            else:
+                                logger.warning(f"Total timeout of {total_timeout}s about to exceed for {func.__name__}")
+                                raise TimeoutError(f"Operation timed out after {total_timeout}s for {func.__name__}")
+                    
+                    logger.debug(f"Retry {retries}/{max_retries} for {func.__name__} after {sleep_time:.2f}s: {str(e)[:100]}")
+                    await asyncio.sleep(sleep_time)
+                    
+                    # Exponential backoff
+                    delay = min(delay * 2, max_delay)
+        
+        @functools.wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            retries = 0
+            delay = base_delay
+            start_time = time.time()
+            
+            while True:
+                # Check total timeout if set
+                if total_timeout is not None and time.time() - start_time > total_timeout:
+                    method_name = getattr(args[0].__class__ if args else None, '__name__', 'unknown') + '.' + func.__name__
+                    logger.warning(f"Total timeout of {total_timeout}s exceeded for {method_name}")
+                    raise TimeoutError(f"Operation timed out after {total_timeout}s for {method_name}")
+                
+                try:
+                    return func(*args, **kwargs)
+                except exceptions as e:
+                    retries += 1
+                    if retries > max_retries:
+                        logger.warning(f"Max retries ({max_retries}) exceeded for {func.__name__}: {e}")
+                        raise
+                    
+                    # Calculate delay with jitter to avoid thundering herd
+                    jitter = random.uniform(0.8, 1.2)
+                    sleep_time = min(delay * jitter, max_delay)
+                    
+                    # Check if next sleep would exceed total timeout
+                    if total_timeout is not None:
+                        elapsed = time.time() - start_time
+                        remaining = total_timeout - elapsed
+                        if remaining <= sleep_time:
+                            # If we can't do a full sleep, either do a shorter one or just timeout now
+                            if remaining > 0.1:  # Only sleep if we have a meaningful amount of time left
+                                sleep_time = remaining * 0.9  # Leave a little margin
+                                logger.debug(f"Adjusting sleep time to {sleep_time:.2f}s to respect total timeout")
+                            else:
+                                logger.warning(f"Total timeout of {total_timeout}s about to exceed for {func.__name__}")
+                                raise TimeoutError(f"Operation timed out after {total_timeout}s for {func.__name__}")
+                    
+                    logger.debug(f"Retry {retries}/{max_retries} for {func.__name__} after {sleep_time:.2f}s: {str(e)[:100]}")
+                    time.sleep(sleep_time)
+                    
+                    # Exponential backoff
+                    delay = min(delay * 2, max_delay)
+        
+        # Return appropriate wrapper based on whether the function is async or not
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        return sync_wrapper
+    
+    return decorator
+
+def track_slow_method(threshold=2.0):
+    """
+    Decorator that logs a warning if the execution of the method took longer than the threshold (default to 2 seconds).
+    Logs the subclass.method names, execution time, and arguments.
+    """
+    def decorator(func):
+        if asyncio.iscoroutinefunction(func):
+            @functools.wraps(func)
+            async def wrapper(*args, **kwargs):
+                start = time.time()
+                result = await func(*args, **kwargs)
+                elapsed = time.time() - start
+
+                if elapsed > threshold:
+                    instance = args[0]
+                    class_name = instance.__class__.__name__
+                    method_name = func.__name__
+
+                    try:
+                        arg_str = json.dumps(args[1:], default=str)
+                        kwarg_str = json.dumps(kwargs, default=str)
+                    except Exception:
+                        arg_str = str(args[1:])
+                        kwarg_str = str(kwargs)
+
+                    logger.warning(
+                        f"Slow method {class_name}.{method_name} took {elapsed:.2f}s. "
+                        f"Args={arg_str} Kwargs={kwarg_str}"
+                    )
+
+                return result
+        else:
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                start = time.time()
+                result = func(*args, **kwargs)
+                elapsed = time.time() - start
+
+                if elapsed > threshold:
+                    instance = args[0]
+                    class_name = instance.__class__.__name__
+                    method_name = func.__name__
+
+                    try:
+                        arg_str = json.dumps(args[1:], default=str)
+                        kwarg_str = json.dumps(kwargs, default=str)
+                    except Exception:
+                        arg_str = str(args[1:])
+                        kwarg_str = str(kwargs)
+
+                    logger.warning(
+                        f"Slow method {class_name}.{method_name} took {elapsed:.2f}s. "
+                        f"Args={arg_str} Kwargs={kwarg_str}"
+                    )
+
+                return result
+        return wrapper
+    return decorator
+
+def overridable(method):
+    """Marks a method as overridable for documentation / IDE purposes."""
+    method.__overridable__ = True
+    return method
+
+
+class StatementCache:
+    """Thread-safe cache for prepared SQL statements with dynamic sizing"""
+    
+    def __init__(self, initial_size=100, min_size=50, max_size=500, auto_resize=True):
+        self._cache = {}
+        self._max_size = initial_size
+        self._min_size = min_size
+        self._hard_max = max_size
+        self._auto_resize = auto_resize
+        self._lru = []  # Track usage for LRU eviction
+        self._lock = threading.Lock()  # Add a lock for thread safety
+        self._hits = 0
+        self._misses = 0
+        self._last_resize_check = time.time()
+        self._resize_interval = 300  # Check resize every 5 minutes
+    
+    @property
+    def hit_ratio(self):
+        """Calculate the cache hit ratio"""
+        total = self._hits + self._misses
+        return self._hits / total if total > 0 else 0
+    
+    def _check_resize(self):
+        """Dynamically resize the cache based on hit ratio and usage"""
+        if not self._auto_resize:
+            return
+            
+        now = time.time()
+        if now - self._last_resize_check < self._resize_interval:
+            return
+            
+        self._last_resize_check = now
+        total_ops = self._hits + self._misses
+        
+        # Only resize if we have enough operations to make a decision
+        if total_ops < 1000:
+            return
+        
+        hit_ratio = self.hit_ratio
+        current_usage = len(self._cache)
+        current_max = self._max_size
+        
+        # If hit ratio is high and we're close to capacity, increase size
+        if hit_ratio > 0.8 and current_usage > 0.9 * current_max:
+            new_size = min(current_max * 2, self._hard_max)
+            if new_size > current_max:
+                logger.info(f"Increasing statement cache size from {current_max} to {new_size} (hit ratio: {hit_ratio:.2f})")
+                self._max_size = new_size
+        
+        # If hit ratio is low and we're using much less than capacity, decrease size
+        elif hit_ratio < 0.4 and current_usage < 0.5 * current_max:
+            new_size = max(int(current_max / 2), self._min_size)
+            if new_size < current_max:
+                logger.info(f"Decreasing statement cache size from {current_max} to {new_size} (hit ratio: {hit_ratio:.2f})")
+                self._max_size = new_size
+                
+                # Trim the cache if needed
+                excess = len(self._cache) - self._max_size
+                if excess > 0:
+                    for _ in range(excess):
+                        if self._lru:
+                            lru_hash = self._lru.pop(0)
+                            self._cache.pop(lru_hash, None)
+        
+        # Reset stats periodically
+        if total_ops > 10000:
+            self._hits = int(self._hits * 0.5)
+            self._misses = int(self._misses * 0.5)
+    
+    def get(self, sql_hash):
+        """Get a prepared statement from the cache in a thread-safe manner"""
+        with self._lock:
+            if sql_hash in self._cache:
+                # Update LRU tracking
+                self._lru.remove(sql_hash)
+                self._lru.append(sql_hash)
+                self._hits += 1
+                self._check_resize()
+                return self._cache[sql_hash]
+            self._misses += 1
+            self._check_resize()
+        return None
+    
+    def put(self, sql_hash, statement, sql):
+        """Add a prepared statement to the cache in a thread-safe manner"""
+        with self._lock:
+            # Evict least recently used if at capacity
+            if len(self._cache) >= self._max_size and sql_hash not in self._cache:
+                lru_hash = self._lru.pop(0)
+                self._cache.pop(lru_hash, None)
+            
+            # Add to cache and update LRU
+            self._cache[sql_hash] = (statement, sql)
+            if sql_hash in self._lru:
+                self._lru.remove(sql_hash)
+            self._lru.append(sql_hash)
 
 class SqlParameterConverter(ABC):
     """
@@ -83,12 +590,8 @@ class BaseConnection:
     """
     Base class for database connections.
     """
-    
-    @property
-    @abstractmethod
-    def parameter_converter(self) -> SqlParameterConverter:
-        """Returns the parameter converter for this connection."""
-        pass
+    def __init__(self):
+         self._statement_cache = StatementCache() 
 
     def _normalize_result(self, raw_result: Any) -> List[Tuple]:
         """
@@ -142,7 +645,111 @@ class BaseConnection:
         except (TypeError, ValueError):
             # If conversion fails, wrap in a list with single tuple
             return [(raw_result,)]
+
+    async def _get_statement_async(self, sql: str) -> Any:
+        """
+        Gets a prepared statement from cache or creates a new one
+        
+        Args:
+            sql: SQL query with ? placeholders
             
+        Returns:
+            A database-specific prepared statement object
+        """
+        sql_hash = StatementCache.hash(sql)       
+    
+        stmt_tuple = self._statement_cache.get(sql_hash)
+        if stmt_tuple:
+            return stmt_tuple[0]  # First element is the statement
+            
+        converted_sql, _ = self.parameter_converter.convert_query(sql)
+        stmt = await self._prepare_statement_async(converted_sql)
+        self._statement_cache.put(sql_hash, stmt, sql)
+        return stmt
+        
+    def _get_statement_sync(self, sql: str) -> Any:
+        """
+        Gets a prepared statement from cache or creates a new one (synchronous version)
+        
+        Args:
+            sql: SQL query with ? placeholders
+            
+        Returns:
+            A database-specific prepared statement object
+        """
+        sql_hash = StatementCache.hash(sql)       
+    
+        stmt_tuple = self._statement_cache.get(sql_hash)
+        if stmt_tuple:
+            return stmt_tuple[0]  # First element is the statement
+            
+        converted_sql, _ = self.parameter_converter.convert_query(sql)
+        stmt = self._prepare_statement_sync(converted_sql)
+        self._statement_cache.put(sql_hash, stmt, sql)
+        return stmt
+    
+    # region -- ABSTRACT METHODS ----------
+    @property
+    @abstractmethod
+    def parameter_converter(self) -> SqlParameterConverter:
+        """Returns the parameter converter for this connection."""
+        pass
+
+    @abstractmethod
+    def _prepare_statement_sync(self, native_sql: str) -> Any:
+        """
+        Prepares a statement using database-specific API
+        
+        Args:
+            native_sql: SQL with database-specific placeholders
+            
+        Returns:
+            A database-specific prepared statement object
+        """
+        pass
+
+    @abstractmethod
+    def _execute_statement_sync(self, statement: Any, params=None) -> Any:
+        """
+        Executes a prepared statement with given parameters
+        
+        Args:
+            statement: A database-specific prepared statement
+            params: Parameters to bind
+            
+        Returns:
+            Raw execution result
+        """
+        pass
+
+    @abstractmethod
+    async def _prepare_statement_async(self, native_sql: str) -> Any:
+        """
+        Prepares a statement using database-specific API
+        
+        Args:
+            native_sql: SQL with database-specific placeholders
+            
+        Returns:
+            A database-specific prepared statement object
+        """
+        pass
+
+    @abstractmethod
+    async def _execute_statement_async(self, statement: Any, params=None) -> Any:
+        """
+        Executes a prepared statement with given parameters
+        
+        Args:
+            statement: A database-specific prepared statement
+            params: Parameters to bind
+            
+        Returns:
+            Raw execution result
+        """
+        pass
+    # region --------------------------------
+
 class AsyncConnection(BaseConnection, ABC):
     """
     Abstract base class defining the interface for asynchronous database connections.
@@ -153,7 +760,91 @@ class AsyncConnection(BaseConnection, ABC):
     
     All methods are abstract and must be implemented by derived classes.
     """ 
+    def __init__(self):
+        super().__init__()
+        self._acquired_time = None
+        self._acquired_stack = None
+        self._last_active_time = None
+        self._is_leaked = False
+        self._id = str(uuid.uuid4())  # Unique ID for tracking
 
+    def mark_active(self):
+        """Mark the connection as active (used recently)"""
+        self._last_active_time = time.time()
+    
+    def is_idle_timeout(self, timeout_seconds: int=1800):
+        """Check if the connection has been idle for too long (default to 30mns)"""
+        if self._last_active_time is None:
+            return False
+        return (time.time() - self._last_active_time) > timeout_seconds
+    
+    def mark_leaked(self):
+        """Mark this connection as leaked"""
+        self._is_leaked = True
+    
+    @property
+    def is_leaked(self):
+        """Check if this connection has been marked as leaked"""
+        return self._is_leaked
+
+    @circuit_breaker(name="async_execute")
+    @track_slow_method
+    async def execute_async(self, sql: str, params: Optional[tuple] = None) -> List[Tuple]:
+        """
+        Asynchronously executes a SQL query with standard ? placeholders.
+        
+        Note:
+            Automatically prepares and caches statements for repeated executions.
+
+        Args:
+            sql: SQL query with ? placeholders
+            params: Parameters for the query
+            
+        Returns:
+            List[Tuple]: Result rows as tuples
+        """
+        stmt = await self._get_statement_async(sql)
+        raw_result = await self._execute_statement_async(stmt, params)
+        return self._normalize_result(raw_result)
+
+    @circuit_breaker(name="async_executemany")
+    @overridable
+    @track_slow_method
+    async def executemany_async(self, sql: str, param_list: List[tuple]) -> List[Tuple]:
+        """
+        Asynchronously executes a SQL query multiple times with different parameters.
+
+        Note:
+            Automatically prepares and caches statements for repeated executions.
+            Subclasses SHOULD override this method if the underlying driver supports native batch/array/bulk execution for better performance.      
+            
+        Args:
+            sql: SQL query with ? placeholders
+            param_list: List of parameter tuples, one for each execution
+            
+        Returns:
+            List[Tuple]: Result rows as tuples
+        """
+        if not param_list:
+            return []
+            
+        stmt = await self._get_statement_async(sql)
+        
+        # For databases with native executemany for prepared statements
+        if hasattr(stmt, 'executemany'):
+            raw_result = await stmt.executemany_async(param_list)
+            return self._normalize_result(raw_result)
+            
+        # Fallback to executing one-by-one
+        results = []
+        for params in param_list:
+            raw_result = await self._execute_statement_async(stmt, params)
+            normalized = self._normalize_result(raw_result)
+            if normalized:
+                results.extend(normalized)
+        return results
+
+    # region -- ABSTRACT METHODS -------
     @abstractmethod
     def get_raw_connection(self) -> Any:
         """
@@ -166,71 +857,6 @@ class AsyncConnection(BaseConnection, ABC):
             Any: The underlying database connection object.
         """
         pass
-
-    @abstractmethod
-    async def _execute_async(self, sql: str, params: Optional[tuple] = None) -> Any:
-        """
-        Asynchronously executes a SQL query with optional parameters.
-
-        This protected method is called by execute_async and should be implemented
-        by subclasses to handle the driver-specific execution.
-        
-        Args:
-            sql (str): The SQL query to execute.
-            params (Optional[tuple], optional): Query parameters to bind. Defaults to None.
-        
-        Returns:
-            Any: Query result, format depends on the database backend.
-        """
-        pass
-
-    async def execute_async(self, sql: str, params: Optional[tuple] = None) -> List[Tuple]:
-        """
-        Asynchronously executes a SQL query with standard ? placeholders.
-        
-        Args:
-            sql: SQL query with ? placeholders
-            params: Parameters for the query
-            
-        Returns:
-            List[Tuple]: Result rows as tuples
-        """
-        converted_sql, converted_params = self.parameter_converter.convert_query(sql, params)
-        raw_result = await self._execute_async(converted_sql, converted_params)
-        return self._normalize_result(raw_result)
-
-    @abstractmethod
-    async def _executemany_async(self, sql: str, param_list: List[tuple]) -> Any:
-        """
-        Asynchronously executes a SQL query multiple times with different parameters.
-        
-        This is typically more efficient than executing the same query multiple times
-        for batch operations like bulk inserts.
-        
-        Args:
-            sql (str): The SQL query to execute.
-            param_list (List[tuple]): List of parameter tuples, one for each execution.
-        
-        Returns:
-            Any: Query result, format depends on the database backend.
-        """
-        pass
-
-    async def executemany_async(self, sql: str, param_list: List[tuple]) -> List[Tuple]:
-        """
-        Asynchronously executes a SQL query multiple times with different parameters.
-        
-        Args:
-            sql: SQL query with ? placeholders
-            param_list: List of parameter tuples, one for each execution
-            
-        Returns:
-            List[Tuple]: Result rows as tuples
-        """
-        converted_sql, _ = self.parameter_converter.convert_query(sql)
-        # Note: we're only converting the SQL, not the parameters list
-        raw_result = await self._executemany_async(converted_sql, param_list)
-        return self._normalize_result(raw_result)
 
     @abstractmethod
     async def begin_transaction_async(self) -> None:
@@ -269,9 +895,9 @@ class AsyncConnection(BaseConnection, ABC):
         should not be used after calling this method.
         """
         pass
+    # endregion ------------------------
 
-
-class SyncConnection(ABC):
+class SyncConnection(ABC, BaseConnection):
     """
     Abstract base class defining the interface for synchronous database connections.
     
@@ -281,28 +907,14 @@ class SyncConnection(ABC):
     
     All methods are abstract and must be implemented by derived classes.
     """
-
-    @abstractmethod
-    def _execute(self, sql: str, params: Optional[tuple] = None) -> Any:
+    @circuit_breaker(name="sync_execute")
+    def execute_sync(self, sql: str, params: Optional[tuple] = None) -> List[Tuple]:
         """
-        Executes a SQL query with optional parameters.
-
-        This protected method is called by execute and should be implemented
-        by subclasses to handle the driver-specific execution.
-
-        Args:
-            sql (str): The SQL query to execute.
-            params (Optional[tuple], optional): Query parameters to bind. Defaults to None.
+        Synchronously executes a SQL query with standard ? placeholders.
         
-        Returns:
-            Any: Query result, format depends on the database backend.
-        """
-        pass
+        Note:
+            Automatically prepares and caches statements for repeated executions.
 
-    def execute(self, sql: str, params: Optional[tuple] = None) -> list[Tuple]:
-        """
-        Executes a SQL query with standard ? placeholders.
-        
         Args:
             sql: SQL query with ? placeholders
             params: Parameters for the query
@@ -310,31 +922,27 @@ class SyncConnection(ABC):
         Returns:
             List[Tuple]: Result rows as tuples
         """
-        converted_sql, converted_params = self.parameter_converter.convert_query(sql, params)
-        raw_result = self._execute(converted_sql, converted_params)
-        return self._normalize_result(raw_result)
-    
-    @abstractmethod
-    def _executemany(self, sql: str, param_list: List[tuple]) -> Any:
-        """
-        Executes a SQL query multiple times with different parameters.
-        
-        This is typically more efficient than executing the same query multiple times
-        for batch operations like bulk inserts.
-        
-        Args:
-            sql (str): The SQL query to execute.
-            param_list (List[tuple]): List of parameter tuples, one for each execution.
-        
-        Returns:
-            Any: Query result, format depends on the database backend.
-        """
-        pass
+        stmt = self._get_statement_sync(sql)
 
-    def executemany(self, sql: str, param_list: List[tuple]) -> List[Tuple]:
+        start = time.time()
+        raw_result = self._execute_statement_sync(stmt, params)
+        elapsed = time.time() - start
+
+        if elapsed > 2.0:
+            logger.warning(f"Slow query ({elapsed:.2f}s): {sql} params={params}")
+
+        return self._normalize_result(raw_result)
+
+    @circuit_breaker(name="sync_executemany")
+    @overridable
+    def executemany_sync(self, sql: str, param_list: List[tuple]) -> List[Tuple]:
         """
-        Executes a SQL query multiple times with different parameters.
-        
+        Synchronously executes a SQL query multiple times with different parameters.
+
+        Note:
+            Automatically prepares and caches statements for repeated executions.
+            Subclasses SHOULD override this method if the underlying driver supports native batch/array/bulk execution for better performance.
+                   
         Args:
             sql: SQL query with ? placeholders
             param_list: List of parameter tuples, one for each execution
@@ -342,12 +950,28 @@ class SyncConnection(ABC):
         Returns:
             List[Tuple]: Result rows as tuples
         """
-        converted_sql, _ = self.parameter_converter.convert_query(sql)
-        raw_result = self._executemany(converted_sql, param_list)
-        return self._normalize_result(raw_result)
+        if not param_list:
+            return []
+            
+        stmt = self._get_statement_sync(sql)
+        
+        # For databases with native executemany for prepared statements
+        if hasattr(stmt, 'executemany'):
+            raw_result = stmt.executemany_sync(param_list)
+            return self._normalize_result(raw_result)
+            
+        # Fallback to executing one-by-one
+        results = []
+        for params in param_list:
+            raw_result = self._execute_statement_sync(stmt, params)
+            normalized = self._normalize_result(raw_result)
+            if normalized:
+                results.extend(normalized)
+        return results
 
+    # region -- ABSTRACT METHODS ----------
     @abstractmethod
-    def begin_transaction(self) -> None:
+    def begin_transaction_sync(self) -> None:
         """
         Begins a database transaction.
         
@@ -357,7 +981,7 @@ class SyncConnection(ABC):
         pass
 
     @abstractmethod
-    def commit_transaction(self) -> None:
+    def commit_transaction_sync(self) -> None:
         """
         Commits the current transaction.
         
@@ -366,7 +990,7 @@ class SyncConnection(ABC):
         pass
 
     @abstractmethod
-    def rollback_transaction(self) -> None:
+    def rollback_transaction_sync(self) -> None:
         """
         Rolls back the current transaction.
         
@@ -375,7 +999,7 @@ class SyncConnection(ABC):
         pass
 
     @abstractmethod
-    def close(self) -> None:
+    def close_sync(self) -> None:
         """
         Closes the database connection.
         
@@ -383,6 +1007,7 @@ class SyncConnection(ABC):
         should not be used after calling this method.
         """
         pass
+    # region ------------------------------
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Tuple, List
@@ -555,6 +1180,16 @@ class DatabaseConfig:
                  password: str=None, alias: str=None, env: str='prod',  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # Validate inputs
+        if not database:
+            raise ValueError("Database name or connection string is required")
+        
+        if port is not None and not isinstance(port, int):
+            raise ValueError(f"Port must be an integer, got {type(port).__name__}")
+        
+        if env not in ('prod', 'dev', 'test', 'staging'):
+            logger.warning(f"Unrecognized environment '{env}', using anyway but this might indicate a mistake")
+  
         self.__host = host
         self.__port = port
         self.__database = database
@@ -675,12 +1310,14 @@ class AsyncPoolManager(ABC):
         _shared_pools (Dict[str, Any]): Dictionary mapping config hashes to pool instances
         _shared_locks (Dict[str, asyncio.Lock]): Locks for thread-safe pool initialization
         _active_connections (Dict[str, Set[AsyncConnection]]): Keep track of active connections
+        _shutting_down: [Dict[str, bool]: Keep track of pools shutdown status
+        _metrics: Dict[str, Dict[str, int]]: keep track of some metrics for each pool (e.g. how many connection acqusitions timed out)
     """
-    _shared_pools: Dict[str, Any] = {}
-    _shared_locks: Dict[str, asyncio.Lock] = {}
-    _active_connections: Dict[str, Set[AsyncConnection]] = {}
-    _shutting_down: Dict[str, bool] = {}  # to track shutdown state per pool
-    _metrics: Dict[str, Dict[str, int]] = {}
+    _shared_pools: ClassVar[Final[Dict[str, Any]]] = {}
+    _shared_locks: ClassVar[Final[Dict[str, asyncio.Lock]]] = {}
+    _active_connections: ClassVar[Final[Dict[str, Set[AsyncConnection]]]] = {}
+    _shutting_down: ClassVar[Final[Dict[str, bool]]] = {}
+    _metrics: ClassVar[Final[Dict[str, Dict[str, int]]]] = {}
     
     def _track_metrics(self, is_new: bool=True, error: Exception=None, is_timeout: bool=False):       
         k = self.hash()
@@ -1146,28 +1783,71 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self._sync_conn = None       
+        # Use thread-local storage for sync connections
+        self._local = threading.local()
+        self._local._sync_conn = None     
 
         if self.is_environment_async():
             try:
                 asyncio.get_running_loop().create_task(self._initialize_pool_if_needed())
                 asyncio.get_running_loop().create_task(self._leak_detection_task())
             except RuntimeError:
-                self._sync_conn = self.get_sync_connection()
+                self._local._sync_conn = self.get_sync_connection()
         else:
-            self._sync_conn = self.get_sync_connection()
+            self._local._sync_conn = self.get_sync_connection()
 
     async def _leak_detection_task(self):
-        """Background task that periodically checks for connection leaks"""
+        """Background task that periodically checks for and recovers from connection leaks"""
+        IDLE_TIMEOUT = 1800  # 30 minutes idle time before considering a connection dead
+        
         while True:
             try:
-                await self.check_for_leaked_connections()
+                # Wait to avoid excessive CPU usage
+                await asyncio.sleep(300)  # Check every 5 minutes
+                
+                # Check for leaked connections
+                leaked_conns = await self.check_for_leaked_connections(threshold_seconds=300)
+                
+                # Additionally check for idle connections
+                now = time.time()
+                idle_conns = []
+                
+                for conn in self._connections:
+                    if conn.is_idle_timeout(IDLE_TIMEOUT) and not conn.is_leaked:
+                        idle_conns.append(conn)
+                
+                # Log idle connections
+                if idle_conns:
+                    logger.warning(f"Found {len(idle_conns)} idle connections in {self.alias()} pool that haven't been active for 30+ minutes")
+                
+                # Attempt recovery for leaked connections
+                for conn, duration, stack in leaked_conns:
+                    try:
+                        # Mark as leaked to avoid duplicate recovery attempts
+                        conn.mark_leaked()
+                        
+                        # Try to gracefully return to the pool
+                        logger.warning(f"Attempting to recover leaked connection in {self.alias()} pool (leaked for {duration:.2f}s)")
+                        await self._release_connection_to_pool(conn)
+                        logger.info(f"Successfully recovered leaked connection in {self.alias()} pool")
+                    except Exception as e:
+                        logger.error(f"Failed to recover leaked connection: {e}")
+                        
+                        # Try to close directly as a last resort
+                        try:
+                            await conn.close_async()
+                        except Exception:
+                            pass
+                
+                # Also recover idle connections
+                for conn in idle_conns:
+                    try:
+                        logger.warning(f"Recovering idle connection in {self.alias()} pool")
+                        await self._release_connection_to_pool(conn)
+                    except Exception as e:
+                        logger.error(f"Failed to recover idle connection: {e}")
             except Exception as e:
-                logger.error(f"Error in leak detection: {e}")
-            
-            # Check every 5 minutes
-            await asyncio.sleep(300)
+                logger.error(f"Error in connection leak detection task: {e}")
 
     def is_environment_async(self) -> bool:
         """
@@ -1204,15 +1884,15 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
         Note:
             The connection should be closed with release_sync_connection() or by using the sync_connection() context manager.
         """
-        if self._sync_conn is None:
+        if not hasattr(self._local, '_sync_conn') or self._local._sync_conn is None:
             try:
                 start_time = time.time()
                 raw_conn = self._create_sync_connection(self.config())
                 logger.info(f"Sync connection created and cached for {self.alias()} in {(time.time() - start_time):.2f}s")
+                self._local._sync_conn = self._wrap_sync_connection(raw_conn)
             except Exception as e:
-                logger.error(f"Could not create a sync connection for {self.alias()}")
-            self._sync_conn = self._wrap_sync_connection(raw_conn)
-        return self._sync_conn     
+                logger.error(f"Could not create a sync connection for {self.alias()}")            
+        return self._local._sync_conn     
 
     def release_sync_connection(self) -> None:
         """
@@ -1222,13 +1902,13 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
         to properly release database resources. After calling this method,
         the next call to get_sync_connection() will create a new connection.
         """
-        if self._sync_conn:
+        if hasattr(self._local, '_sync_conn') and self._local._sync_conn:
             try:
-                self._sync_conn.close()
+                self._local._sync_conn.close_sync()
                 logger.debug(f"{self.alias()} sync connection closed")
             except Exception as e:
                 logger.warning(f"{self.alias()} failed to close sync connection: {e}")
-            self._sync_conn = None
+            self._local._sync_conn = None
 
     @contextlib.contextmanager
     async def sync_connection(self):
@@ -1302,15 +1982,32 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
         
         This method should be called when the connection is no longer needed
         to make it available for reuse by other operations.
+        Connections are always properly tracked even if release fails, preventing connection leaks.
         
         Args:
             async_conn (AsyncConnection): The connection to release.
         """
-        if async_conn and self._pool:
-            try:                
-                await self._release_connection_to_pool(async_conn)
-            except Exception as e:
-                logger.warning(f"{self.alias()} failed to release async connection: {e}")
+        if not async_conn or not self._pool:
+            return
+            
+        try:
+            await self._release_connection_to_pool(async_conn)
+        except Exception as e:
+            logger.error(f"{self.alias()} failed to release async connection: {e}")
+            # Even if release failed, remove from tracking to prevent memory leaks
+            self._connections.discard(async_conn)
+            
+            # Try to close the connection directly to prevent resource leaks
+            try:
+                await async_conn.close_async()
+            except Exception as close_error:
+                logger.error(f"Failed to close leaked connection: {close_error}")
+            
+            # Try to maintain pool health by creating a replacement connection
+            try:
+                asyncio.create_task(self._initialize_pool_if_needed())
+            except Exception:
+                pass
 
     @contextlib.asynccontextmanager
     async def async_connection(self):
@@ -1450,14 +2147,41 @@ class BaseDatabase(DatabaseConnectionManager):
         )
 
     def _calculate_pool_size(self) -> Tuple[int, int]:
-        """Calculate optimal pool size based on environment"""        
-        if self.env() == 'prod':
-            cpus = os.cpu_count() or 1
-            min_size = max(2, cpus // 4)
-            max_size = cpus * 2
-        else:
-            min_size = 1
-            max_size = 5
+        """
+        Calculate optimal pool size based on workload characteristics.
+        
+        This uses a combination of:
+        - CPU count (for CPU-bound workloads)
+        - System memory (to avoid exhausting resources)
+        - Expected concurrency
+        
+        Returns:
+            Tuple[int, int]: (min_size, max_size) of the connection pool
+        """
+        # Get system information
+        cpus = os.cpu_count() or 1
+        
+        # Try to get available memory in GB
+        try:
+            import psutil
+            available_memory_gb = psutil.virtual_memory().available / (1024 * 1024 * 1024)
+        except (ImportError, AttributeError):
+            # Default assumption if psutil is not available
+            available_memory_gb = 4.0
+        
+        estimated_mem = 0.03
+        
+        # Calculate max connections based on memory
+        max_by_memory = int(available_memory_gb / estimated_mem * 0.5)  # Use no more than 50% of available memory
+
+        min_size = max(3, cpus // 2)
+        # Max should be enough to handle spikes but not exhaust resources
+        max_size = min(max(cpus * 4, 20), max_by_memory)       
+        
+        # Log the calculation for transparency
+        logger.debug(f"Calculated connection pool size: min={min_size}, max={max_size} " +
+                    f"(cpus={cpus}, mem={available_memory_gb:.1f}GB, env={self.env()})")
+        
         return min_size, max_size
 
     @contextlib.asynccontextmanager
@@ -1538,41 +2262,46 @@ class PostgresSyncConnection(SyncConnection):
         self._conn = conn
         self._cursor = conn.cursor()
         self._param_converter = PostgresSyncConverter()
+        self._prepared_counter = self.ThreadSafeCounter()
 
+    class ThreadSafeCounter:
+        def __init__(self, start=0, step=1):
+            self.counter = itertools.count(start, step)
+            self.lock = threading.Lock()
+            
+        def next(self):
+            with self.lock:
+                return next(self.counter)
+        
     @property
     def parameter_converter(self) -> SqlParameterConverter:
         """Returns the PostgreSQL parameter converter."""
         return self._param_converter
     
-    def _execute(self, sql, params=None) -> Any:
-        """
-        Executes a SQL query with PostgreSQL parameter binding.
+    def _prepare_statement_sync(self, native_sql: str) -> Any:
+        """Prepare a statement using psycopg2"""
+        stmt_name = f"prep_{self._prepared_counter.next()}"  
         
-        PostgreSQL uses %s as parameter placeholders regardless of the data type.
-        
-        Args:
-            sql (str): SQL query with %s placeholders.
-            params (tuple, optional): Parameters to bind. Defaults to None.
-            
-        Returns:
-            Any: The cursor object, which can be used to fetch results.
-        """
-        return self._cursor.execute(sql, params or ())
+        # Prepare the statement
+        self._cursor.execute(f"PREPARE {stmt_name} AS {native_sql}")
+        return stmt_name
+    
+    @retry_with_backoff(
+        max_retries=3, 
+        exceptions=(
+            psycopg2.OperationalError,
+            psycopg2.InterfaceError,
+            psycopg2.InternalError
+        )
+    )
+    def _execute_statement_sync(self, statement: Any, params=None) -> Any:
+        """Execute a prepared statement using psycopg2"""
+        # statement is a string name of the prepared statement
+        placeholders = ','.join(['%s'] * len(params or []))
+        self._cursor.execute(f"EXECUTE {statement} ({placeholders})", params or ())
+        return self._cursor.fetchall()  # Return raw results
 
-    def _executemany(self, sql, param_list) -> Any:
-        """
-        Executes a SQL query multiple times with different parameters.
-        
-        Args:
-            sql (str): SQL query with %s placeholders.
-            param_list (List[tuple]): List of parameter tuples, one for each execution.
-            
-        Returns:
-            Any: The cursor object, which can be used to fetch results.
-        """
-        return self._cursor.executemany(sql, param_list)
-
-    def begin_transaction(self):
+    def begin_transaction_sync(self):
         """
         Begins a database transaction.
         
@@ -1583,7 +2312,7 @@ class PostgresSyncConnection(SyncConnection):
         # psycopg2 starts transaction implicitly on execute
         pass
 
-    def commit_transaction(self):
+    def commit_transaction_sync(self):
         """
         Commits the current transaction.
         
@@ -1591,7 +2320,7 @@ class PostgresSyncConnection(SyncConnection):
         """
         self._conn.commit()
 
-    def rollback_transaction(self):
+    def rollback_transaction_sync(self):
         """
         Rolls back the current transaction.
         
@@ -1599,7 +2328,7 @@ class PostgresSyncConnection(SyncConnection):
         """
         self._conn.rollback()
 
-    def close(self):
+    def close_sync(self):
         """
         Closes the database connection and cursor.
         
@@ -1638,36 +2367,29 @@ class PostgresAsyncConnection(AsyncConnection):
         """
         return self._conn
 
-    async def _execute_async(self, sql, params=None) -> Any:
-        """
-        Asynchronously executes a SQL query with PostgreSQL parameter binding.
-        
-        asyncpg uses positional parameters with the format $1, $2, etc., but this
-        method accepts standard tuples and handles the conversion.
-        
-        Args:
-            sql (str): SQL query with %s or $1, $2, etc. placeholders.
-            params (tuple, optional): Parameters to bind. Defaults to None.
-            
-        Returns:
-            Any: The query result from asyncpg.
-        """
-        return await self._conn.execute(sql, *(params or []))
+    @retry_with_backoff(
+        exceptions=(
+            asyncpg.exceptions.ConnectionDoesNotExistError,
+            asyncpg.exceptions.InterfaceError,
+            asyncpg.exceptions.ConnectionFailureError
+        )
+    )
+    async def _prepare_statement_async(self, native_sql: str) -> Any:
+        """Prepare a statement using asyncpg"""
+        return await self._conn.prepare(native_sql)
     
-    async def _executemany_async(self, sql: str, param_list: List[tuple]) -> Any:
-        """
-        Executes a SQL query multiple times with different parameters.
-        Since asyncpg doesn't have a direct executemany equivalent, this method
-        executes the query in a loop for each parameter set.
-        """
-        results = []
-        for params in param_list:
-            # Note: asyncpg expects parameters as separate arguments
-            result = await self._conn.execute(sql, *params)
-            if result:
-                results.append(result)
-        return results
-
+    @retry_with_backoff(
+        exceptions=(
+            asyncpg.exceptions.ConnectionDoesNotExistError,
+            asyncpg.exceptions.InterfaceError,
+            asyncpg.exceptions.TooManyConnectionsError,
+            asyncpg.exceptions.ConnectionFailureError
+        )
+    )
+    async def _execute_statement_async(self, statement: Any, params=None) -> Any:
+        """Execute a prepared statement using asyncpg"""
+        return await statement.fetch(*(params or []))
+    
     async def begin_transaction_async(self):
         """
         Asynchronously begins a database transaction.
@@ -1949,38 +2671,40 @@ class MysqlSyncConnection(SyncConnection):
 
     @property
     def parameter_converter(self) -> SqlParameterConverter:
-        """Returns the PostgreSQL parameter converter."""
+        """Returns the MySql parameter converter."""
         return self._param_converter
-
-    def _execute(self, sql, params=None) -> Any:
+    
+    @retry_with_backoff()
+    def _prepare_statement_sync(self, converted_sql: str) -> Any:
         """
-        Executes a SQL query with MySQL parameter binding.
-        
-        MySQL uses %s as parameter placeholders regardless of the data type.
-        
-        Args:
-            sql (str): SQL query with %s placeholders.
-            params (tuple, optional): Parameters to bind. Defaults to None.
+        MySQL with pymysql doesn't have true prepared statements API
+        so we just return the SQL for later execution
+        """
+        return converted_sql  # Just return the converted SQL
+
+    @retry_with_backoff()
+    def _execute_statement_sync(self, statement: Any, params=None) -> Any:
+        """Execute a statement using pymysql"""
+        # statement is just the SQL string
+        self._cursor.execute(statement, params or ())
+        return self._cursor.fetchall()  # Return raw results
+
+    @retry_with_backoff()  
+    @track_slow_method
+    def executemany_sync(self, sql: str, param_list: List[tuple]) -> Any:
+        """
+        MySQL has a native executemany implementation, so we override the base method
+        """
+        if not param_list:
+            return []  # Return empty list for consistency
             
-        Returns:
-            Any: The cursor object, which can be used to fetch results.
-        """
-        return self._cursor.execute(sql, params or ())
-
-    def _executemany(self, sql, param_list) -> Any:
-        """
-        Executes a SQL query multiple times with different parameters.
+        stmt = self._get_statement_sync(sql)  # Fix method name
         
-        Args:
-            sql (str): SQL query with %s placeholders.
-            param_list (List[tuple]): List of parameter tuples, one for each execution.
-            
-        Returns:
-            Any: The cursor object, which can be used to fetch results.
-        """
-        return self._cursor.executemany(sql, param_list)
+        # Use native executemany
+        self._cursor.executemany(stmt, param_list)
+        return self._cursor.fetchall()  # Return raw results
 
-    def begin_transaction(self):
+    def begin_transaction_sync(self):
         """
         Begins a database transaction.
         
@@ -1989,7 +2713,7 @@ class MysqlSyncConnection(SyncConnection):
         """
         self._conn.begin()
 
-    def commit_transaction(self):
+    def commit_transaction_sync(self):
         """
         Commits the current transaction.
         
@@ -1997,7 +2721,7 @@ class MysqlSyncConnection(SyncConnection):
         """
         self._conn.commit()
 
-    def rollback_transaction(self):
+    def rollback_transaction_sync(self):
         """
         Rolls back the current transaction.
         
@@ -2005,7 +2729,7 @@ class MysqlSyncConnection(SyncConnection):
         """
         self._conn.rollback()
 
-    def close(self):
+    def close_sync(self):
         """
         Closes the database connection and cursor.
         
@@ -2034,6 +2758,39 @@ class MysqlAsyncConnection(AsyncConnection):
         """Returns the PostgreSQL parameter converter."""
         return self._param_converter
 
+    @retry_with_backoff()
+    async def _prepare_statement_async(self, native_sql: str) -> Any:
+        """
+        MySQL with aiomysql doesn't have true prepared statements API
+        so we just return the SQL for later execution
+        """
+        return native_sql
+    
+    @retry_with_backoff()
+    async def _execute_statement_async(self, statement: Any, params=None) -> Any:
+        """Execute a statement using aiomysql"""
+        # statement is just the SQL string
+        async with self._conn.cursor() as cursor:
+            await cursor.execute(statement, params or ())
+            return await cursor.fetchall()
+    
+    @retry_with_backoff()
+    @track_slow_method
+    async def executemany_async(self, sql: str, param_list: List[tuple]) -> List[Tuple]:
+        """
+        MySQL has a native executemany implementation, so we override the base method
+        """
+        if not param_list:
+            return []
+            
+        stmt = await self._get_statement_async(sql)
+        
+        # Use native executemany
+        async with self._conn.cursor() as cursor:
+            await cursor.executemany(stmt, param_list)
+            native_result = await cursor.fetchall()
+            return self._normalize_result(native_result)
+        
     def get_raw_connection(self):
         """
         Returns the underlying raw aiomysql connection.
@@ -2042,35 +2799,6 @@ class MysqlAsyncConnection(AsyncConnection):
             The raw aiomysql connection object.
         """
         return self._conn
-
-    async def _execute_async(self, sql, params=None) -> Any:
-        """
-        Asynchronously executes a SQL query with MySQL parameter binding.
-        
-        Args:
-            sql (str): SQL query with %s placeholders.
-            params (tuple, optional): Parameters to bind. Defaults to None.
-            
-        Returns:
-            Any: The query result from aiomysql.
-        """
-        async with self._conn.cursor() as cur:
-            await cur.execute(sql, params or ())
-            return await cur.fetchall()
-
-    async def _executemany_async(self, sql, param_list) -> Any:
-        """
-        Asynchronously executes a SQL query multiple times with different parameters.
-        
-        Args:
-            sql (str): SQL query with %s placeholders.
-            param_list (List[tuple]): List of parameter tuples, one for each execution.
-            
-        Returns:
-            Any: Result of the execution.
-        """
-        async with self._conn.cursor() as cur:
-            return await cur.executemany(sql, param_list)
 
     async def begin_transaction_async(self):
         """
@@ -2364,35 +3092,44 @@ class SqliteSyncConnection(SyncConnection):
         """Returns the PostgreSQL parameter converter."""
         return self._param_converter
 
-    def _execute(self, sql, params=None) -> Any:
+    @retry_with_backoff()
+    def _prepare_statement_sync(self, native_sql: str) -> Any:
+        """Prepare a statement using sqlite3"""
+        return self._conn.prepare(native_sql)
+    
+    @retry_with_backoff()
+    def _execute_statement_sync(self, statement: Any, params=None) -> Any:
+        """Execute a prepared statement using sqlite3"""
+        return statement.execute(params or ())
+
+    @retry_with_backoff()
+    @track_slow_method
+    def executemany_sync(self, sql: str, param_list: List[tuple]) -> List[Tuple]:
         """
-        Executes a SQL query with SQLite parameter binding.
-        
-        SQLite uses ? as parameter placeholders.
+        SQLite-specific optimized implementation for executemany.
         
         Args:
-            sql (str): SQL query with ? placeholders.
-            params (tuple, optional): Parameters to bind. Defaults to None.
+            sql: SQL query with ? placeholders
+            param_list: List of parameter tuples, one for each execution
             
         Returns:
-            Any: The cursor object, which can be used to fetch results.
+            List[Tuple]: Result rows as tuples
         """
-        return self._cursor.execute(sql, params or ())
-
-    def _executemany(self, sql, param_list) -> Any:
-        """
-        Executes a SQL query multiple times with different parameters.
+        if not param_list:
+            return []
+            
+        # SQLite uses ? placeholders already
+        self._cursor.executemany(sql, param_list)
         
-        Args:
-            sql (str): SQL query with ? placeholders.
-            param_list (List[tuple]): List of parameter tuples, one for each execution.
-            
-        Returns:
-            Any: The cursor object, which can be used to fetch results.
-        """
-        return self._cursor.executemany(sql, param_list)
-
-    def begin_transaction(self):
+        # For SQLite, executemany typically doesn't return results for SELECT queries
+        # If this is a SELECT, we need to execute a separate query to get results
+        if sql.strip().upper().startswith("SELECT"):
+            # Execute one more time with the last parameters to get results
+            self._cursor.execute(sql, param_list[-1] if param_list else ())
+            return self._cursor.fetchall()
+        return []  # Non-SELECT queries don't return rows
+    
+    def begin_transaction_sync(self):
         """
         Begins a database transaction.
         
@@ -2401,7 +3138,7 @@ class SqliteSyncConnection(SyncConnection):
         """
         self._conn.execute("BEGIN")
 
-    def commit_transaction(self):
+    def commit_transaction_sync(self):
         """
         Commits the current transaction.
         
@@ -2409,7 +3146,7 @@ class SqliteSyncConnection(SyncConnection):
         """
         self._conn.commit()
 
-    def rollback_transaction(self):
+    def rollback_transaction_sync(self):
         """
         Rolls back the current transaction.
         
@@ -2417,7 +3154,7 @@ class SqliteSyncConnection(SyncConnection):
         """
         self._conn.rollback()
 
-    def close(self):
+    def close_sync(self):
         """
         Closes the database connection and cursor.
         
@@ -2455,36 +3192,49 @@ class SqliteAsyncConnection(AsyncConnection):
         """
         return self._conn
 
-    async def _execute_async(self, sql, params=None) -> Any:
+    @retry_with_backoff()
+    async def _prepare_statement_async(self, native_sql: str) -> Any:
         """
-        Asynchronously executes a SQL query with SQLite parameter binding.
-        
-        Args:
-            sql (str): SQL query with ? placeholders.
-            params (tuple, optional): Parameters to bind. Defaults to None.
-            
-        Returns:
-            Any: The query result from aiosqlite.
-        """
-        async with self._conn.execute(sql, params or ()) as cursor:
+        SQLite with aiosqlite doesn't have a separate prepare API, so returning the sql        
+        """       
+        return native_sql
+    
+    @retry_with_backoff()
+    async def _execute_statement_async(self, statement: Any, params=None) -> Any:
+        """Execute a prepared statement using aiosqlite"""
+        async with self._conn.execute(statement, params or ()) as cursor:
             return await cursor.fetchall()
 
-    async def _executemany_async(self, sql, param_list) -> None:
+    @retry_with_backoff()
+    @track_slow_method
+    async def executemany_async(self, sql: str, param_list: List[Tuple]) -> List[Tuple]:
         """
-        Asynchronously executes a SQL query multiple times with different parameters.
-        
-        Since aiosqlite doesn't have a direct executemany equivalent, this method
-        executes the query in a loop for each parameter set.
+        SQLite-specific optimized implementation for executemany.
         
         Args:
-            sql (str): SQL query with ? placeholders.
-            param_list (List[tuple]): List of parameter tuples, one for each execution.
+            sql: SQL query with ? placeholders
+            param_list: List of parameter tuples, one for each execution
             
         Returns:
-            Any: None - This method doesn't return results for SQLite.
+            List[Tuple]: Result rows as tuples
         """
-        for params in param_list:
-            await self._conn.execute(sql, params)
+        if not param_list:
+            return []
+            
+        # SQLite uses ? placeholders already, so we only need to convert if needed
+        native_sql, _ = self.parameter_converter.convert_query(sql, param_list[0] if param_list else None)
+        
+        # Use the executemany method directly on the connection
+        await self._conn.executemany(native_sql, param_list)
+        
+        # For SQLite, executemany typically doesn't return results for SELECT queries
+        # If this is a SELECT, we need to execute a separate query to get results
+        if native_sql.strip().upper().startswith("SELECT"):
+            # Execute one more time with the last parameters to get results
+            # This is a limitation of SQLite's executemany
+            async with self._conn.execute(native_sql, param_list[-1] if param_list else ()) as cursor:
+                return await cursor.fetchall()
+        return []  # Non-SELECT queries don't return rows
 
     async def begin_transaction_async(self):
         """
