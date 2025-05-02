@@ -594,6 +594,11 @@ class PostgresSyncConverter(SqlParameterConverter):
         new_sql = sql.replace('?', '%s')
         return new_sql, params
 
+    def make_timeout_sql(self, timeout: Optional[float]) -> Optional[str]:
+        if timeout:
+            return f"SET LOCAL statement_timeout = {int(timeout * 1000)}"
+        return None
+
 class MySqlConverter(SqlParameterConverter):
     """Converter for MySQL placeholders (%s)"""    
     def convert_query(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
