@@ -5,7 +5,7 @@ import time
 import hashlib
 import asyncio
 import contextlib
-import inspect
+import traceback
 from typing import Set, Awaitable, Callable, Optional, Tuple, List, Any, Dict, final, Union
 from typing import AsyncIterator, Iterator
 from abc import ABC, abstractmethod
@@ -834,11 +834,11 @@ class AsyncPoolManager(ABC):
         k = self.hash()
         if k not in self._active_connections:
             self._active_connections[k] = set()
-        return self._active_connections[k]
-      
+        return self._active_connections[k]      
+   
     async def _get_connection_from_pool(self, wrap_raw_connection: Callable) -> AsyncConnection:
         """
-        Acquires a connection from the pool with timeout handling.
+        Acquires a connection from the pool with timeout handling and leak tracking.
         """
         if self._shutting_down.get(self.hash(), False):
             raise RuntimeError(f"Cannot acquire new connections: pool for {self.alias()} is shutting down")
@@ -853,9 +853,8 @@ class AsyncPoolManager(ABC):
         
         try:
             start_time = time.time()
-            # Use the ConnectionPool interface to acquire with timeout
             try:
-                # No need for asyncio.wait_for - our interface handles timeout
+                # Acquire connection
                 raw_conn = await self._pool.acquire(timeout=acquisition_timeout)
                 acquisition_time = time.time() - start_time
                 logger.debug(f"Connection acquired from {self.alias()} pool in {acquisition_time:.2f}s")
@@ -881,11 +880,32 @@ class AsyncPoolManager(ABC):
             raise
         
         async_conn = wrap_raw_connection(raw_conn)
+        
+        # Add tracking information for leak detection
+        async_conn._acquired_time = time.time()
+        async_conn._acquired_stack = traceback.format_stack()
+        
         self._connections.add(async_conn)
         return async_conn
 
     async def _release_connection_to_pool(self, async_conn: AsyncConnection) -> None:
         try:
+            # Calculate how long this connection was out
+            if hasattr(async_conn, '_acquired_time'):
+                duration = time.time() - async_conn._acquired_time
+                
+                # Log if this connection was out for a long time
+                if duration > 60:  # 1 minute
+                    logger.warning(
+                        f"Connection from {self.alias()} pool was out for {duration:.2f}s. "
+                        f"This may indicate inefficient usage. Stack trace at acquisition:\n"
+                        f"{getattr(async_conn, '_acquired_stack', 'Stack not available')}"
+                    )
+                
+                # Clean up tracking attributes
+                delattr(async_conn, '_acquired_time')
+                delattr(async_conn, '_acquired_stack')
+            
             start_time = time.time()
             # Use the ConnectionPool interface
             await self._pool.release(async_conn.get_raw_connection())
@@ -900,6 +920,34 @@ class AsyncPoolManager(ABC):
             self._track_metrics(False, e)
             raise
         self._connections.discard(async_conn)
+
+    async def check_for_leaked_connections(self, threshold_seconds=300):
+        """
+        Check for connections that have been active for longer than the threshold.
+        Returns a list of (connection, duration, stack) tuples for leaked connections.
+        """
+        now = time.time()
+        leaked_connections = []
+        
+        for conn in self._connections:
+            if hasattr(conn, '_acquired_time'):
+                duration = now - conn._acquired_time
+                if duration > threshold_seconds:
+                    leaked_connections.append((
+                        conn,
+                        duration,
+                        getattr(conn, '_acquired_stack', 'Stack not available')
+                    ))
+        
+        # Log any leaks
+        for conn, duration, stack in leaked_connections:
+            logger.warning(
+                f"Connection leak detected in {self.alias()} pool! "
+                f"Connection has been active for {duration:.2f}s. "
+                f"Stack trace at acquisition:\n{stack}"
+            )
+        
+        return leaked_connections
 
     async def _initialize_pool_if_needed(self) -> None:
         """
@@ -1104,10 +1152,22 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
         if self.is_environment_async():
             try:
                 asyncio.get_running_loop().create_task(self._initialize_pool_if_needed())
+                asyncio.get_running_loop().create_task(self._leak_detection_task())
             except RuntimeError:
                 self._sync_conn = self.get_sync_connection()
         else:
             self._sync_conn = self.get_sync_connection()
+
+    async def _leak_detection_task(self):
+        """Background task that periodically checks for connection leaks"""
+        while True:
+            try:
+                await self.check_for_leaked_connections()
+            except Exception as e:
+                logger.error(f"Error in leak detection: {e}")
+            
+            # Check every 5 minutes
+            await asyncio.sleep(300)
 
     def is_environment_async(self) -> bool:
         """
