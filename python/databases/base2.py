@@ -449,7 +449,11 @@ class StatementCache:
         self._misses = 0
         self._last_resize_check = time.time()
         self._resize_interval = 300  # Check resize every 5 minutes
-    
+  
+    @staticmethod
+    def hash(sql: str) -> str:
+        return hashlib.md5(sql.encode('utf-8')).hexdigest()
+
     @property
     def hit_ratio(self) -> float:
         """Calculate the cache hit ratio"""
@@ -1911,7 +1915,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
             self._local._sync_conn = None
 
     @contextlib.contextmanager
-    def sync_connection(self) -> -> Iterator[SyncConnection]:
+    def sync_connection(self) -> Iterator[SyncConnection]:
         """
         Context manager for safe synchronous connection usage.
         
