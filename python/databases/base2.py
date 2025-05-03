@@ -4,6 +4,7 @@ import json
 import random
 import time
 import hashlib
+import uuid
 import asyncio
 import contextlib
 import traceback
@@ -313,7 +314,11 @@ def retry_with_backoff(max_retries=3, base_delay=0.1, max_delay=10.0,
                                 raise TimeoutError(f"Operation timed out after {total_timeout}s for {func.__name__}")
                     
                     logger.debug(f"Retry {retries}/{max_retries} for {func.__name__} after {sleep_time:.2f}s: {str(e)[:100]}")
-                    await asyncio.sleep(sleep_time)
+                    try:
+                        await asyncio.sleep(sleep_time)
+                    except asyncio.CancelledError:
+                        logger.warning("Retry sleep interrupted due to task cancellation")
+                        raise
                     
                     # Exponential backoff
                     delay = min(delay * 2, max_delay)
@@ -687,48 +692,99 @@ class BaseConnection:
             # If conversion fails, wrap in a list with single tuple
             return [(raw_result,)]
 
-    async def _get_statement_async(self, sql: str) -> Any:
+    def _finalize_sql(self, sql: str, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]] = None) -> str:
+        combined_parts = []
+
+        if tags:
+            comment_sql = self.parameter_converter.make_comment_sql(tags)
+            if comment_sql:
+                combined_parts.append(comment_sql)
+
+        if timeout:
+            timeout_sql = self.parameter_converter.make_timeout_sql(timeout)
+            if timeout_sql:
+                combined_parts.append(timeout_sql)
+
+        combined_parts.append(sql)
+
+        return "\n".join(combined_parts)
+
+    async def _get_statement_async(self, sql: str, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]] = None) -> Any:
         """
         Gets a prepared statement from cache or creates a new one
+
+        Note that statement is unique for the combination of sql, timeout and tags 
         
         Args:
             sql: SQL query with ? placeholders
-            
+            timeout: optional timeout in seconds
+            tags: optional dictionary of tags to add in the sql comment
+                       
         Returns:
             A database-specific prepared statement object
         """
-        sql_hash = StatementCache.hash(sql)       
+        final_sql = self._finalize_sql(sql, timeout, tags)
+        sql_hash = StatementCache.hash(final_sql)      
     
         stmt_tuple = self._statement_cache.get(sql_hash)
         if stmt_tuple:
             return stmt_tuple[0]  # First element is the statement
             
-        converted_sql, _ = self.parameter_converter.convert_query(sql)
+        converted_sql, _ = self.parameter_converter.convert_query(final_sql)
         stmt = await self._prepare_statement_async(converted_sql)
-        self._statement_cache.put(sql_hash, stmt, sql)
+        self._statement_cache.put(sql_hash, stmt, final_sql)
         return stmt
         
-    def _get_statement_sync(self, sql: str) -> Any:
+    def _get_statement_sync(self, sql: str, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]] = None) -> Any:
         """
         Gets a prepared statement from cache or creates a new one (synchronous version)
         
         Args:
             sql: SQL query with ? placeholders
+            timeout: optional timeout in seconds
+            tags: optional dictionary of tags to add in the sql comment
             
         Returns:
             A database-specific prepared statement object
         """
-        sql_hash = StatementCache.hash(sql)       
+        final_sql = self._finalize_sql(sql, timeout, tags)
+        sql_hash = StatementCache.hash(final_sql)       
     
         stmt_tuple = self._statement_cache.get(sql_hash)
         if stmt_tuple:
             return stmt_tuple[0]  # First element is the statement
             
-        converted_sql, _ = self.parameter_converter.convert_query(sql)
+        converted_sql, _ = self.parameter_converter.convert_query(final_sql)
         stmt = self._prepare_statement_sync(converted_sql)
         self._statement_cache.put(sql_hash, stmt, sql)
         return stmt
     
+    @contextlib.contextmanager
+    def _auto_transaction(self):
+        if self.in_transaction():
+            yield
+        else:
+            self.begin()
+            try:
+                yield
+                self.commit()
+            except:
+                self.rollback()
+                raise
+
+    @contextlib.asynccontextmanager
+    async def _auto_transaction_async(self):
+        if await self.in_transaction_async():
+            yield
+        else:
+            await self.begin_async()
+            try:
+                yield
+                await self.commit_async()
+            except:
+                await self.rollback_async()
+                raise
+
     # region -- ABSTRACT METHODS ----------
     @property
     @abstractmethod
@@ -828,8 +884,16 @@ class AsyncConnection(BaseConnection, ABC):
         """Check if this connection has been marked as leaked"""
         return self._is_leaked
 
-    @circuit_breaker(name="async_execute")
     @track_slow_method
+    async def _execute_with_timeout(self, sql, params, stmt, timeout):           
+            if timeout:
+                raw_result = await asyncio.wait_for(self._execute_statement_async(stmt, params), timeout=timeout)
+            else:
+                raw_result = await self._execute_statement_async(stmt, params)    
+            _ = sql # we need the sql as argument to log if the query is slow (@track_slow_method)    
+            return raw_result
+    
+    @circuit_breaker(name="async_execute")    
     async def execute_async(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Asynchronously executes a SQL query with standard ? placeholders.
@@ -840,33 +904,19 @@ class AsyncConnection(BaseConnection, ABC):
         Args:
             sql: SQL query with ? placeholders
             params: Parameters for the query
-            timout (float, optional): a timeout, in second, after which a TimeoutError is raised
+            timeout (float, optional): a timeout, in second, after which a TimeoutError is raised
             tags: optional dictionary of tags to inject to the sql as comment
             
         Returns:
             List[Tuple]: Result rows as tuples
         """
-        stmt = await self._get_statement_async(sql)
-        
-        timeout_sql = self.parameter_converter.make_timeout_sql(timeout)
-        if timeout_sql:
-            await self._execute_statement_async(timeout_sql)
-
-        comment_sql = self.parameter_converter.make_comment_sql(tags)
-        if comment_sql:
-            await self._execute_statement_async(comment_sql)
-        
-        if timeout:
-            raw_result = await asyncio.wait_for(self._execute_statement_async(stmt, params), timeout=timeout)
-        else:
-            raw_result = await self._execute_statement_async(stmt, params)
-
+        stmt = await self._get_statement_async(sql, timeout, tags)        
+        raw_result = await self._execute_with_timeout(sql, params, stmt, timeout)
         return self._normalize_result(raw_result)
 
     @circuit_breaker(name="async_executemany")
-    @overridable
-    @track_slow_method
-    async def executemany_async(self, sql: str, param_list: List[tuple]) -> List[Tuple]:
+    @overridable    
+    async def executemany_async(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Asynchronously executes a SQL query multiple times with different parameters.
 
@@ -877,28 +927,36 @@ class AsyncConnection(BaseConnection, ABC):
         Args:
             sql: SQL query with ? placeholders
             param_list: List of parameter tuples, one for each execution
+            timeout (float, optional): a timeout, in second, after which a TimeoutError is raised
+            tags: optional dictionary of tags to inject to the sql as comment
             
         Returns:
             List[Tuple]: Result rows as tuples
         """
         if not param_list:
             return []
-            
-        stmt = await self._get_statement_async(sql)
         
-        # For databases with native executemany for prepared statements
-        if hasattr(stmt, 'executemany'):
-            raw_result = await stmt.executemany_async(param_list)
-            return self._normalize_result(raw_result)
-            
-        # Fallback to executing one-by-one
-        results = []
-        for params in param_list:
-            raw_result = await self._execute_statement_async(stmt, params)
-            normalized = self._normalize_result(raw_result)
-            if normalized:
-                results.extend(normalized)
-        return results
+        individual_timeout = None
+        if timeout and timeout > 1:
+            individual_timeout = timeout * 0.1
+
+        stmt = await self._get_statement_async(sql, individual_timeout, tags)
+
+        async def _run_batch():
+            results = []
+            for params in param_list:
+                raw_result = await self._execute_with_timeout(sql, params, stmt, individual_timeout)
+                normalized = self._normalize_result(raw_result)
+                if normalized:
+                    results.extend(normalized)
+            return results
+
+        if timeout:
+            async with self._auto_transaction_async():
+                return await asyncio.wait_for(_run_batch(), timeout=timeout)
+        else:
+            async with self._auto_transaction_async():
+                return await _run_batch()
 
     # region -- ABSTRACT METHODS -------
     @abstractmethod
@@ -912,6 +970,11 @@ class AsyncConnection(BaseConnection, ABC):
         Returns:
             Any: The underlying database connection object.
         """
+        pass
+
+    @abstractmethod
+    async def in_transaction_async(self) -> bool:
+        """Return True if connection is in an active transaction."""
         pass
 
     @abstractmethod
@@ -951,6 +1014,11 @@ class AsyncConnection(BaseConnection, ABC):
         should not be used after calling this method.
         """
         pass
+
+    @abstractmethod
+    async def get_version_details_async(self) -> Dict[str, str]:
+        """ Returns {'db_server_version', 'db_driver'} """
+        pass
     # endregion ------------------------
 
 class SyncConnection(ABC, BaseConnection):
@@ -963,7 +1031,19 @@ class SyncConnection(ABC, BaseConnection):
     
     All methods are abstract and must be implemented by derived classes.
     """
-    @circuit_breaker(name="sync_execute")
+
+    @track_slow_method
+    def _execute_with_soft_timeout(self, sql, params, stmt, timeout):
+        soft_timeout = (timeout - 0.5) if timeout and timeout > 1 else None
+        start = time.time()
+        raw_result = self._execute_statement_sync(stmt, params)
+        elapsed = time.time() - start
+        if soft_timeout and elapsed > soft_timeout:
+            raise TimeoutError(f"Query exceeded soft timeout of {soft_timeout}s (took {elapsed:.2f}s)")
+        _ = sql # need sql in the arg for logging details of slow queries
+        return raw_result
+
+    @circuit_breaker(name="sync_execute")    
     def execute_sync(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Synchronously executes a SQL query with standard ? placeholders.
@@ -980,35 +1060,14 @@ class SyncConnection(ABC, BaseConnection):
         Returns:
             List[Tuple]: Result rows as tuples
         """
-        stmt = self._get_statement_sync(sql)
-
-        comment_sql = self.parameter_converter.make_comment_sql(tags)
-        if comment_sql:
-            self._execute_statement_sync(comment_sql)
-        
-        timeout_sql = self.parameter_converter.make_timeout_sql(timeout)
-        if timeout_sql:
-            self._execute_statement_sync(timeout_sql)
-
-        # Define Python soft timeout (slightly lower)
-        soft_timeout = (timeout - 0.5) if timeout and timeout > 1 else None
-
-        start = time.time()
-        raw_result = self._execute_statement_sync(stmt, params)
-        elapsed = time.time() - start
-
-        if soft_timeout and elapsed > soft_timeout:
-            raise TimeoutError(f"Query exceeded soft timeout of {soft_timeout}s (took {elapsed:.2f}s): {sql}")
-
-        if elapsed > 2.0:
-            logger.warning(f"Slow query ({elapsed:.2f}s): {sql} params={params}")
-
+        stmt = self._get_statement_sync(sql, timeout, tags)
+        raw_result = self._execute_with_soft_timeout(sql, params, stmt, timeout)
         return self._normalize_result(raw_result)
 
 
     @circuit_breaker(name="sync_executemany")
     @overridable
-    def executemany_sync(self, sql: str, param_list: List[tuple]) -> List[Tuple]:
+    def executemany_sync(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Synchronously executes a SQL query multiple times with different parameters.
 
@@ -1019,30 +1078,47 @@ class SyncConnection(ABC, BaseConnection):
         Args:
             sql: SQL query with ? placeholders
             param_list: List of parameter tuples, one for each execution
-            
+            timeout (float, optional): a timeout, in second, after which a TimeoutError is raised
+            tags: optional dictionary of tags to inject to the sql as comment
+
         Returns:
             List[Tuple]: Result rows as tuples
         """
         if not param_list:
             return []
-            
-        stmt = self._get_statement_sync(sql)
-        
-        # For databases with native executemany for prepared statements
-        if hasattr(stmt, 'executemany'):
-            raw_result = stmt.executemany_sync(param_list)
-            return self._normalize_result(raw_result)
-            
+    
+        individual_timeout = None
+        if timeout and timeout > 1:
+            individual_timeout = timeout * 0.1
+
+        stmt = self._get_statement_sync(sql, individual_timeout, tags)
+
         # Fallback to executing one-by-one
         results = []
-        for params in param_list:
-            raw_result = self._execute_statement_sync(stmt, params)
-            normalized = self._normalize_result(raw_result)
-            if normalized:
-                results.extend(normalized)
+        start_total = time.time()
+
+        with self._auto_transaction():
+            for params in param_list:
+                raw_result = self._execute_with_soft_timeout(sql, params, stmt, individual_timeout)
+                normalized = self._normalize_result(raw_result)
+                if normalized:
+                    results.extend(normalized)
+
+                # Total soft timeout check
+                if timeout:
+                    elapsed_total = time.time() - start_total
+                    soft_total_timeout = timeout - 0.5 if timeout > 1 else None
+                    if soft_total_timeout and elapsed_total > soft_total_timeout:
+                        raise TimeoutError(f"executemany exceeded total timeout of {soft_total_timeout}s (took {elapsed_total:.2f}s)")
+
         return results
 
     # region -- ABSTRACT METHODS ----------
+    @abstractmethod
+    def in_transaction_sync(self) -> bool:
+        """Return True if connection is in an active transaction."""
+        pass
+
     @abstractmethod
     def begin_transaction_sync(self) -> None:
         """
@@ -1079,6 +1155,11 @@ class SyncConnection(ABC, BaseConnection):
         This releases any resources used by the connection. The connection
         should not be used after calling this method.
         """
+        pass
+
+    @abstractmethod
+    def get_version_details_sync(self) -> Dict[str, str]:
+        """ Returns {'db_server_version', 'db_driver'} """
         pass
     # region ------------------------------
 
@@ -1384,46 +1465,46 @@ class AsyncPoolManager(ABC):
         _shared_locks (Dict[str, asyncio.Lock]): Locks for thread-safe pool initialization
         _active_connections (Dict[str, Set[AsyncConnection]]): Keep track of active connections
         _shutting_down: [Dict[str, bool]: Keep track of pools shutdown status
-        _metrics: Dict[str, Dict[str, int]]: keep track of some metrics for each pool (e.g. how many connection acqusitions timed out)
+        _metrics: Dict[str, Dict[str, int]]: keep track of some metrics for each pool (e.g. how many connection acquisitions timed out)
     """
     _shared_pools: ClassVar[Final[Dict[str, Any]]] = {}
     _shared_locks: ClassVar[Final[Dict[str, asyncio.Lock]]] = {}
     _active_connections: ClassVar[Final[Dict[str, Set[AsyncConnection]]]] = {}
     _shutting_down: ClassVar[Final[Dict[str, bool]]] = {}
     _metrics: ClassVar[Final[Dict[str, Dict[str, int]]]] = {}
+    _metrics_lock: ClassVar[asyncio.Lock] = asyncio.Lock()
     
-    def _track_metrics(self, is_new: bool=True, error: Exception=None, is_timeout: bool=False):       
+    async def _track_metrics(self, is_new: bool=True, error: Exception=None, is_timeout: bool=False):
         k = self.hash()
-        if k not in self._metrics:
-            self._metrics[k] = {
-                'total_acquired': 1 if is_new and not error and not is_timeout else 0,
-                'total_released': 0,
-                'current_active': 1 if is_new and not error and not is_timeout else 0,
-                'peak_active': 1 if is_new and not error and not is_timeout else 0,
-                'errors': 0 if not error else 1,
-                'timeouts': 0 if not is_timeout else 1,
-                'last_timeout_timestamp': time.time() if is_timeout else None,
-                'avg_acquisition_time': 0.0,  # We'll calculate this as a running average
-            }
-        else:
-            # Update existing metrics
-            metrics = self._metrics[k]
-            if is_timeout:
-                metrics['timeouts'] += 1
-                metrics['last_timeout_timestamp'] = time.time()
-            elif error:
-                metrics['errors'] += 1
+        async with self._metrics_lock:
+            if k not in self._metrics:
+                self._metrics[k] = {
+                    'total_acquired': 1 if is_new and not error and not is_timeout else 0,
+                    'total_released': 0,
+                    'current_active': 1 if is_new and not error and not is_timeout else 0,
+                    'peak_active': 1 if is_new and not error and not is_timeout else 0,
+                    'errors': 0 if not error else 1,
+                    'timeouts': 0 if not is_timeout else 1,
+                    'last_timeout_timestamp': time.time() if is_timeout else None,
+                    'avg_acquisition_time': 0.0,
+                }
             else:
-                if is_new:
-                    metrics['total_acquired'] += 1
-                    metrics['current_active'] += 1
+                metrics = self._metrics[k]
+                if is_timeout:
+                    metrics['timeouts'] += 1
+                    metrics['last_timeout_timestamp'] = time.time()
+                elif error:
+                    metrics['errors'] += 1
                 else:
-                    metrics['total_released'] += 1
-                    metrics['current_active'] = max(0, metrics['current_active'] - 1)  # Avoid negative
-                
-                # Update peak value
-                metrics['peak_active'] = max(metrics['peak_active'], metrics['current_active'])
-        
+                    if is_new:
+                        metrics['total_acquired'] += 1
+                        metrics['current_active'] += 1
+                    else:
+                        metrics['total_released'] += 1
+                        metrics['current_active'] = max(0, metrics['current_active'] - 1)
+
+                    metrics['peak_active'] = max(metrics['peak_active'], metrics['current_active'])
+
         try:
             logger.info(f"Pool status:\n{json.dumps(self.get_pool_status())}")
         except Exception as e:
@@ -1568,11 +1649,11 @@ class AsyncPoolManager(ABC):
                 raw_conn = await self._pool.acquire(timeout=acquisition_timeout)
                 acquisition_time = time.time() - start_time
                 logger.debug(f"Connection acquired from {self.alias()} pool in {acquisition_time:.2f}s")
-                self._track_metrics(True)
+                await self._track_metrics(True)
             except TimeoutError as e:
                 acquisition_time = time.time() - start_time
                 logger.warning(f"Timeout acquiring connection from {self.alias()} pool after {acquisition_time:.2f}s")
-                self._track_metrics(is_new=False, error=None, is_timeout=True)
+                await self._track_metrics(is_new=False, error=None, is_timeout=True)
                 raise  # Re-raise the TimeoutError
                 
         except Exception as e:
@@ -1586,7 +1667,7 @@ class AsyncPoolManager(ABC):
                 'pool_exists': self._pool is not None,
             }
             logger.error(f"Connection acquisition failed for {self.alias()} pool: {e}, pool info: {pool_info}")
-            self._track_metrics(True, e)           
+            await self._track_metrics(True, e)           
             raise
         
         async_conn = wrap_raw_connection(raw_conn)
@@ -1620,14 +1701,14 @@ class AsyncPoolManager(ABC):
             # Use the ConnectionPool interface
             await self._pool.release(async_conn.get_raw_connection())
             logger.debug(f"Connection released back to {self.alias()} pool in {(time.time() - start_time):.2f}s")
-            self._track_metrics(False)
+            await self._track_metrics(False)
         except Exception as e:
             pool_info = {
                 'active_connections': len(self._connections),
                 'pool_exists': self._pool is not None,
             }
             logger.error(f"Connection release failed for {self.alias()} pool: {e}, pool info: {pool_info}")
-            self._track_metrics(False, e)
+            await self._track_metrics(False, e)
             raise
         self._connections.discard(async_conn)
 
@@ -1876,7 +1957,11 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
         while True:
             try:
                 # Wait to avoid excessive CPU usage
-                await asyncio.sleep(300)  # Check every 5 minutes
+                try:
+                    await asyncio.sleep(300)  # Check every 5 minutes
+                except asyncio.CancelledError:
+                    logger.info("Leak detection task cancelled")
+                    break
                 
                 # Check for leaked connections
                 leaked_conns = await self.check_for_leaked_connections(threshold_seconds=300)
@@ -2374,6 +2459,10 @@ class PostgresSyncConnection(SyncConnection):
         self._cursor.execute(f"EXECUTE {statement} ({placeholders})", params or ())
         return self._cursor.fetchall()  # Return raw results
 
+    def in_transaction_sync(self) -> bool:
+        """Return True if connection is in an active transaction.""" 
+        return self._conn.get_transaction_status() != psycopg2.extensions.TRANSACTION_STATUS_IDLE
+
     def begin_transaction_sync(self):
         """
         Begins a database transaction.
@@ -2410,6 +2499,20 @@ class PostgresSyncConnection(SyncConnection):
         """
         self._cursor.close()
         self._conn.close()
+    
+    def get_version_details_sync(self) -> Dict[str, str]:
+        """ Returns {'db_server_version', 'db_driver'} """
+        cursor = self._connection.cursor()
+        cursor.execute("SHOW server_version;")
+        server_version = cursor.fetchone()[0]
+
+        import psycopg2
+        driver_version = f"psycopg2 {psycopg2.__version__}"
+
+        return {           
+            "db_server_version": server_version,
+            "db_driver": driver_version
+        }
 
 class PostgresAsyncConnection(AsyncConnection):
     """
@@ -2463,6 +2566,10 @@ class PostgresAsyncConnection(AsyncConnection):
         """Execute a prepared statement using asyncpg"""
         return await statement.fetch(*(params or []))
     
+    async def in_transaction_async(self) -> bool:
+        """Return True if connection is in an active transaction."""       
+        return await self._conn.is_in_transaction()
+
     async def begin_transaction_async(self):
         """
         Asynchronously begins a database transaction.
@@ -2505,7 +2612,19 @@ class PostgresAsyncConnection(AsyncConnection):
         """
         await self._conn.close()
 
+    async def get_version_details_async(self) -> Dict[str, str]:
+        """ Returns {'db_server_version', 'db_driver'} """
+        version_tuple = self._connection.get_server_version()
+        server_version = ".".join(str(v) for v in version_tuple[:2])
 
+        import asyncpg
+        driver_version = f"asyncpg {asyncpg.__version__}"
+
+        return {      
+            "db_server_version": server_version,
+            "db_driver": driver_version
+        }
+    
 class PostgresConnectionPool(ConnectionPool):
     """
     PostgreSQL implementation of ConnectionPool using asyncpg.
@@ -2762,20 +2881,9 @@ class MysqlSyncConnection(SyncConnection):
         self._cursor.execute(statement, params or ())
         return self._cursor.fetchall()  # Return raw results
 
-    @retry_with_backoff()  
-    @track_slow_method
-    def executemany_sync(self, sql: str, param_list: List[tuple]) -> Any:
-        """
-        MySQL has a native executemany implementation, so we override the base method
-        """
-        if not param_list:
-            return []  # Return empty list for consistency
-            
-        stmt = self._get_statement_sync(sql)  # Fix method name
-        
-        # Use native executemany
-        self._cursor.executemany(stmt, param_list)
-        return self._cursor.fetchall()  # Return raw results
+    def in_transaction_sync(self) -> bool:
+        """Return True if connection is in an active transaction.""" 
+        return not self._conn.get_autocommit()
 
     def begin_transaction_sync(self):
         """
@@ -2812,6 +2920,20 @@ class MysqlSyncConnection(SyncConnection):
         self._cursor.close()
         self._conn.close()
 
+    def get_version_details_sync(self) -> Dict[str, str]:
+        """ Returns {'db_server_version', 'db_driver'} """
+        cursor = self._connection.cursor()
+        cursor.execute("SELECT VERSION();")
+        server_version = cursor.fetchone()[0]
+
+        module = type(self._connection).__module__.split(".")[0]
+        driver_version = f"{module} {__import__(module).__version__}"
+
+        return {
+            "db_server_version": server_version,
+            "db_driver": driver_version
+        }
+    
 class MysqlAsyncConnection(AsyncConnection):
     """
     MySQL implementation of the AsyncConnection interface.
@@ -2845,24 +2967,7 @@ class MysqlAsyncConnection(AsyncConnection):
         # statement is just the SQL string
         async with self._conn.cursor() as cursor:
             await cursor.execute(statement, params or ())
-            return await cursor.fetchall()
-    
-    @retry_with_backoff()
-    @track_slow_method
-    async def executemany_async(self, sql: str, param_list: List[tuple]) -> List[Tuple]:
-        """
-        MySQL has a native executemany implementation, so we override the base method
-        """
-        if not param_list:
-            return []
-            
-        stmt = await self._get_statement_async(sql)
-        
-        # Use native executemany
-        async with self._conn.cursor() as cursor:
-            await cursor.executemany(stmt, param_list)
-            native_result = await cursor.fetchall()
-            return self._normalize_result(native_result)
+            return await cursor.fetchall()   
         
     def get_raw_connection(self):
         """
@@ -2873,6 +2978,10 @@ class MysqlAsyncConnection(AsyncConnection):
         """
         return self._conn
 
+    async def in_transaction_async(self) -> bool:
+        """Return True if connection is in an active transaction.""" 
+        return not self._conn.get_autocommit()
+    
     async def begin_transaction_async(self):
         """
         Asynchronously begins a database transaction.
@@ -2911,6 +3020,21 @@ class MysqlAsyncConnection(AsyncConnection):
         """
         self._conn.close()
 
+    async def get_version_details_async(self) -> Dict[str, str]:
+        """ Returns {'db_server_version', 'db_driver'} """
+        async with self._connection.cursor() as cursor:
+            await cursor.execute("SELECT VERSION();")
+            row = await cursor.fetchone()
+            server_version = row[0]
+
+        import aiomysql
+        driver_version = f"aiomysql {aiomysql.__version__}"
+
+        return {           
+            "db_server_version": server_version,
+            "db_driver": driver_version
+        }
+    
 class MySqlConnectionPool(ConnectionPool):
     """
     MySQL implementation of ConnectionPool using aiomysql.
@@ -3174,34 +3298,11 @@ class SqliteSyncConnection(SyncConnection):
     def _execute_statement_sync(self, statement: Any, params=None) -> Any:
         """Execute a prepared statement using sqlite3"""
         return statement.execute(params or ())
-
-    @retry_with_backoff()
-    @track_slow_method
-    def executemany_sync(self, sql: str, param_list: List[tuple]) -> List[Tuple]:
-        """
-        SQLite-specific optimized implementation for executemany.
-        
-        Args:
-            sql: SQL query with ? placeholders
-            param_list: List of parameter tuples, one for each execution
-            
-        Returns:
-            List[Tuple]: Result rows as tuples
-        """
-        if not param_list:
-            return []
-            
-        # SQLite uses ? placeholders already
-        self._cursor.executemany(sql, param_list)
-        
-        # For SQLite, executemany typically doesn't return results for SELECT queries
-        # If this is a SELECT, we need to execute a separate query to get results
-        if sql.strip().upper().startswith("SELECT"):
-            # Execute one more time with the last parameters to get results
-            self._cursor.execute(sql, param_list[-1] if param_list else ())
-            return self._cursor.fetchall()
-        return []  # Non-SELECT queries don't return rows
     
+    def in_transaction_sync(self) -> bool:
+        """Return True if connection is in an active transaction.""" 
+        return not self._conn.in_transaction
+
     def begin_transaction_sync(self):
         """
         Begins a database transaction.
@@ -3237,6 +3338,20 @@ class SqliteSyncConnection(SyncConnection):
         self._cursor.close()
         self._conn.close()
 
+    def get_version_details_sync(self) -> Dict[str, str]:
+        """ Returns {'db_server_version', 'db_driver'} """
+        cursor = self._connection.cursor()
+        cursor.execute("SELECT sqlite_version();")
+        server_version = cursor.fetchone()[0]
+
+        import sqlite3
+        driver_version = f"sqlite3 {sqlite3.sqlite_version}"
+
+        return {          
+            "db_server_version": server_version,
+            "db_driver": driver_version
+        }
+           
 class SqliteAsyncConnection(AsyncConnection):
     """
     SQLite implementation of the AsyncConnection interface.
@@ -3277,38 +3392,7 @@ class SqliteAsyncConnection(AsyncConnection):
         """Execute a prepared statement using aiosqlite"""
         async with self._conn.execute(statement, params or ()) as cursor:
             return await cursor.fetchall()
-
-    @retry_with_backoff()
-    @track_slow_method
-    async def executemany_async(self, sql: str, param_list: List[Tuple]) -> List[Tuple]:
-        """
-        SQLite-specific optimized implementation for executemany.
-        
-        Args:
-            sql: SQL query with ? placeholders
-            param_list: List of parameter tuples, one for each execution
-            
-        Returns:
-            List[Tuple]: Result rows as tuples
-        """
-        if not param_list:
-            return []
-            
-        # SQLite uses ? placeholders already, so we only need to convert if needed
-        native_sql, _ = self.parameter_converter.convert_query(sql, param_list[0] if param_list else None)
-        
-        # Use the executemany method directly on the connection
-        await self._conn.executemany(native_sql, param_list)
-        
-        # For SQLite, executemany typically doesn't return results for SELECT queries
-        # If this is a SELECT, we need to execute a separate query to get results
-        if native_sql.strip().upper().startswith("SELECT"):
-            # Execute one more time with the last parameters to get results
-            # This is a limitation of SQLite's executemany
-            async with self._conn.execute(native_sql, param_list[-1] if param_list else ()) as cursor:
-                return await cursor.fetchall()
-        return []  # Non-SELECT queries don't return rows
-
+    
     async def begin_transaction_async(self):
         """
         Asynchronously begins a database transaction.
@@ -3343,6 +3427,20 @@ class SqliteAsyncConnection(AsyncConnection):
         """
         await self._conn.close()
 
+    async def get_version_details_async(self) -> Dict[str, str]:
+        """ Returns {'db_server_version', 'db_driver'} """
+        async with self._connection.execute("SELECT sqlite_version();") as cursor:
+            row = await cursor.fetchone()
+            server_version = row[0]
+
+        import aiosqlite
+        driver_version = f"aiosqlite {aiosqlite.__version__}"
+
+        return {
+            "db_server_version": server_version,
+            "db_driver": driver_version
+        }
+            
 class SqliteConnectionPool(ConnectionPool):
     """
     SQLite implementation of ConnectionPool.
