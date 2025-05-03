@@ -589,3 +589,155 @@ except CircuitOpenError as e:
     # Handle circuit open condition
     logger.warning(f"Operation prevented: {e}")
 ```
+
+### Entity Manager API
+
+The `EntityManager` class provides a high-level abstraction for managing entities stored in the database. It offers automatic schema evolution, serialization/deserialization, and history tracking.
+
+#### Core Features
+
+- **Auto Schema Creation**: Tables and columns created automatically based on entity structure
+- **Type Detection & Validation**: Automatic type inference and validation
+- **JSON Serialization**: Complex types (dict, list, etc.) stored as JSON
+- **History Tracking**: Optional versioning with rollback capability
+- **Soft Deletion**: Entities can be marked as deleted without removing data
+- **Query Builder**: Fluent query API for complex queries
+
+#### Usage Examples
+
+```python
+# Basic Entity Management
+class MyDatabase(PostgresDatabase, EntityManager):
+    pass
+
+# Initialize with both database connection and entity management
+db = MyDatabase(database="my_db", user="user", password="pass")
+
+# Create and save an entity
+user = {
+    "id": "user-123",  # Optional, auto-generated if not provided
+    "name": "John Doe",
+    "email": "john@example.com",
+    "settings": {"theme": "dark", "notifications": True},  # Complex types handled automatically
+    "tags": ["customer", "premium"]
+}
+
+# Synchronous save
+user_id = db.save_entity_sync("users", user, user_id="admin", comment="Initial creation")
+
+# Asynchronous save
+user_id = await db.save_entity_async("users", user, user_id="admin", comment="Initial creation")
+
+# Retrieve entities
+user = db.get_entity_sync("users", "user-123")
+users = db.get_entities_sync("users", {"status": "active"}, limit=10)
+
+user = await db.get_entity_async("users", "user-123")
+users = await db.get_entities_async("users", {"status": "active"}, limit=10)
+
+# Delete entities
+db.delete_entity_sync("users", "user-123", soft_delete=True, user_id="admin", comment="User requested deletion")
+await db.delete_entity_async("users", "user-123", soft_delete=True)
+
+# Restore soft-deleted entities
+db.restore_entity_sync("users", "user-123")
+await db.restore_entity_async("users", "user-123")
+
+# Enable history tracking
+db.enable_history_sync("users")
+await db.enable_history_async("users")
+
+# Access version history
+history = db.get_entity_history_sync("users", "user-123", limit=10)
+history = await db.get_entity_history_async("users", "user-123", limit=10)
+
+# Rollback to a previous version
+db.rollback_to_version_sync("users", "user-123", 3, user_id="admin", comment="Rollback to fix data issue")
+await db.rollback_to_version_async("users", "user-123", 3)
+```
+
+#### Query Builder
+
+```python
+# Synchronous Query Builder
+users = db.query_builder_sync("users")
+           .where("status", "active")
+           .where("age", ">", 21)
+           .order_by("last_login", "DESC")
+           .limit(10)
+           .offset(20)
+           .execute()
+
+# Count query
+count = db.query_builder_sync("users")
+           .where("status", "active")
+           .count()
+
+# First record only
+user = db.query_builder_sync("users")
+          .where("email", "john@example.com")
+          .first()
+
+# Asynchronous Query Builder
+users = await db.query_builder_async("users")
+                 .where("status", "active")
+                 .order_by("created_at", "DESC")
+                 .limit(10)
+                 .execute()
+```
+
+#### Entity Storage and Retrieval Methods
+
+| Method | Description |
+|--------|-------------|
+| `save_entity_sync/save_entity_async` | Create or update an entity |
+| `save_entities_sync/save_entities_async` | Create or update multiple entities in a transaction |
+| `get_entity_sync/get_entity_async` | Get an entity by ID |
+| `get_entity_by_sync/get_entity_by_async` | Get an entity by any field value |
+| `get_entities_sync/get_entities_async` | Get multiple entities with filtering |
+| `count_entities_sync/count_entities_async` | Count entities matching criteria |
+| `delete_entity_sync/delete_entity_async` | Delete or soft-delete an entity |
+| `update_entity_fields_sync/update_entity_fields_async` | Update specific fields of an entity |
+| `entity_exists_sync/entity_exists_async` | Check if an entity exists |
+| `restore_entity_sync/restore_entity_async` | Restore a soft-deleted entity |
+
+#### History and Versioning Methods
+
+| Method | Description |
+|--------|-------------|
+| `enable_history_sync/enable_history_async` | Enable history tracking for an entity type |
+| `get_entity_history_sync/get_entity_history_async` | Get version history of an entity |
+| `rollback_to_version_sync/rollback_to_version_async` | Revert an entity to a previous version |
+
+#### Schema and Metadata Methods
+
+| Method | Description |
+|--------|-------------|
+| `list_entities_sync/list_entities_async` | List all entity types in the database |
+| `get_entity_schema_sync/get_entity_schema_async` | Get field names and types for an entity |
+| `to_json/from_json` | Convert entities to/from JSON |
+| `execute_raw_sql_sync/execute_raw_sql_async` | Execute raw SQL for advanced needs |
+
+#### Internals
+
+The `EntityManager` class handles:
+
+- **Automatic Table Creation**: Creates tables and metadata tables as needed
+- **Column Management**: Adds columns when new fields appear in entities
+- **Type Inference**: Determines the most appropriate type for each field
+- **Serialization**: Converts complex types to/from string representations
+- **Transaction Safety**: Ensures ACID compliance with proper transaction handling
+- **Database Dialect Handling**: Supports different SQL dialects (PostgreSQL, MySQL, SQLite)
+
+> **Note**: MySQL has a limitation with DDL statements (CREATE, ALTER) within transactions. They cause an implicit commit, which can break transaction atomicity. Be cautious when saving entities that might trigger schema changes in a MySQL transaction.
+
+```python
+# Example: What happens internally when you save an entity
+# 1. Prepare entity (add ID, timestamps, user info)
+# 2. Check if tables exist, create if needed
+# 3. Check for missing columns, add if needed
+# 4. Serialize values (complex types to JSON)
+# 5. Generate and execute upsert SQL
+# 6. Save to history table if enabled
+# 7. Return entity ID
+```
