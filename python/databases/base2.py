@@ -540,17 +540,19 @@ class StatementCache:
                 self._lru.remove(sql_hash)
             self._lru.append(sql_hash)
 
-class SqlParameterConverter(ABC):
+class SqlGenerator(ABC):
     """
-    Abstract base class for SQL parameter placeholder conversion.
+    Abstract base class for SQL generation.
     
     Different databases use different parameter placeholder syntax. This class
     provides a way to convert between a standard format (? placeholders)
     and database-specific formats for positional parameters.
+
+    It also provide database specific sql for usual operations.
     """
     
     @abstractmethod
-    def convert_query(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
+    def convert_query_to_native(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
         """
         Converts a standard SQL query with ? placeholders to a database-specific format.
         
@@ -563,7 +565,7 @@ class SqlParameterConverter(ABC):
         """
         pass
 
-    def make_timeout_sql(self, timeout: Optional[float]) -> Optional[str]:
+    def get_timeout_sql(self, timeout: Optional[float]) -> Optional[str]:
         """
         Return a SQL statement to enforce query timeout (if applicable).
 
@@ -575,7 +577,7 @@ class SqlParameterConverter(ABC):
         """
         return None
 
-    def make_comment_sql(self, tags: Optional[Dict[str, Any]]) -> Optional[str]:
+    def get_comment_sql(self, tags: Optional[Dict[str, Any]]) -> Optional[str]:
         """
         Return SQL comment with tags if supported by database.
 
@@ -590,46 +592,40 @@ class SqlParameterConverter(ABC):
             return f"/* {' '.join(parts)} */"
         return None
         
-class PostgresAsyncConverter(SqlParameterConverter):
-    """Converter for PostgreSQL numeric placeholders ($1, $2, etc.)"""    
-    def convert_query(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
+class PostgresSqlGenerator(SqlGenerator):
+    def __init__(self, is_async: bool=True):
+        super().__init__()
+        self._is_async=is_async
+        
+    """Converter for PostgreSQL numeric placeholders ($1, $2, etc.) if async or positional '%s' if sync"""    
+    def convert_query_to_native(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
         if not params:
             return sql, []
-        new_sql = sql
-        for i in range(1, len(params) + 1):
-            new_sql = new_sql.replace('?', f"${i}", 1)
-        
+        if self._is_async:
+            new_sql = sql
+            for i in range(1, len(params) + 1):
+                new_sql = new_sql.replace('?', f"${i}", 1)
+        else:
+            new_sql = sql.replace('?', '%s')
         return new_sql, params
 
-    def make_timeout_sql(self, timeout: Optional[float]) -> Optional[str]:
+    def get_timeout_sql(self, timeout: Optional[float]) -> Optional[str]:
         if timeout:
             return f"SET LOCAL statement_timeout = {int(timeout * 1000)}"
-        return None
-        
-class PostgresSyncConverter(SqlParameterConverter):
-    """Converter for PostgreSQL percent placeholders (%s)"""    
-    def convert_query(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
-        if not params:
-            return sql, [] 
-        new_sql = sql.replace('?', '%s')
-        return new_sql, params
+        return None      
 
-    def make_timeout_sql(self, timeout: Optional[float]) -> Optional[str]:
-        if timeout:
-            return f"SET LOCAL statement_timeout = {int(timeout * 1000)}"
-        return None
 
-class MySqlConverter(SqlParameterConverter):
+class MySqlGenerator(SqlGenerator):
     """Converter for MySQL placeholders (%s)"""    
-    def convert_query(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
+    def convert_query_to_native(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
         if not params:
             return sql, []
         new_sql = sql.replace('?', '%s')
         return new_sql, params
 
-class SqliteConverter(SqlParameterConverter):
+class SqliteSqlGenerator(SqlGenerator):
     """Converter for SQLite placeholders (?)"""    
-    def convert_query(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
+    def convert_query_to_native(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
         return sql, params
 
 class BaseConnection:
@@ -764,33 +760,28 @@ class BaseConnection:
         if self.in_transaction():
             yield
         else:
-            self.begin()
+            self.begin_transaction()
             try:
                 yield
-                self.commit()
+                self.commit_transaction()
             except:
-                self.rollback()
+                self.rollback_transaction()
                 raise
 
     @contextlib.asynccontextmanager
     async def _auto_transaction_async(self):
-        if await self.in_transaction_async():
+        if await self.in_transaction():
             yield
         else:
-            await self.begin_async()
+            await self.begin_transaction()
             try:
                 yield
-                await self.commit_async()
+                await self.commit_transaction()
             except:
-                await self.rollback_async()
+                await self.rollback_transaction()
                 raise
 
-    # region -- ABSTRACT METHODS ----------
-    @property
-    @abstractmethod
-    def parameter_converter(self) -> SqlParameterConverter:
-        """Returns the parameter converter for this connection."""
-        pass
+    # region -- PRIVATE ABSTRACT METHODS ----------
 
     @abstractmethod
     def _prepare_statement_sync(self, native_sql: str) -> Any:
@@ -845,7 +836,10 @@ class BaseConnection:
             Raw execution result
         """
         pass
-    # region --------------------------------
+
+    # endregion --------------------------------
+
+
 
 class AsyncConnection(BaseConnection, ABC):
     """
@@ -857,30 +851,31 @@ class AsyncConnection(BaseConnection, ABC):
     
     All methods are abstract and must be implemented by derived classes.
     """ 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, conn: Any):
+        super().__init__(self)
+        self.__conn = conn
         self._acquired_time = None
         self._acquired_stack = None
         self._last_active_time = None
         self._is_leaked = False
         self._id = str(uuid.uuid4())  # Unique ID for tracking
 
-    def mark_active(self):
+    def _mark_active(self):
         """Mark the connection as active (used recently)"""
         self._last_active_time = time.time()
     
-    def is_idle_timeout(self, timeout_seconds: int=1800):
+    def _is_idle(self, timeout_seconds: int=1800):
         """Check if the connection has been idle for too long (default to 30mns)"""
         if self._last_active_time is None:
             return False
         return (time.time() - self._last_active_time) > timeout_seconds
     
-    def mark_leaked(self):
+    def _mark_leaked(self):
         """Mark this connection as leaked"""
         self._is_leaked = True
     
     @property
-    def is_leaked(self):
+    def _is_leaked(self):
         """Check if this connection has been marked as leaked"""
         return self._is_leaked
 
@@ -894,7 +889,7 @@ class AsyncConnection(BaseConnection, ABC):
             return raw_result
     
     @circuit_breaker(name="async_execute")    
-    async def execute_async(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
+    async def execute(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Asynchronously executes a SQL query with standard ? placeholders.
         
@@ -910,19 +905,18 @@ class AsyncConnection(BaseConnection, ABC):
         Returns:
             List[Tuple]: Result rows as tuples
         """
+        self._mark_active()
         stmt = await self._get_statement_async(sql, timeout, tags)        
         raw_result = await self._execute_with_timeout(sql, params, stmt, timeout)
         return self._normalize_result(raw_result)
 
     @circuit_breaker(name="async_executemany")
-    @overridable    
-    async def executemany_async(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
+    async def executemany(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Asynchronously executes a SQL query multiple times with different parameters.
 
         Note:
-            Automatically prepares and caches statements for repeated executions.
-            Subclasses SHOULD override this method if the underlying driver supports native batch/array/bulk execution for better performance.      
+            Automatically prepares and caches statements for repeated executions.            
             
         Args:
             sql: SQL query with ? placeholders
@@ -933,6 +927,8 @@ class AsyncConnection(BaseConnection, ABC):
         Returns:
             List[Tuple]: Result rows as tuples
         """
+        self._mark_active()
+        
         if not param_list:
             return []
         
@@ -958,57 +954,55 @@ class AsyncConnection(BaseConnection, ABC):
             async with self._auto_transaction_async():
                 return await _run_batch()
 
-    # region -- ABSTRACT METHODS -------
+    def _get_raw_connection(self) -> Any:
+        """ Return the underlying database connection (as defined by the driver) """
+        return self.__conn
+    
+    # region -- PUBLIC ABSTRACT METHODS ----------
+
+    @property
     @abstractmethod
-    def get_raw_connection(self) -> Any:
-        """
-        Returns the underlying raw database connection object.
-        
-        This method allows access to the actual database driver connection
-        when needed for advanced operations not covered by the standard API.
-        
-        Returns:
-            Any: The underlying database connection object.
-        """
+    def parameter_converter(self) -> SqlGenerator:
+        """Returns the parameter converter for this connection."""
         pass
 
     @abstractmethod
-    async def in_transaction_async(self) -> bool:
+    def in_transaction(self) -> bool:
         """Return True if connection is in an active transaction."""
         pass
 
     @abstractmethod
-    async def begin_transaction_async(self) -> None:
+    async def begin_transaction(self) -> None:
         """
-        Asynchronously begins a database transaction.
+        Begins a database transaction.
         
         After calling this method, subsequent queries will be part of the transaction
-        until either commit_transaction_async() or rollback_transaction_async() is called.
+        until either commit_transaction() or rollback_transaction() is called.
         """
         pass
 
     @abstractmethod
-    async def commit_transaction_async(self) -> None:
+    async def commit_transaction(self) -> None:
         """
-        Asynchronously commits the current transaction.
+        Commits the current transaction.
         
-        This permanently applies all changes made since begin_transaction_async() was called.
+        This permanently applies all changes made since begin_transaction() was called.
         """
         pass
 
     @abstractmethod
-    async def rollback_transaction_async(self) -> None:
+    async def rollback_transaction(self) -> None:
         """
-        Asynchronously rolls back the current transaction.
+        Rolls back the current transaction.
         
-        This discards all changes made since begin_transaction_async() was called.
+        This discards all changes made since begin_transaction() was called.
         """
         pass
 
     @abstractmethod
-    async def close_async(self) -> None:
+    async def close(self) -> None:
         """
-        Asynchronously closes the database connection.
+        Closes the database connection.
         
         This releases any resources used by the connection. The connection
         should not be used after calling this method.
@@ -1016,10 +1010,13 @@ class AsyncConnection(BaseConnection, ABC):
         pass
 
     @abstractmethod
-    async def get_version_details_async(self) -> Dict[str, str]:
+    async def get_version_details(self) -> Dict[str, str]:
         """ Returns {'db_server_version', 'db_driver'} """
         pass
-    # endregion ------------------------
+ 
+    # endregion --------------------------------
+
+
 
 class SyncConnection(ABC, BaseConnection):
     """
@@ -1031,6 +1028,9 @@ class SyncConnection(ABC, BaseConnection):
     
     All methods are abstract and must be implemented by derived classes.
     """
+    def __init__(self):
+        super().__init__()
+        self.__conn = conn
 
     @track_slow_method
     def _execute_with_soft_timeout(self, sql, params, stmt, timeout):
@@ -1044,7 +1044,7 @@ class SyncConnection(ABC, BaseConnection):
         return raw_result
 
     @circuit_breaker(name="sync_execute")    
-    def execute_sync(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
+    def execute(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Synchronously executes a SQL query with standard ? placeholders.
         
@@ -1067,7 +1067,7 @@ class SyncConnection(ABC, BaseConnection):
 
     @circuit_breaker(name="sync_executemany")
     @overridable
-    def executemany_sync(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
+    def executemany(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Synchronously executes a SQL query multiple times with different parameters.
 
@@ -1113,14 +1113,25 @@ class SyncConnection(ABC, BaseConnection):
 
         return results
 
-    # region -- ABSTRACT METHODS ----------
+    def _get_raw_connection(self) -> Any:
+        """ Return the underlying database connection (as defined by the driver) """
+        return self._conn
+    
+    # region -- PUBLIC ABSTRACT METHODS ----------
+
+    @property
     @abstractmethod
-    def in_transaction_sync(self) -> bool:
+    def parameter_converter(self) -> SqlGenerator:
+        """Returns the parameter converter for this connection."""
+        pass
+
+    @abstractmethod
+    def in_transaction(self) -> bool:
         """Return True if connection is in an active transaction."""
         pass
 
     @abstractmethod
-    def begin_transaction_sync(self) -> None:
+    def begin_transaction(self) -> None:
         """
         Begins a database transaction.
         
@@ -1130,7 +1141,7 @@ class SyncConnection(ABC, BaseConnection):
         pass
 
     @abstractmethod
-    def commit_transaction_sync(self) -> None:
+    def commit_transaction(self) -> None:
         """
         Commits the current transaction.
         
@@ -1139,7 +1150,7 @@ class SyncConnection(ABC, BaseConnection):
         pass
 
     @abstractmethod
-    def rollback_transaction_sync(self) -> None:
+    def rollback_transaction(self) -> None:
         """
         Rolls back the current transaction.
         
@@ -1148,7 +1159,7 @@ class SyncConnection(ABC, BaseConnection):
         pass
 
     @abstractmethod
-    def close_sync(self) -> None:
+    def close(self) -> None:
         """
         Closes the database connection.
         
@@ -1158,10 +1169,11 @@ class SyncConnection(ABC, BaseConnection):
         pass
 
     @abstractmethod
-    def get_version_details_sync(self) -> Dict[str, str]:
+    def get_version_details(self) -> Dict[str, str]:
         """ Returns {'db_server_version', 'db_driver'} """
         pass
-    # region ------------------------------
+ 
+    # endregion --------------------------------
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Tuple, List
@@ -1181,7 +1193,43 @@ class ConnectionPool(ABC):
         - Must handle force close behavior appropriately
         - Must implement health checking for pool vitality
     """
+    async def health_check(self) -> bool:
+        """
+        Checks if the pool is healthy by testing a connection.
+        
+        To avoid excessive health checks, this caches the result for a short time.
+        
+        Returns:
+            True if the pool is healthy, False otherwise
+        """
+        # Get cache values from instance attributes or provide defaults
+        last_health_check = getattr(self, '_last_health_check', 0)
+        health_check_interval = getattr(self, '_health_check_interval', 5.0)
+        healthy = getattr(self, '_healthy', True)
+        
+        now = time.time()
+        if now - last_health_check < health_check_interval and healthy:
+            return healthy
+            
+        setattr(self, '_last_health_check', now)
+        try:
+            conn = await self.acquire()
+            try:
+                # This is the database-specific part - subclasses should override
+                await self._test_connection(conn)
+                setattr(self, '_healthy', True)
+                return True
+            finally:
+                await self.release(conn)
+        except Exception:
+            setattr(self, '_healthy', False)
+            return False
     
+    @abstractmethod
+    async def _test_connection(self, connection: Any) -> None:
+        """Run a database-specific test query on the connection"""
+        pass
+
     @abstractmethod
     async def acquire(self, timeout: Optional[float] = None) -> Any:
         """
@@ -1230,15 +1278,7 @@ class ConnectionPool(ABC):
         """
         pass
     
-    @abstractmethod
-    async def health_check(self) -> bool:
-        """
-        Checks if the pool is healthy by testing a connection.
-        
-        Returns:
-            bool: True if the pool is healthy, False otherwise.
-        """
-        pass
+
     
     @property
     @abstractmethod
@@ -1295,22 +1335,6 @@ class ConnectionPool(ABC):
         """
         pass
 
-    @abstractmethod
-    async def execute_on_pool(self, sql: str, params: Optional[Tuple] = None) -> Any:
-        """
-        Convenience method to execute a query without explicitly acquiring/releasing a connection.
-        
-        This method acquires a connection, executes the query, and releases the connection
-        in a single operation, making it more efficient for simple queries.
-        
-        Args:
-            sql (str): The SQL query to execute.
-            params (Optional[Tuple]): Query parameters.
-            
-        Returns:
-            Any: The query result.
-        """
-        pass
 
 class DatabaseConfig:
     """
@@ -1437,7 +1461,7 @@ class DatabaseConfig:
         key_json = json.dumps(cfg, sort_keys=True)
         return hashlib.md5(key_json.encode()).hexdigest()
     
-class AsyncPoolManager(ABC):
+class PoolManager(ABC):
     """
     Abstract base class to manage the lifecycle of asynchronous connection pools.
     
@@ -1474,6 +1498,44 @@ class AsyncPoolManager(ABC):
     _metrics: ClassVar[Final[Dict[str, Dict[str, int]]]] = {}
     _metrics_lock: ClassVar[asyncio.Lock] = asyncio.Lock()
     
+    def _calculate_pool_size(self) -> Tuple[int, int]:
+        """
+        Calculate optimal pool size based on workload characteristics.
+        
+        This uses a combination of:
+        - CPU count (for CPU-bound workloads)
+        - System memory (to avoid exhausting resources)
+        - Expected concurrency
+        
+        Returns:
+            Tuple[int, int]: (min_size, max_size) of the connection pool
+        """
+        # Get system information
+        cpus = os.cpu_count() or 1
+        
+        # Try to get available memory in GB
+        try:
+            import psutil
+            available_memory_gb = psutil.virtual_memory().available / (1024 * 1024 * 1024)
+        except (ImportError, AttributeError):
+            # Default assumption if psutil is not available
+            available_memory_gb = 4.0
+        
+        estimated_mem = 0.03
+        
+        # Calculate max connections based on memory
+        max_by_memory = int(available_memory_gb / estimated_mem * 0.5)  # Use no more than 50% of available memory
+
+        min_size = max(3, cpus // 2)
+        # Max should be enough to handle spikes but not exhaust resources
+        max_size = min(max(cpus * 4, 20), max_by_memory)       
+        
+        # Log the calculation for transparency
+        logger.debug(f"Calculated connection pool size: min={min_size}, max={max_size} " +
+                    f"(cpus={cpus}, mem={available_memory_gb:.1f}GB, env={self.env()})")
+        
+        return min_size, max_size
+
     async def _track_metrics(self, is_new: bool=True, error: Exception=None, is_timeout: bool=False):
         k = self.hash()
         async with self._metrics_lock:
@@ -1699,7 +1761,7 @@ class AsyncPoolManager(ABC):
             
             start_time = time.time()
             # Use the ConnectionPool interface
-            await self._pool.release(async_conn.get_raw_connection())
+            await self._pool.release(async_conn._get_raw_connection())
             logger.debug(f"Connection released back to {self.alias()} pool in {(time.time() - start_time):.2f}s")
             await self._track_metrics(False)
         except Exception as e:
@@ -1804,12 +1866,12 @@ class AsyncPoolManager(ABC):
     async def _cleanup_connection(cls, async_conn: AsyncConnection):
         try:            
             try:
-                await async_conn.commit_transaction_async()
+                await async_conn.commit_transaction()
             except Exception as e:
                 logger.warning(f"Error committing transaction during cleanup: {e}")
 
             try:      
-                raw_conn = async_conn.get_raw_connection()
+                raw_conn = async_conn._get_raw_connection()
                 for key, conn_set in cls._active_connections.items():
                     if async_conn in conn_set:
                         pool = cls._shared_pools.get(key)
@@ -1870,7 +1932,7 @@ class AsyncPoolManager(ABC):
         # Then process each pool
         for key in keys:
             try:
-                await AsyncPoolManager._release_pending_connections(key, timeout)
+                await PoolManager._release_pending_connections(key, timeout)
                 pool = cls._shared_pools.get(key)
                 if pool:
                     try:
@@ -1902,7 +1964,7 @@ class AsyncPoolManager(ABC):
         """
         raise NotImplementedError()
 
-class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
+class ConnectionManager(PoolManager, DatabaseConfig):
     """
     Manages synchronized and asynchronous database connection lifecycles.
     
@@ -1920,7 +1982,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
         - The cached sync connection (_sync_conn) is per-instance and not shared
         - Async connections use thread-safe connection pools (see AsyncPoolManager)
         - Each instance maintains its own sync connection state
-        - DO NOT share a DatabaseConnectionManager instance across threads
+        - DO NOT share a ConnectionManager instance across threads
     
     Concurrency:
         - Sync methods will block and should not be used from async code
@@ -1934,9 +1996,34 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
         - _create_pool(config): Create a backend-specific async connection pool
         - _wrap_sync_connection(raw_conn): Wrap raw connection in SyncConnection interface
         - _wrap_async_connection(raw_conn): Wrap raw connection in AsyncConnection interface
+    
+    Args:
+        database (str): Database name.
+        host (str, optional): Server hostname. Defaults to "localhost".
+        port (int, optional): Server port. Defaults to 5432.
+        user (str, optional): Username for authentication. Defaults to None.
+        password (str, optional): Password for authentication. Defaults to None.
+        alias (str, optional): Friendly name for the connection. Defaults to database name.
+        env (str, optional): Environment label (e.g. prod, dev, test). Defaults to "prod".
     """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, database: str, host: str="localhost", port: int=5432, user: str=None, 
+                 password: str=None, alias: str=None, env: str='prod', 
+                 connection_acquisition_timeout: float=10.0, *args, **kwargs):
+        # Store the timeout value
+        self.connection_acquisition_timeout = connection_acquisition_timeout
+        
+        # Forward all named parameters
+        super().__init__(
+            database=database, 
+            host=host, 
+            port=port, 
+            user=user, 
+            password=password, 
+            alias=alias, 
+            env=env, 
+            *args, 
+            **kwargs
+        )
         # Use thread-local storage for sync connections
         self._local = threading.local()
         self._local._sync_conn = None     
@@ -1971,7 +2058,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
                 idle_conns = []
                 
                 for conn in self._connections:
-                    if conn.is_idle_timeout(IDLE_TIMEOUT) and not conn.is_leaked:
+                    if conn._is_idle(IDLE_TIMEOUT) and not conn._is_leaked:
                         idle_conns.append(conn)
                 
                 # Log idle connections
@@ -1982,7 +2069,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
                 for conn, duration, stack in leaked_conns:
                     try:
                         # Mark as leaked to avoid duplicate recovery attempts
-                        conn.mark_leaked()
+                        conn._mark_leaked()
                         
                         # Try to gracefully return to the pool
                         logger.warning(f"Attempting to recover leaked connection in {self.alias()} pool (leaked for {duration:.2f}s)")
@@ -1993,7 +2080,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
                         
                         # Try to close directly as a last resort
                         try:
-                            await conn.close_async()
+                            await conn.close()
                         except Exception:
                             pass
                 
@@ -2157,7 +2244,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
             
             # Try to close the connection directly to prevent resource leaks
             try:
-                await async_conn.close_async()
+                await async_conn.close()
             except Exception as close_error:
                 logger.error(f"Failed to close leaked connection: {close_error}")
             
@@ -2180,7 +2267,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
             
         Example:
             async with db.async_connection() as conn:
-                await conn.execute_async("SELECT * FROM users")
+                await conn.execute("SELECT * FROM users")
         """
         conn = await self.get_async_connection()
         try:
@@ -2242,169 +2329,7 @@ class DatabaseConnectionManager(AsyncPoolManager, DatabaseConfig):
         raise Exception("Derived class must implement this")  
 
 
-class BaseDatabase(DatabaseConnectionManager):
-    '''
-    Base class for all database implementations.
-    
-    This class inherits from DatabaseConnectionManager to provide connection management functionality. Specific database implementations (PostgreSQL, MySQL, SQLite) should inherit from this class and implement the required abstract methods.
-    
-    Public API:
-        - get_sync_connection() / release_sync_connection(): Manage sync connections
-        - get_async_connection() / release_async_connection(): Manage async connections
-        - sync_connection() context manager: For safe sync connection usage
-        - async_connection() context manager: For safe async connection usage
-        - close_pool() class method: For shutting down connection pools
-    
-    Thread Safety:
-        - Inherits thread safety properties from DatabaseConnectionManager
-        - Each BaseDatabase instance maintains its own sync connection state
-        - Instances should not be shared across threads
-        - For multi-threaded applications, create one instance per thread
-        - For async applications, a single instance can be shared within one event loop
-    
-    Concurrency Model:
-        - Sync operations: Single-threaded, blocking I/O model
-        - Async operations: Event-loop based, non-blocking I/O model
-        - Do not mix sync and async operations in the same call chain
-        - Sync connections are cached per instance
-        - Async connections are pooled and shared across instances with identical config
-    
-    Implementation Requirements:
-        Derived classes must implement:
-        - _create_sync_connection(config): Create raw synchronous connection
-        - _create_pool(config): Create asynchronous connection pool
-        - _wrap_async_connection(raw_conn): Wrap raw connection in AsyncConnection
-        - _wrap_sync_connection(raw_conn): Wrap raw connection in SyncConnection
-    
-    Args:
-        database (str): Database name.
-        host (str, optional): Server hostname. Defaults to "localhost".
-        port (int, optional): Server port. Defaults to 5432.
-        user (str, optional): Username for authentication. Defaults to None.
-        password (str, optional): Password for authentication. Defaults to None.
-        alias (str, optional): Friendly name for the connection. Defaults to database name.
-        env (str, optional): Environment label (e.g. prod, dev, test). Defaults to "prod".
-    '''
-    def __init__(self, database: str, host: str="localhost", port: int=5432, user: str=None, 
-                 password: str=None, alias: str=None, env: str='prod', 
-                 connection_acquisition_timeout: float=10.0, *args, **kwargs):
-        # Store the timeout value
-        self.connection_acquisition_timeout = connection_acquisition_timeout
-        
-        # Forward all named parameters
-        super().__init__(
-            database=database, 
-            host=host, 
-            port=port, 
-            user=user, 
-            password=password, 
-            alias=alias, 
-            env=env, 
-            *args, 
-            **kwargs
-        )
 
-    def _calculate_pool_size(self) -> Tuple[int, int]:
-        """
-        Calculate optimal pool size based on workload characteristics.
-        
-        This uses a combination of:
-        - CPU count (for CPU-bound workloads)
-        - System memory (to avoid exhausting resources)
-        - Expected concurrency
-        
-        Returns:
-            Tuple[int, int]: (min_size, max_size) of the connection pool
-        """
-        # Get system information
-        cpus = os.cpu_count() or 1
-        
-        # Try to get available memory in GB
-        try:
-            import psutil
-            available_memory_gb = psutil.virtual_memory().available / (1024 * 1024 * 1024)
-        except (ImportError, AttributeError):
-            # Default assumption if psutil is not available
-            available_memory_gb = 4.0
-        
-        estimated_mem = 0.03
-        
-        # Calculate max connections based on memory
-        max_by_memory = int(available_memory_gb / estimated_mem * 0.5)  # Use no more than 50% of available memory
-
-        min_size = max(3, cpus // 2)
-        # Max should be enough to handle spikes but not exhaust resources
-        max_size = min(max(cpus * 4, 20), max_by_memory)       
-        
-        # Log the calculation for transparency
-        logger.debug(f"Calculated connection pool size: min={min_size}, max={max_size} " +
-                    f"(cpus={cpus}, mem={available_memory_gb:.1f}GB, env={self.env()})")
-        
-        return min_size, max_size
-
-    @contextlib.asynccontextmanager
-    async def async_transaction(self) -> AsyncIterator[AsyncConnection]:
-        """
-        Async context manager for database transactions.
-        
-        This ensures that operations performed within the context are either
-        all committed or all rolled back in case of an exception. Handles
-        proper connection lifecycle and transaction boundaries.
-        
-        Database-specific transaction behaviors (such as MySQL auto-committing
-        on DDL statements) are handled by the underlying connection implementations.
-        
-        Yields:
-            AsyncConnection: A database connection with an active transaction.
-            
-        Example:
-            async with db.async_transaction() as conn:
-                await conn.execute_async("INSERT INTO users (name) VALUES (?)", ("Alice",))
-                await conn.execute_async("UPDATE user_counts SET count = count + 1")
-        """
-        async with self.async_connection() as conn:
-            logger.debug(f"Beginning transaction on {self.alias()} ({self.hash()[:8]})")
-            await conn.begin_transaction_async()
-            try:
-                yield conn
-                logger.debug(f"Committing transaction on {self.alias()} ({self.hash()[:8]})")
-                await conn.commit_transaction_async()
-            except Exception as e:
-                logger.debug(f"Rolling back transaction on {self.alias()} ({self.hash()[:8]}) due to: {type(e).__name__}: {e}")
-                await conn.rollback_transaction_async()
-                raise
-    
-    @contextlib.contextmanager
-    def sync_transaction(self) -> Iterator[SyncConnection]:
-        """
-        Synchronous context manager for database transactions.
-        
-        This ensures that operations performed within the context are either
-        all committed or all rolled back in case of an exception. Handles
-        proper connection lifecycle and transaction boundaries.
-        
-        Database-specific transaction behaviors (such as MySQL auto-committing
-        on DDL statements) are handled by the underlying connection implementations.
-        
-        Yields:
-            SyncConnection: A database connection with an active transaction.
-            
-        Example:
-            with db.sync_transaction() as conn:
-                conn.execute("INSERT INTO users (name) VALUES (?)", ("Alice",))
-                conn.execute("UPDATE user_counts SET count = count + 1")
-        """
-        with self.sync_connection() as conn:
-            logger.debug(f"Beginning sync transaction on {self.alias()} ({self.hash()[:8]})")
-            conn.begin_transaction()
-            try:
-                yield conn
-                logger.debug(f"Committing sync transaction on {self.alias()} ({self.hash()[:8]})")
-                conn.commit_transaction()
-            except Exception as e:
-                logger.debug(f"Rolling back sync transaction on {self.alias()} ({self.hash()[:8]}) due to: {type(e).__name__}: {e}")
-                conn.rollback_transaction()
-                raise
 
 class PostgresSyncConnection(SyncConnection):
     """
@@ -2419,7 +2344,7 @@ class PostgresSyncConnection(SyncConnection):
     def __init__(self, conn):
         self._conn = conn
         self._cursor = conn.cursor()
-        self._param_converter = PostgresSyncConverter()
+        self._param_converter = PostgresSqlGenerator(False)
         self._prepared_counter = self.ThreadSafeCounter()
 
     class ThreadSafeCounter:
@@ -2432,7 +2357,7 @@ class PostgresSyncConnection(SyncConnection):
                 return next(self.counter)
         
     @property
-    def parameter_converter(self) -> SqlParameterConverter:
+    def parameter_converter(self) -> SqlGenerator:
         """Returns the PostgreSQL parameter converter."""
         return self._param_converter
     
@@ -2458,12 +2383,12 @@ class PostgresSyncConnection(SyncConnection):
         placeholders = ','.join(['%s'] * len(params or []))
         self._cursor.execute(f"EXECUTE {statement} ({placeholders})", params or ())
         return self._cursor.fetchall()  # Return raw results
-
-    def in_transaction_sync(self) -> bool:
+  
+    def in_transaction(self) -> bool:
         """Return True if connection is in an active transaction.""" 
         return self._conn.get_transaction_status() != psycopg2.extensions.TRANSACTION_STATUS_IDLE
 
-    def begin_transaction_sync(self):
+    def begin_transaction(self):
         """
         Begins a database transaction.
         
@@ -2474,7 +2399,7 @@ class PostgresSyncConnection(SyncConnection):
         # psycopg2 starts transaction implicitly on execute
         pass
 
-    def commit_transaction_sync(self):
+    def commit_transaction(self):
         """
         Commits the current transaction.
         
@@ -2482,7 +2407,7 @@ class PostgresSyncConnection(SyncConnection):
         """
         self._conn.commit()
 
-    def rollback_transaction_sync(self):
+    def rollback_transaction(self):
         """
         Rolls back the current transaction.
         
@@ -2490,7 +2415,7 @@ class PostgresSyncConnection(SyncConnection):
         """
         self._conn.rollback()
 
-    def close_sync(self):
+    def close(self):
         """
         Closes the database connection and cursor.
         
@@ -2500,7 +2425,7 @@ class PostgresSyncConnection(SyncConnection):
         self._cursor.close()
         self._conn.close()
     
-    def get_version_details_sync(self) -> Dict[str, str]:
+    def get_version_details(self) -> Dict[str, str]:
         """ Returns {'db_server_version', 'db_driver'} """
         cursor = self._connection.cursor()
         cursor.execute("SHOW server_version;")
@@ -2527,21 +2452,13 @@ class PostgresAsyncConnection(AsyncConnection):
     def __init__(self, raw_conn):
         self._conn = raw_conn
         self._tx = None
-        self._param_converter = PostgresAsyncConverter()
+        self._param_converter = PostgresSqlGenerator(True)
 
     @property
-    def parameter_converter(self) -> SqlParameterConverter:
+    def parameter_converter(self) -> SqlGenerator:
         """Returns the PostgreSQL parameter converter."""
         return self._param_converter
-    
-    def get_raw_connection(self):
-        """
-        Returns the underlying raw asyncpg connection.
-        
-        Returns:
-            The raw asyncpg connection object.
-        """
-        return self._conn
+
 
     @retry_with_backoff(
         exceptions=(
@@ -2566,11 +2483,11 @@ class PostgresAsyncConnection(AsyncConnection):
         """Execute a prepared statement using asyncpg"""
         return await statement.fetch(*(params or []))
     
-    async def in_transaction_async(self) -> bool:
+    async def in_transaction(self) -> bool:
         """Return True if connection is in an active transaction."""       
         return await self._conn.is_in_transaction()
 
-    async def begin_transaction_async(self):
+    async def begin_transaction(self):
         """
         Asynchronously begins a database transaction.
         
@@ -2581,7 +2498,7 @@ class PostgresAsyncConnection(AsyncConnection):
             self._tx = self._conn.transaction()
             await self._tx.start()
 
-    async def commit_transaction_async(self):
+    async def commit_transaction(self):
         """
         Asynchronously commits the current transaction.
         
@@ -2592,7 +2509,7 @@ class PostgresAsyncConnection(AsyncConnection):
             await self._tx.commit()
             self._tx = None
 
-    async def rollback_transaction_async(self):
+    async def rollback_transaction(self):
         """
         Asynchronously rolls back the current transaction.
         
@@ -2603,7 +2520,7 @@ class PostgresAsyncConnection(AsyncConnection):
             await self._tx.rollback()
             self._tx = None
 
-    async def close_async(self):
+    async def close(self):
         """
         Asynchronously closes the database connection.
         
@@ -2612,7 +2529,7 @@ class PostgresAsyncConnection(AsyncConnection):
         """
         await self._conn.close()
 
-    async def get_version_details_async(self) -> Dict[str, str]:
+    async def get_version_details(self) -> Dict[str, str]:
         """ Returns {'db_server_version', 'db_driver'} """
         version_tuple = self._connection.get_server_version()
         server_version = ".".join(str(v) for v in version_tuple[:2])
@@ -2693,31 +2610,10 @@ class PostgresConnectionPool(ConnectionPool):
         # asyncpg.Pool.close() has a cancel_tasks parameter that maps to our force parameter
         await self._pool.close(cancel_tasks=force)
     
-    async def health_check(self) -> bool:
-        """
-        Checks if the pool is healthy by testing a connection.
-        
-        To avoid excessive health checks, this caches the result for a short time.
-        
-        Returns:
-            True if the pool is healthy, False otherwise
-        """
-        now = time.time()
-        if now - self._last_health_check < self._health_check_interval and self._healthy:
-            return self._healthy
-            
-        self._last_health_check = now
-        try:
-            conn = await self.acquire()
-            try:
-                await conn.execute("SELECT 1")
-                self._healthy = True
-                return True
-            finally:
-                await self.release(conn)
-        except Exception:
-            self._healthy = False
-            return False
+
+    async def _test_connection(self, connection):
+        await connection.execute("SELECT 1")
+
     
     @property
     def min_size(self) -> int:
@@ -2744,29 +2640,13 @@ class PostgresConnectionPool(ConnectionPool):
         """Gets the number of idle connections in the pool."""
         return len([h for h in self._pool._holders if not h._in_use])
     
-    async def execute_on_pool(self, sql: str, params: Optional[Tuple] = None) -> Any:
-        """
-        Executes a query on a temporary connection from the pool.
-        
-        Args:
-            sql: The SQL query to execute
-            params: Query parameters
-            
-        Returns:
-            The query result
-        """
-        conn = await self.acquire()
-        try:
-            return await conn.execute(sql, *(params or []))
-        finally:
-            await self.release(conn)
 
-class PostgresDatabase(BaseDatabase):
+class PostgresDatabase(ConnectionManager):
     """
-    PostgreSQL implementation of the BaseDatabase.
+    PostgreSQL implementation of the ConnectionManager.
     
     This class provides concrete implementations of the abstract methods
-    in BaseDatabase for PostgreSQL using psycopg2 for synchronous operations
+    in ConnectionManager for PostgreSQL using psycopg2 for synchronous operations
     and asyncpg for asynchronous operations.
     
     Usage:
@@ -2783,7 +2663,7 @@ class PostgresDatabase(BaseDatabase):
             
         # Asynchronous
         async with db.async_connection() as conn:
-            await conn.execute_async("SELECT * FROM users")
+            await conn.execute("SELECT * FROM users")
     """
 
     # region -- Implementation of Abstract methods ---------
@@ -2859,10 +2739,10 @@ class MysqlSyncConnection(SyncConnection):
     def __init__(self, conn):
         self._conn = conn
         self._cursor = conn.cursor()
-        self._param_converter = MySqlConverter()
+        self._param_converter = MySqlGenerator()
 
     @property
-    def parameter_converter(self) -> SqlParameterConverter:
+    def parameter_converter(self) -> SqlGenerator:
         """Returns the MySql parameter converter."""
         return self._param_converter
     
@@ -2881,11 +2761,12 @@ class MysqlSyncConnection(SyncConnection):
         self._cursor.execute(statement, params or ())
         return self._cursor.fetchall()  # Return raw results
 
-    def in_transaction_sync(self) -> bool:
+     
+    def in_transaction(self) -> bool:
         """Return True if connection is in an active transaction.""" 
         return not self._conn.get_autocommit()
 
-    def begin_transaction_sync(self):
+    def begin_transaction(self):
         """
         Begins a database transaction.
         
@@ -2894,7 +2775,7 @@ class MysqlSyncConnection(SyncConnection):
         """
         self._conn.begin()
 
-    def commit_transaction_sync(self):
+    def commit_transaction(self):
         """
         Commits the current transaction.
         
@@ -2902,7 +2783,7 @@ class MysqlSyncConnection(SyncConnection):
         """
         self._conn.commit()
 
-    def rollback_transaction_sync(self):
+    def rollback_transaction(self):
         """
         Rolls back the current transaction.
         
@@ -2910,7 +2791,7 @@ class MysqlSyncConnection(SyncConnection):
         """
         self._conn.rollback()
 
-    def close_sync(self):
+    def close(self):
         """
         Closes the database connection and cursor.
         
@@ -2920,7 +2801,7 @@ class MysqlSyncConnection(SyncConnection):
         self._cursor.close()
         self._conn.close()
 
-    def get_version_details_sync(self) -> Dict[str, str]:
+    def get_version_details(self) -> Dict[str, str]:
         """ Returns {'db_server_version', 'db_driver'} """
         cursor = self._connection.cursor()
         cursor.execute("SELECT VERSION();")
@@ -2946,11 +2827,11 @@ class MysqlAsyncConnection(AsyncConnection):
     """
     def __init__(self, conn):
         self._conn = conn
-        self._param_converter = MySqlConverter()
+        self._param_converter = MySqlGenerator()
 
     @property
-    def parameter_converter(self) -> SqlParameterConverter:
-        """Returns the PostgreSQL parameter converter."""
+    def parameter_converter(self) -> SqlGenerator:
+        """Returns the SQL parameter converter."""
         return self._param_converter
 
     @retry_with_backoff()
@@ -2968,21 +2849,13 @@ class MysqlAsyncConnection(AsyncConnection):
         async with self._conn.cursor() as cursor:
             await cursor.execute(statement, params or ())
             return await cursor.fetchall()   
-        
-    def get_raw_connection(self):
-        """
-        Returns the underlying raw aiomysql connection.
-        
-        Returns:
-            The raw aiomysql connection object.
-        """
-        return self._conn
+ 
 
-    async def in_transaction_async(self) -> bool:
+    async def in_transaction(self) -> bool:
         """Return True if connection is in an active transaction.""" 
         return not self._conn.get_autocommit()
     
-    async def begin_transaction_async(self):
+    async def begin_transaction(self):
         """
         Asynchronously begins a database transaction.
         
@@ -2992,7 +2865,7 @@ class MysqlAsyncConnection(AsyncConnection):
         """
         await self._conn.begin()
 
-    async def commit_transaction_async(self):
+    async def commit_transaction(self):
         """
         Asynchronously commits the current transaction.
         
@@ -3000,7 +2873,7 @@ class MysqlAsyncConnection(AsyncConnection):
         """
         await self._conn.commit()
 
-    async def rollback_transaction_async(self):
+    async def rollback_transaction(self):
         """
         Asynchronously rolls back the current transaction.
         
@@ -3011,7 +2884,7 @@ class MysqlAsyncConnection(AsyncConnection):
         """
         await self._conn.rollback()
 
-    async def close_async(self):
+    async def close(self):
         """
         Asynchronously closes the database connection.
         
@@ -3020,7 +2893,7 @@ class MysqlAsyncConnection(AsyncConnection):
         """
         self._conn.close()
 
-    async def get_version_details_async(self) -> Dict[str, str]:
+    async def get_version_details(self) -> Dict[str, str]:
         """ Returns {'db_server_version', 'db_driver'} """
         async with self._connection.cursor() as cursor:
             await cursor.execute("SELECT VERSION();")
@@ -3109,34 +2982,8 @@ class MySqlConnectionPool(ConnectionPool):
                 self._pool._cond._loop.call_soon(self._pool._cond.notify_all)
         await self._pool.close()
     
-    async def health_check(self) -> bool:
-        """
-        Checks if the pool is healthy by testing a connection.
-        
-        To avoid excessive health checks, this caches the result for a short time.
-        
-        Returns:
-            True if the pool is healthy, False otherwise
-        """
-        now = time.time()
-        if now - self._last_health_check < self._health_check_interval and self._healthy:
-            return self._healthy
-            
-        self._last_health_check = now
-        try:
-            conn = await self.acquire()
-            try:
-                async with conn.cursor() as cur:
-                    await cur.execute("SELECT 1")
-                    # Must fetch result to complete the query
-                    await cur.fetchone()
-                self._healthy = True
-                return True
-            finally:
-                await self.release(conn)
-        except Exception:
-            self._healthy = False
-            return False
+    async def _test_connection(self, connection):
+        await connection.execute("SELECT 1")
     
     @property
     def min_size(self) -> int:
@@ -3162,33 +3009,15 @@ class MySqlConnectionPool(ConnectionPool):
     @property
     def idle(self) -> int:
         """Gets the number of idle connections in the pool."""
-        return len(self._pool._free)
+        return len(self._pool._free)   
     
-    async def execute_on_pool(self, sql: str, params: Optional[Tuple] = None) -> Any:
-        """
-        Executes a query on a temporary connection from the pool.
-        
-        Args:
-            sql: The SQL query to execute
-            params: Query parameters
-            
-        Returns:
-            The query result
-        """
-        conn = await self.acquire()
-        try:
-            async with conn.cursor() as cur:
-                await cur.execute(sql, params or ())
-                return await cur.fetchall()
-        finally:
-            await self.release(conn)
 
-class MySqlDatabase(BaseDatabase):
+class MySqlDatabase(ConnectionManager):
     """
-    MySQL implementation of the BaseDatabase.
+    MySQL implementation of the ConnectionManager.
     
     This class provides concrete implementations of the abstract methods
-    in BaseDatabase for MySQL using pymysql for synchronous operations
+    in ConnectionManager for MySQL using pymysql for synchronous operations
     and aiomysql for asynchronous operations.
     
     Usage:
@@ -3205,7 +3034,7 @@ class MySqlDatabase(BaseDatabase):
             
         # Asynchronous
         async with db.async_connection() as conn:
-            await conn.execute_async("SELECT * FROM users")
+            await conn.execute("SELECT * FROM users")
     """
 
     # region -- Implementation of Abstract methods ---------
@@ -3282,11 +3111,11 @@ class SqliteSyncConnection(SyncConnection):
     def __init__(self, conn):
         self._conn = conn
         self._cursor = conn.cursor()
-        self._param_converter = SqliteConverter()
+        self._param_converter = SqliteSqlGenerator()
 
     @property
-    def parameter_converter(self) -> SqlParameterConverter:
-        """Returns the PostgreSQL parameter converter."""
+    def parameter_converter(self) -> SqlGenerator:
+        """Returns the SQL parameter converter."""
         return self._param_converter
 
     @retry_with_backoff()
@@ -3298,12 +3127,13 @@ class SqliteSyncConnection(SyncConnection):
     def _execute_statement_sync(self, statement: Any, params=None) -> Any:
         """Execute a prepared statement using sqlite3"""
         return statement.execute(params or ())
-    
-    def in_transaction_sync(self) -> bool:
+
+        
+    def in_transaction(self) -> bool:
         """Return True if connection is in an active transaction.""" 
         return not self._conn.in_transaction
 
-    def begin_transaction_sync(self):
+    def begin_transaction(self):
         """
         Begins a database transaction.
         
@@ -3312,7 +3142,7 @@ class SqliteSyncConnection(SyncConnection):
         """
         self._conn.execute("BEGIN")
 
-    def commit_transaction_sync(self):
+    def commit_transaction(self):
         """
         Commits the current transaction.
         
@@ -3320,7 +3150,7 @@ class SqliteSyncConnection(SyncConnection):
         """
         self._conn.commit()
 
-    def rollback_transaction_sync(self):
+    def rollback_transaction(self):
         """
         Rolls back the current transaction.
         
@@ -3328,7 +3158,7 @@ class SqliteSyncConnection(SyncConnection):
         """
         self._conn.rollback()
 
-    def close_sync(self):
+    def close(self):
         """
         Closes the database connection and cursor.
         
@@ -3338,7 +3168,7 @@ class SqliteSyncConnection(SyncConnection):
         self._cursor.close()
         self._conn.close()
 
-    def get_version_details_sync(self) -> Dict[str, str]:
+    def get_version_details(self) -> Dict[str, str]:
         """ Returns {'db_server_version', 'db_driver'} """
         cursor = self._connection.cursor()
         cursor.execute("SELECT sqlite_version();")
@@ -3364,22 +3194,14 @@ class SqliteAsyncConnection(AsyncConnection):
     """
     def __init__(self, conn):
         self._conn = conn
-        self._param_converter = SqliteConverter()
+        self._param_converter = SqliteSqlGenerator()
 
     @property
-    def parameter_converter(self) -> SqlParameterConverter:
-        """Returns the PostgreSQL parameter converter."""
+    def parameter_converter(self) -> SqlGenerator:
+        """Returns the SQL parameter converter."""
         return self._param_converter
 
-    def get_raw_connection(self):
-        """
-        Returns the underlying raw aiosqlite connection.
-        
-        Returns:
-            The raw aiosqlite connection object.
-        """
-        return self._conn
-
+  
     @retry_with_backoff()
     async def _prepare_statement_async(self, native_sql: str) -> Any:
         """
@@ -3393,7 +3215,7 @@ class SqliteAsyncConnection(AsyncConnection):
         async with self._conn.execute(statement, params or ()) as cursor:
             return await cursor.fetchall()
     
-    async def begin_transaction_async(self):
+    async def begin_transaction(self):
         """
         Asynchronously begins a database transaction.
         
@@ -3402,7 +3224,7 @@ class SqliteAsyncConnection(AsyncConnection):
         """
         await self._conn.execute("BEGIN")
 
-    async def commit_transaction_async(self):
+    async def commit_transaction(self):
         """
         Asynchronously commits the current transaction.
         
@@ -3410,7 +3232,7 @@ class SqliteAsyncConnection(AsyncConnection):
         """
         await self._conn.commit()
 
-    async def rollback_transaction_async(self):
+    async def rollback_transaction(self):
         """
         Asynchronously rolls back the current transaction.
         
@@ -3418,7 +3240,7 @@ class SqliteAsyncConnection(AsyncConnection):
         """
         await self._conn.rollback()
 
-    async def close_async(self):
+    async def close(self):
         """
         Asynchronously closes the database connection.
         
@@ -3427,7 +3249,7 @@ class SqliteAsyncConnection(AsyncConnection):
         """
         await self._conn.close()
 
-    async def get_version_details_async(self) -> Dict[str, str]:
+    async def get_version_details(self) -> Dict[str, str]:
         """ Returns {'db_server_version', 'db_driver'} """
         async with self._connection.execute("SELECT sqlite_version();") as cursor:
             row = await cursor.fetchone()
@@ -3540,32 +3362,8 @@ class SqliteConnectionPool(ConnectionPool):
             # Close the connection
             await self._conn.close()
     
-    async def health_check(self) -> bool:
-        """
-        Checks if the SQLite connection is healthy.
-        
-        Returns:
-            True if the connection is healthy, False otherwise
-        """
-        now = time.time()
-        if now - self._last_health_check < self._health_check_interval and self._healthy:
-            return self._healthy
-            
-        self._last_health_check = now
-        
-        # If the connection is in use, assume it's healthy
-        if self._in_use:
-            return True
-            
-        # Otherwise, test it
-        try:
-            async with self._lock:
-                await self._conn.execute("SELECT 1")
-                self._healthy = True
-                return True
-        except Exception:
-            self._healthy = False
-            return False
+    async def _test_connection(self, connection):
+        await connection.execute("SELECT 1")
     
     @property
     def min_size(self) -> int:
@@ -3592,30 +3390,13 @@ class SqliteConnectionPool(ConnectionPool):
         """Returns 0 if the connection is in use, 1 otherwise."""
         return 0 if self._in_use else 1
     
-    async def execute_on_pool(self, sql: str, params: Optional[Tuple] = None) -> Any:
-        """
-        Executes a query on the SQLite connection.
-        
-        Args:
-            sql: The SQL query to execute
-            params: Query parameters
-            
-        Returns:
-            The query result
-        """
-        conn = await self.acquire()
-        try:
-            async with conn.execute(sql, params or ()) as cursor:
-                return await cursor.fetchall()
-        finally:
-            await self.release(conn)
 
-class SqliteDatabase(BaseDatabase):
+class SqliteDatabase(ConnectionManager):
     """
-    SQLite implementation of the BaseDatabase.
+    SQLite implementation of the ConnectionManager.
     
     This class provides concrete implementations of the abstract methods
-    in BaseDatabase for SQLite using sqlite3 for synchronous operations
+    in ConnectionManager for SQLite using sqlite3 for synchronous operations
     and aiosqlite for asynchronous operations.
     
     Usage:
@@ -3629,7 +3410,7 @@ class SqliteDatabase(BaseDatabase):
             
         # Asynchronous
         async with db.async_connection() as conn:
-            await conn.execute_async("SELECT * FROM users")
+            await conn.execute("SELECT * FROM users")
     """
 
     # region -- Implementation of Abstract methods ---------
@@ -3713,7 +3494,7 @@ with db.sync_connection() as conn:
 # Asynchronous usage
 async def async_example():
     async with db.async_connection() as conn:
-        result = await conn.execute_async("SELECT * FROM users WHERE id = %s", (1,))
+        result = await conn.execute("SELECT * FROM users WHERE id = %s", (1,))
         # Process result...
 
 # Cleanup at application shutdown
@@ -3723,7 +3504,7 @@ async def shutdown():
 
 
 class EntityRepository:
-    def __init__(self, db: BaseDatabase):
+    def __init__(self, db: ConnectionManager):
         self._db = db
     
     def get_entity(self, entity_id):
@@ -3763,7 +3544,7 @@ class MetadataCacheMixin:
 
 class DatabaseFactory:
     @staticmethod
-    def create_database(db_type: str, db_config: DatabaseConfig) -> BaseDatabase:
+    def create_database(db_type: str, db_config: DatabaseConfig) -> ConnectionManager:
         """Factory method to create the appropriate database instance"""
         if db_type.lower() == 'postgres':
             return PostgresDatabase(**db_config.config())
