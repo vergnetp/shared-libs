@@ -170,6 +170,15 @@ This means preceding SQL in the transaction cannot be rolled back — unlike Pos
 
 ---
 
+## TODO
+
+Think about integrating different timeouts in DatabaseConfig:
+* connection acquisition/creation
+* pool creation
+* sql execution
+  
+
+
 ## Getting Started
 
 To get started, initialize the database connection using your engine of choice (e.g. PostgreSQL, MySQL). Here's an example using PostgreSQL:
@@ -186,12 +195,13 @@ config = DatabaseConfig(
     connection_acquisition_timeout=10.0  # Optional timeout setting
 )
 
-# Create appropriate database instance without directly specifying the class
 db = DatabaseFactory.create_database("postgres", config)
 
 async with db.async_connection() as conn:   
     await conn.begin_transaction()    
     try:
+        # Note: in the following results, we ommit the auto-generated created_at field for simplicity. Also the id would be longer (uuid).
+
         entities = await conn.save_entities("users",[{'name':'Phil'},{'name':'Karen','surname':'Brown'}])
         uid = entities[0].get('id', None)
         
@@ -201,19 +211,19 @@ async with db.async_connection() as conn:
             timeout=5.0,  # Query timeout in seconds
             tags={"operation": "get_user"}  # Optional query tags for logging/metrics
         ) 
-        # ('Phil',None,'1','2025-05-05T11:00:00.123456','2025-05-05T11:00:00.123456')
+        # ('Phil',None,'1','2025-05-05T11:00:00.123456')
         
         await conn.save_entity("users",{'id':uid,'name':'Bob','age':24})
         
-        result = await conn.get_entity("users",uid) # {'name':'Bob','surname':None,'age':'24','id':'1','created_at':'2025-05-05T11:00:00.123456','updated_at':'2025-05-05T11:00:01.789012'}
-        result = await conn.get_entity("users",uid,deserialize=True) # {'name':'Bob','surname':None,'age':24,'id':'1','created_at':datetime.datetime(2025, 5, 5, 11, 0, 0, 123456),'updated_at':datetime.datetime(2025, 5, 5, 11, 0, 1, 789012)}
-        result = await conn.find_entities("users",where_clause="age <= ?",params=(30,),deserialize=False) # [{'name':'Bob','surname':None,'age':'24','id':'1','created_at':'2025-05-05T11:00:00.123456','updated_at':'2025-05-05T11:00:01.789012'}]
-        result = await conn.get_entity_history("users",uid,deserialize=False) # [{'name':'Phil','surname':None,'id':'1','created_at':'2025-05-05T11:00:00.123456','updated_at':'2025-05-05T11:00:00.123456','version':'1'},{'name':'Bob','surname':None,'age':'24','id':'1','created_at':'2025-05-05T11:00:00.123456','updated_at':'2025-05-05T11:00:01.789012','version':'2'}]
+        result = await conn.get_entity("users",uid) # {'name':'Bob','surname':None,'age':'24','id':'1','updated_at':'2025-05-05T11:00:01.789012'}
+        result = await conn.get_entity("users",uid,deserialize=True) # {'name':'Bob','surname':None,'age':24,'id':'1','updated_at':datetime.datetime(2025, 5, 5, 11, 0, 1, 789012)}
+        result = await conn.find_entities("users",where_clause="age <= ?",params=(30,),deserialize=False) # [{'name':'Bob','surname':None,'age':'24','id':'1','updated_at':'2025-05-05T11:00:01.789012'}]
+        result = await conn.get_entity_history("users",uid,deserialize=False) # [{'name':'Phil','surname':None,'id':'1','updated_at':'2025-05-05T11:00:00.123456','version':'1'},{'name':'Bob','surname':None,'age':'24','id':'1','updated_at':'2025-05-05T11:00:01.789012','version':'2'}]
         
         old_version = await conn.get_entity_by_version("users", uid, 1)        
         await conn.save_entity("users", old_version)        
         
-        result = await conn.get_entity("users",uid) # {'name':'Phil','surname':None,'id':'1','created_at':'2025-05-05T11:00:00.123456','updated_at':'2025-05-05T11:00:02.345678'}
+        result = await conn.get_entity("users",uid) # {'name':'Phil','surname':None,'id':'1','updated_at':'2025-05-05T11:00:02.345678'}
         
         await conn.commit_transaction()
     except Exception:
@@ -427,7 +437,7 @@ Abstract base class defining the interface for asynchronous database connections
 |<code style="background-color:pink">@async_method</code>| `close` |||Resource Management| Asynchronously closes the database connection. |
 |<code style="background-color:pink">@async_method</code>| `get_version_details` ||`Dict[str, str]`|Diagnostic| Returns {'db_server_version', 'db_driver'} with version information. |
 |<code style="background-color:pink">@async_method</code>| `execute` |`sql:str` `params:tuple` `timeout:float=None` `tags:Dict[str, Any]=None`|`List[Tuple]`|Query Execution| Asynchronously executes a SQL query with standard ? placeholders. |
-|<code style="background-color:pink">@async_method</code>| `executemany` |`sql:str` `param_list:List[tuple]` `timeout:float=None` `tags:Dict[str, Any]=None`|`List[Tuple]`|Query Execution| Asynchronously executes a SQL query multiple times with different parameters. |
+|<code style="background-color:pink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code>| `executemany` |`sql:str` `param_list:List[tuple]` `timeout:float=None` `tags:Dict[str, Any]=None`|`List[Tuple]`|Query Execution| Asynchronously executes a SQL query multiple times with different parameters. |
 |<code style="background-color:pink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code>| `get_entity` |`entity_name:str` `entity_id:str` `include_deleted:bool=False` `deserialize:bool=False`|`Optional[Dict[str,Any]]`| Entity | Fetch an entity by ID. Returns None if not found. If deserialize=True, converts field values to appropriate Python types based on metadata. |
 |<code style="background-color:pink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code>| `save_entity` |`entity_name:str` `entity:Dict[str,Any]` `user_id:str=None` `comment:str=None`|`Dict[str,Any]`| Entity | Save an entity (create or update). Adds id, created_at, updated_at, and other system fields. Uses upsert to efficiently handle both new entities and updates. Adds an entry to the history table. |
 |<code style="background-color:pink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code>| `save_entities` |`entity_name:str` `entities:List[Dict[str,Any]]` `user_id:str=None` `comment:str=None`|`List[Dict[str,Any]]`| Entity | Save a list of entities in bulk. Processes each entity similar to save_entity. Returns the list of saved entities with their IDs. |

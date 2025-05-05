@@ -954,7 +954,7 @@ class EntityUtils:
             'bool': lambda v: v.lower() in ('true', '1', 'yes', 'y', 't') if v else False,
         }
     
-    def register_custom_serializer(self, type_name: str, serializer_func, deserializer_func):
+    def register_serializer(self, type_name: str, serializer_func, deserializer_func):
         """
         Register custom serialization functions for handling non-standard types.
         
@@ -1284,6 +1284,7 @@ class EntityAsyncMixin(EntityUtils):
     # Core CRUD operations
     
     @async_method
+    @with_timeout
     @auto_transaction
     async def get_entity(self, entity_name: str, entity_id: str, 
                          include_deleted: bool = False, 
@@ -1320,10 +1321,12 @@ class EntityAsyncMixin(EntityUtils):
         return entity_dict
     
     @async_method
+    @with_timeout
     @auto_transaction
     async def save_entity(self, entity_name: str, entity: Dict[str, Any], 
                         user_id: Optional[str] = None, 
-                        comment: Optional[str] = None) -> Dict[str, Any]:
+                        comment: Optional[str] = None,
+                        timeout: Optional[float] = 60) -> Dict[str, Any]:
         """
         Save an entity (create or update).
         
@@ -1332,51 +1335,62 @@ class EntityAsyncMixin(EntityUtils):
             entity: Entity data dictionary
             user_id: Optional ID of the user making the change
             comment: Optional comment about the change
+            timeout: Optional timeout in seconds for the operation (defaults to 60)
             
         Returns:
             The saved entity with updated fields
         """
-        # Prepare entity with timestamps, IDs, etc.
-        prepared_entity = self._prepare_entity(entity_name, entity, user_id, comment)
+        async def perform_save():
+            # Prepare entity with timestamps, IDs, etc.
+            prepared_entity = self._prepare_entity(entity_name, entity, user_id, comment)
+            
+            # Ensure schema exists (will be a no-op if already exists)
+            await self._ensure_entity_schema(entity_name, prepared_entity)
+            
+            # Update metadata based on entity fields
+            await self._update_entity_metadata(entity_name, prepared_entity)
+            
+            # Serialize the entity to string values
+            meta = await self._get_entity_metadata(entity_name)
+            serialized = self._serialize_entity(prepared_entity, meta)
+            
+            # Always use targeted upsert with exactly the fields provided
+            # (plus system fields added by _prepare_entity)
+            fields = list(serialized.keys())
+            sql = self.parameter_converter.get_upsert_sql(entity_name, fields)
+            
+            # Execute the upsert
+            params = tuple(serialized[field] for field in fields)
+            await self.execute(sql, params)
+            
+            # Add to history
+            await self._add_to_history(entity_name, serialized, user_id, comment)
+            
+            # Return the prepared entity
+            return prepared_entity        
+
+        try:
+            return await asyncio.wait_for(perform_save(), timeout=timeout)
+        except asyncio.TimeoutError:
+            raise TimeoutError(f"save_entity operation for {entity_name} timed out after {timeout:.1f}s")
         
-        # Ensure schema exists (will be a no-op if already exists)
-        await self._ensure_entity_schema(entity_name, prepared_entity)
-        
-        # Update metadata based on entity fields
-        await self._update_entity_metadata(entity_name, prepared_entity)
-        
-        # Serialize the entity to string values
-        meta = await self._get_entity_metadata(entity_name)
-        serialized = self._serialize_entity(prepared_entity, meta)
-        
-        # Always use targeted upsert with exactly the fields provided
-        # (plus system fields added by _prepare_entity)
-        fields = list(serialized.keys())
-        sql = self.parameter_converter.get_upsert_sql(entity_name, fields)
-        
-        # Execute the upsert
-        params = tuple(serialized[field] for field in fields)
-        await self.execute(sql, params)
-        
-        # Add to history
-        await self._add_to_history(entity_name, serialized, user_id, comment)
-        
-        # Return the prepared entity
-        return prepared_entity
     
     @async_method
+    @with_timeout
     @auto_transaction
     async def save_entities(self, entity_name: str, entities: List[Dict[str, Any]],
                         user_id: Optional[str] = None,
-                        comment: Optional[str] = None) -> List[Dict[str, Any]]:
+                        comment: Optional[str] = None,
+                        timeout: Optional[float] = 60) -> List[Dict[str, Any]]:
         """
-        Save multiple entities in a single transaction.
+        Save multiple entities in a single transaction with batch operations.
         
         Args:
             entity_name: Name of the entity type
             entities: List of entity data dictionaries
             user_id: Optional ID of the user making the change
             comment: Optional comment about the change
+            timeout: Optional timeout in seconds for the entire operation (defaults to 60)
             
         Returns:
             List of saved entities with their IDs
@@ -1384,14 +1398,93 @@ class EntityAsyncMixin(EntityUtils):
         if not entities:
             return []
         
-        result_entities = []
-        for entity in entities:
-            saved_entity = await self.save_entity(entity_name, entity, user_id, comment)
-            result_entities.append(saved_entity)
+        async def perform_batch_save():
+            # Prepare all entities and collect fields
+            prepared_entities = []
+            all_fields = set()
+            
+            for entity in entities:
+                prepared = self._prepare_entity(entity_name, entity, user_id, comment)
+                prepared_entities.append(prepared)
+                all_fields.update(prepared.keys())
+            
+            # Ensure schema exists and can accommodate all fields
+            await self._ensure_entity_schema(entity_name, {field: None for field in all_fields})
+            
+            # Update metadata for all fields at once
+            meta = {}
+            for entity in prepared_entities:
+                for field_name, value in entity.items():
+                    if field_name not in meta:
+                        meta[field_name] = self._infer_type(value)
+            
+            # Batch update the metadata
+            meta_params = [(field_name, field_type) for field_name, field_type in meta.items()]
+            if meta_params:
+                sql = self.parameter_converter.get_meta_upsert_sql(entity_name)
+                await self.executemany(sql, meta_params)
+            
+            # Add all entities to the database with batch upsert
+            fields = list(all_fields)
+            sql = self.parameter_converter.get_upsert_sql(entity_name, fields)
+            
+            # Prepare parameters for batch upsert
+            batch_params = []
+            for entity in prepared_entities:
+                params = tuple(entity.get(field, None) for field in fields)
+                batch_params.append(params)
+            
+            # Execute batch upsert
+            await self.executemany(sql, batch_params)
+            
+            # Get all entity IDs for history lookup
+            entity_ids = [entity['id'] for entity in prepared_entities]
+            
+            # Single query to get all existing versions
+            versions = {}
+            if entity_ids:
+                placeholders = ','.join(['?'] * len(entity_ids))
+                version_sql = f"SELECT id, MAX(version) as max_version FROM {entity_name}_history WHERE id IN ({placeholders}) GROUP BY id"
+                version_results = await self.execute(version_sql, tuple(entity_ids))
+                
+                # Create a dictionary of id -> current max version
+                versions = {row[0]: row[1] for row in version_results if row[1] is not None}
+            
+            # Prepare history entries
+            now = datetime.datetime.utcnow().isoformat()
+            history_fields = list(all_fields) + ['version', 'history_timestamp', 'history_user_id', 'history_comment']
+            history_sql = f"INSERT INTO {entity_name}_history ({', '.join(history_fields)}) VALUES ({', '.join(['?'] * len(history_fields))})"
+            
+            history_params = []
+            for entity in prepared_entities:
+                history_entry = entity.copy()
+                entity_id = entity['id']
+                
+                # Get next version (default to 1 if no previous versions exist)
+                next_version = (versions.get(entity_id, 0) or 0) + 1
+                
+                history_entry['version'] = next_version
+                history_entry['history_timestamp'] = now
+                history_entry['history_user_id'] = user_id
+                history_entry['history_comment'] = comment
+                
+                # Create params tuple with all fields in the correct order
+                params = tuple(history_entry.get(field, None) for field in history_fields)
+                history_params.append(params)
+            
+            # Execute batch history insert
+            await self.executemany(history_sql, history_params)
+            
+            return prepared_entities
         
-        return result_entities
+        try:
+            return await asyncio.wait_for(perform_batch_save(), timeout=timeout)
+        except asyncio.TimeoutError:
+            raise TimeoutError(f"save_entities operation timed out after {timeout:.1f}s")
+
     
     @async_method
+    @with_timeout
     @auto_transaction
     async def delete_entity(self, entity_name: str, entity_id: str, 
                            user_id: Optional[str] = None, 
@@ -1442,6 +1535,7 @@ class EntityAsyncMixin(EntityUtils):
         return result.rowcount > 0
     
     @async_method
+    @with_timeout
     @auto_transaction
     async def restore_entity(self, entity_name: str, entity_id: str, 
                             user_id: Optional[str] = None) -> bool:
@@ -1486,6 +1580,7 @@ class EntityAsyncMixin(EntityUtils):
     # Query operations
     
     @async_method
+    @with_timeout
     @auto_transaction
     async def find_entities(self, entity_name: str, where_clause: Optional[str] = None,
                           params: Optional[Tuple] = None, order_by: Optional[str] = None,
@@ -1536,6 +1631,7 @@ class EntityAsyncMixin(EntityUtils):
         return entities
     
     @async_method
+    @with_timeout
     @auto_transaction
     async def count_entities(self, entity_name: str, where_clause: Optional[str] = None,
                            params: Optional[Tuple] = None, 
@@ -1568,6 +1664,7 @@ class EntityAsyncMixin(EntityUtils):
     # History operations
     
     @async_method
+    @with_timeout
     @auto_transaction
     async def get_entity_history(self, entity_name: str, entity_id: str, 
                                 deserialize: bool = False) -> List[Dict[str, Any]]:
@@ -1609,6 +1706,7 @@ class EntityAsyncMixin(EntityUtils):
         return history_entries
     
     @async_method
+    @with_timeout
     @auto_transaction
     async def get_entity_by_version(self, entity_name: str, entity_id: str, 
                                version: int, deserialize: bool = False) -> Optional[Dict[str, Any]]:
