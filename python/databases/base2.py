@@ -729,50 +729,51 @@ class StatementCache:
     
     def _check_resize(self):
         """Dynamically resize the cache based on hit ratio and usage"""
-        if not self._auto_resize:
-            return
-            
-        now = time.time()
-        if now - self._last_resize_check < self._resize_interval:
-            return
-            
-        self._last_resize_check = now
-        total_ops = self._hits + self._misses
-        
-        # Only resize if we have enough operations to make a decision
-        if total_ops < 1000:
-            return
-        
-        hit_ratio = self.hit_ratio
-        current_usage = len(self._cache)
-        current_max = self._max_size
-        
-        # If hit ratio is high and we're close to capacity, increase size
-        if hit_ratio > 0.8 and current_usage > 0.9 * current_max:
-            new_size = min(current_max * 2, self._hard_max)
-            if new_size > current_max:
-                logger.info(f"Increasing statement cache size from {current_max} to {new_size} (hit ratio: {hit_ratio:.2f})")
-                self._max_size = new_size
-        
-        # If hit ratio is low and we're using much less than capacity, decrease size
-        elif hit_ratio < 0.4 and current_usage < 0.5 * current_max:
-            new_size = max(int(current_max / 2), self._min_size)
-            if new_size < current_max:
-                logger.info(f"Decreasing statement cache size from {current_max} to {new_size} (hit ratio: {hit_ratio:.2f})")
-                self._max_size = new_size
+        with self._lock:
+            if not self._auto_resize:
+                    return
                 
-                # Trim the cache if needed
-                excess = len(self._cache) - self._max_size
-                if excess > 0:
-                    for _ in range(excess):
-                        if self._lru:
-                            lru_hash = self._lru.pop(0)
-                            self._cache.pop(lru_hash, None)
-        
-        # Reset stats periodically
-        if total_ops > 10000:
-            self._hits = int(self._hits * 0.5)
-            self._misses = int(self._misses * 0.5)
+            now = time.time()
+            if now - self._last_resize_check < self._resize_interval:
+                return
+                
+            self._last_resize_check = now
+            total_ops = self._hits + self._misses
+            
+            # Only resize if we have enough operations to make a decision
+            if total_ops < 1000:
+                return
+            
+            hit_ratio = self.hit_ratio
+            current_usage = len(self._cache)
+            current_max = self._max_size
+            
+            # If hit ratio is high and we're close to capacity, increase size
+            if hit_ratio > 0.8 and current_usage > 0.9 * current_max:
+                new_size = min(current_max * 2, self._hard_max)
+                if new_size > current_max:
+                    logger.info(f"Increasing statement cache size from {current_max} to {new_size} (hit ratio: {hit_ratio:.2f})")
+                    self._max_size = new_size
+            
+            # If hit ratio is low and we're using much less than capacity, decrease size
+            elif hit_ratio < 0.4 and current_usage < 0.5 * current_max:
+                new_size = max(int(current_max / 2), self._min_size)
+                if new_size < current_max:
+                    logger.info(f"Decreasing statement cache size from {current_max} to {new_size} (hit ratio: {hit_ratio:.2f})")
+                    self._max_size = new_size
+                    
+                    # Trim the cache if needed
+                    excess = len(self._cache) - self._max_size
+                    if excess > 0:
+                        for _ in range(excess):
+                            if self._lru:
+                                lru_hash = self._lru.pop(0)
+                                self._cache.pop(lru_hash, None)
+            
+            # Reset stats periodically
+            if total_ops > 10000:
+                self._hits = int(self._hits * 0.5)
+                self._misses = int(self._misses * 0.5)
     
     def get(self, sql_hash) -> Optional[Tuple[Any, str]]:
         """Get a prepared statement from the cache in a thread-safe manner"""
@@ -808,7 +809,7 @@ class BaseConnection:
     """
     def __init__(self):
          self._statement_cache = StatementCache() 
-
+         
     def _normalize_result(self, raw_result: Any) -> List[Tuple]:
         """
         Default implementation to normalize results to a list of tuples.
@@ -924,7 +925,7 @@ class BaseConnection:
         if stmt_tuple:
             return stmt_tuple[0]  # First element is the statement
             
-        converted_sql, _ = self._parameter_converter.convert_query(final_sql)
+        converted_sql, _ = self._parameter_converter.convert_query_to_native(final_sql)
         stmt = self._prepare_statement_sync(converted_sql)
         self._statement_cache.put(sql_hash, stmt, final_sql)
         return stmt
@@ -2230,7 +2231,7 @@ class ConnectionManager():
                         logger.info(f"Successfully recovered leaked connection in {self.config.alias()} pool")
                     except Exception as e:
                         logger.error(f"Failed to recover leaked connection: {e}")
-                        
+                        self._connections.discard(conn)  # Explicitly discard leaked connection
                         # Try to close directly as a last resort
                         try:
                             await conn.close()
@@ -2302,7 +2303,7 @@ class ConnectionManager():
         """
         if hasattr(self._local, '_sync_conn') and self._local._sync_conn:
             try:
-                self._local._sync_conn.close_sync()
+                self._local._sync_conn.close()
                 logger.debug(f"{self.config.alias()} sync connection closed")
             except Exception as e:
                 logger.warning(f"{self.config.alias()} failed to close sync connection: {e}")
