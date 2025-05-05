@@ -25,6 +25,80 @@ import asyncpg
 import pymysql
 import aiomysql
 
+def async_method(func):
+    """
+    Decorator that marks a function as asynchronous.
+    
+    This is a documentation-only decorator that doesn't change the behavior
+    of the function. It helps clarify which methods are meant to be called
+    with 'await' and makes async methods more visible in the codebase.
+    
+    Usage:
+        @async_method
+        async def some_async_function(self, ...):
+            # Async function body
+    """
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        return await func(*args, **kwargs)
+    
+    return wrapper
+
+def auto_transaction(func):
+    """
+    Decorator that automatically wraps a function in a transaction.
+    Works for both sync and async functions.
+    
+    If the decorated function is called when a transaction is already in progress,
+    it will use the existing transaction. Otherwise, it will create a new transaction,
+    commit it if the function succeeds, or roll it back if an exception occurs.
+
+    Need to be applied to methods of a class that offers in_transaction, begin_transaction (and commit/rollback)
+    
+    Usage:
+        @auto_transaction
+        def some_function(self, ...):
+            # Function body, runs within a transaction
+            
+        @auto_transaction
+        async def some_async_function(self, ...):
+            # Async function body, runs within a transaction
+    """
+    @functools.wraps(func)
+    def sync_wrapper(self, *args, **kwargs):
+        if self.in_transaction():
+            return func(self, *args, **kwargs)
+        else:
+            self.begin_transaction()
+            try:
+                result = func(self, *args, **kwargs)
+                self.commit_transaction()
+                return result
+            except:
+                self.rollback_transaction()
+                raise
+
+    @functools.wraps(func)
+    async def async_wrapper(self, *args, **kwargs):
+        if await self.in_transaction():
+            return await func(self, *args, **kwargs)
+        else:
+            await self.begin_transaction()
+            try:
+                result = await func(self, *args, **kwargs)
+                await self.commit_transaction()
+                return result
+            except:
+                await self.rollback_transaction()
+                raise
+
+    # Choose the appropriate wrapper based on whether the function is async or not
+    if asyncio.iscoroutinefunction(func):
+        return async_wrapper
+    else:
+        return sync_wrapper
+
+
 
 class CircuitState(enum.Enum):
     CLOSED = 'closed'      # Normal operation, requests go through
@@ -888,6 +962,7 @@ class AsyncConnection(BaseConnection, ABC):
             _ = sql # we need the sql as argument to log if the query is slow (@track_slow_method)    
             return raw_result
     
+    @async_method
     @circuit_breaker(name="async_execute")    
     async def execute(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
@@ -910,6 +985,7 @@ class AsyncConnection(BaseConnection, ABC):
         raw_result = await self._execute_with_timeout(sql, params, stmt, timeout)
         return self._normalize_result(raw_result)
 
+    @async_method
     @circuit_breaker(name="async_executemany")
     async def executemany(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
@@ -971,6 +1047,7 @@ class AsyncConnection(BaseConnection, ABC):
         """Return True if connection is in an active transaction."""
         pass
 
+    @async_method
     @abstractmethod
     async def begin_transaction(self) -> None:
         """
@@ -981,6 +1058,7 @@ class AsyncConnection(BaseConnection, ABC):
         """
         pass
 
+    @async_method
     @abstractmethod
     async def commit_transaction(self) -> None:
         """
@@ -990,6 +1068,7 @@ class AsyncConnection(BaseConnection, ABC):
         """
         pass
 
+    @async_method
     @abstractmethod
     async def rollback_transaction(self) -> None:
         """
@@ -999,6 +1078,7 @@ class AsyncConnection(BaseConnection, ABC):
         """
         pass
 
+    @async_method
     @abstractmethod
     async def close(self) -> None:
         """
@@ -1009,6 +1089,7 @@ class AsyncConnection(BaseConnection, ABC):
         """
         pass
 
+    @async_method
     @abstractmethod
     async def get_version_details(self) -> Dict[str, str]:
         """ Returns {'db_server_version', 'db_driver'} """
@@ -1193,6 +1274,7 @@ class ConnectionPool(ABC):
         - Must handle force close behavior appropriately
         - Must implement health checking for pool vitality
     """
+    @async_method
     async def health_check(self) -> bool:
         """
         Checks if the pool is healthy by testing a connection.
@@ -1230,6 +1312,7 @@ class ConnectionPool(ABC):
         """Run a database-specific test query on the connection"""
         pass
 
+    @async_method
     @abstractmethod
     async def acquire(self, timeout: Optional[float] = None) -> Any:
         """
@@ -1248,6 +1331,7 @@ class ConnectionPool(ABC):
         """
         pass
         
+    @async_method
     @abstractmethod
     async def release(self, connection: Any) -> None:
         """
@@ -1261,6 +1345,7 @@ class ConnectionPool(ABC):
         """
         pass
         
+    @async_method
     @abstractmethod
     async def close(self, force: bool = False, timeout: Optional[float] = None) -> None:
         """
@@ -1611,6 +1696,7 @@ class PoolManager(ABC):
             }
         }
     
+    @async_method
     @classmethod
     async def health_check_all_pools(cls) -> Dict[str, bool]:
         """
@@ -1774,6 +1860,7 @@ class PoolManager(ABC):
             raise
         self._connections.discard(async_conn)
 
+    @async_method
     async def check_for_leaked_connections(self, threshold_seconds=300) -> List[Tuple[AsyncConnection, float, str]]:
         """
         Check for connections that have been active for longer than the threshold.
@@ -2195,6 +2282,7 @@ class ConnectionManager(PoolManager, DatabaseConfig):
 
     # region -- ASYNC METHODS ----------
    
+    @async_method
     async def get_async_connection(self) -> AsyncConnection:
         """
         Acquires an asynchronous connection from the pool.
@@ -2221,6 +2309,7 @@ class ConnectionManager(PoolManager, DatabaseConfig):
         async_conn = await self._get_connection_from_pool(self._wrap_async_connection)
         return async_conn
 
+    @async_method
     async def release_async_connection(self, async_conn: AsyncConnection):
         """
         Releases an asynchronous connection back to the pool.
@@ -2254,6 +2343,7 @@ class ConnectionManager(PoolManager, DatabaseConfig):
             except Exception:
                 pass
 
+    @async_method
     @contextlib.asynccontextmanager
     async def async_connection(self) -> Iterator[AsyncConnection]:
         """
@@ -2483,10 +2573,12 @@ class PostgresAsyncConnection(AsyncConnection):
         """Execute a prepared statement using asyncpg"""
         return await statement.fetch(*(params or []))
     
+    @async_method
     async def in_transaction(self) -> bool:
         """Return True if connection is in an active transaction."""       
         return await self._conn.is_in_transaction()
 
+    @async_method
     async def begin_transaction(self):
         """
         Asynchronously begins a database transaction.
@@ -2498,6 +2590,7 @@ class PostgresAsyncConnection(AsyncConnection):
             self._tx = self._conn.transaction()
             await self._tx.start()
 
+    @async_method
     async def commit_transaction(self):
         """
         Asynchronously commits the current transaction.
@@ -2509,6 +2602,7 @@ class PostgresAsyncConnection(AsyncConnection):
             await self._tx.commit()
             self._tx = None
 
+    @async_method
     async def rollback_transaction(self):
         """
         Asynchronously rolls back the current transaction.
@@ -2520,6 +2614,7 @@ class PostgresAsyncConnection(AsyncConnection):
             await self._tx.rollback()
             self._tx = None
 
+    @async_method
     async def close(self):
         """
         Asynchronously closes the database connection.
@@ -2529,6 +2624,7 @@ class PostgresAsyncConnection(AsyncConnection):
         """
         await self._conn.close()
 
+    @async_method
     async def get_version_details(self) -> Dict[str, str]:
         """ Returns {'db_server_version', 'db_driver'} """
         version_tuple = self._connection.get_server_version()
@@ -2571,6 +2667,7 @@ class PostgresConnectionPool(ConnectionPool):
         self._health_check_interval = 5.0  # Check at most every 5 seconds
         self._healthy = True
     
+    @async_method
     async def acquire(self, timeout: Optional[float] = None) -> Any:
         """
         Acquires a connection from the pool with timeout.
@@ -2590,6 +2687,7 @@ class PostgresConnectionPool(ConnectionPool):
         except asyncio.TimeoutError:
             raise TimeoutError(f"Timed out waiting for PostgreSQL connection after {timeout}s")
     
+    @async_method
     async def release(self, connection: Any) -> None:
         """
         Releases a connection back to the pool.
@@ -2599,6 +2697,7 @@ class PostgresConnectionPool(ConnectionPool):
         """
         await self._pool.release(connection)
     
+    @async_method
     async def close(self, force: bool = False, timeout: Optional[float] = None) -> None:
         """
         Closes the pool and all connections.
@@ -2850,11 +2949,12 @@ class MysqlAsyncConnection(AsyncConnection):
             await cursor.execute(statement, params or ())
             return await cursor.fetchall()   
  
-
+    @async_method
     async def in_transaction(self) -> bool:
         """Return True if connection is in an active transaction.""" 
         return not self._conn.get_autocommit()
     
+    @async_method
     async def begin_transaction(self):
         """
         Asynchronously begins a database transaction.
@@ -2865,6 +2965,7 @@ class MysqlAsyncConnection(AsyncConnection):
         """
         await self._conn.begin()
 
+    @async_method
     async def commit_transaction(self):
         """
         Asynchronously commits the current transaction.
@@ -2873,6 +2974,7 @@ class MysqlAsyncConnection(AsyncConnection):
         """
         await self._conn.commit()
 
+    @async_method
     async def rollback_transaction(self):
         """
         Asynchronously rolls back the current transaction.
@@ -2884,6 +2986,7 @@ class MysqlAsyncConnection(AsyncConnection):
         """
         await self._conn.rollback()
 
+    @async_method
     async def close(self):
         """
         Asynchronously closes the database connection.
@@ -2893,6 +2996,7 @@ class MysqlAsyncConnection(AsyncConnection):
         """
         self._conn.close()
 
+    @async_method
     async def get_version_details(self) -> Dict[str, str]:
         """ Returns {'db_server_version', 'db_driver'} """
         async with self._connection.cursor() as cursor:
@@ -2937,6 +3041,7 @@ class MySqlConnectionPool(ConnectionPool):
         self._health_check_interval = 5.0  # Check at most every 5 seconds
         self._healthy = True
     
+    @async_method
     async def acquire(self, timeout: Optional[float] = None) -> Any:
         """
         Acquires a connection from the pool with timeout.
@@ -2957,6 +3062,7 @@ class MySqlConnectionPool(ConnectionPool):
         except asyncio.TimeoutError:
             raise TimeoutError(f"Timed out waiting for MySQL connection after {timeout}s")
     
+    @async_method
     async def release(self, connection: Any) -> None:
         """
         Releases a connection back to the pool.
@@ -2966,6 +3072,7 @@ class MySqlConnectionPool(ConnectionPool):
         """
         self._pool.release(connection)
     
+    @async_method
     async def close(self, force: bool = False, timeout: Optional[float] = None) -> None:
         """
         Closes the pool and all connections.
@@ -3215,6 +3322,7 @@ class SqliteAsyncConnection(AsyncConnection):
         async with self._conn.execute(statement, params or ()) as cursor:
             return await cursor.fetchall()
     
+    @async_method
     async def begin_transaction(self):
         """
         Asynchronously begins a database transaction.
@@ -3224,6 +3332,7 @@ class SqliteAsyncConnection(AsyncConnection):
         """
         await self._conn.execute("BEGIN")
 
+    @async_method
     async def commit_transaction(self):
         """
         Asynchronously commits the current transaction.
@@ -3232,6 +3341,7 @@ class SqliteAsyncConnection(AsyncConnection):
         """
         await self._conn.commit()
 
+    @async_method
     async def rollback_transaction(self):
         """
         Asynchronously rolls back the current transaction.
@@ -3240,6 +3350,7 @@ class SqliteAsyncConnection(AsyncConnection):
         """
         await self._conn.rollback()
 
+    @async_method
     async def close(self):
         """
         Asynchronously closes the database connection.
@@ -3249,6 +3360,7 @@ class SqliteAsyncConnection(AsyncConnection):
         """
         await self._conn.close()
 
+    @async_method
     async def get_version_details(self) -> Dict[str, str]:
         """ Returns {'db_server_version', 'db_driver'} """
         async with self._connection.execute("SELECT sqlite_version();") as cursor:
@@ -3294,6 +3406,7 @@ class SqliteConnectionPool(ConnectionPool):
         self._health_check_interval = 5.0
         self._healthy = True
     
+    @async_method
     async def acquire(self, timeout: Optional[float] = None) -> Any:
         """
         Acquires the SQLite connection if it's not in use.
@@ -3323,6 +3436,7 @@ class SqliteConnectionPool(ConnectionPool):
         except asyncio.TimeoutError:
             raise TimeoutError(f"Timed out waiting for SQLite connection after {timeout}s")
     
+    @async_method
     async def release(self, connection: Any) -> None:
         """
         Releases the SQLite connection back to the pool.
@@ -3336,6 +3450,7 @@ class SqliteConnectionPool(ConnectionPool):
         self._in_use = False
         self._lock.release()
     
+    @async_method
     async def close(self, force: bool = False, timeout: Optional[float] = None) -> None:
         """
         Closes the SQLite connection.
@@ -3472,74 +3587,6 @@ class SqliteDatabase(ConnectionManager):
         return SqliteSyncConnection(raw_conn)
     # endregion
 
-
-""" 
-Example usage:
-# Create a PostgreSQL database connection
-db = PostgresDatabase(
-    database="my_database",
-    host="localhost",
-    port=5432,
-    user="postgres",
-    password="secret",
-    alias="main_db",
-    env="dev"
-)
-
-# Synchronous usage
-with db.sync_connection() as conn:
-    result = conn.execute("SELECT * FROM users WHERE id = %s", (1,))
-    # Process result...
-
-# Asynchronous usage
-async def async_example():
-    async with db.async_connection() as conn:
-        result = await conn.execute("SELECT * FROM users WHERE id = %s", (1,))
-        # Process result...
-
-# Cleanup at application shutdown
-async def shutdown():
-    await PostgresDatabase.close_pool() 
-"""
-
-
-class EntityRepository:
-    def __init__(self, db: ConnectionManager):
-        self._db = db
-    
-    def get_entity(self, entity_id):
-        raise NotImplementedError()
-
-class PostgresEntityRepository(EntityRepository):
-    def get_entity(self, entity_id):
-        with self._db.sync_connection() as conn:
-            result = conn.execute("SELECT * FROM entities WHERE id = %s", (entity_id,))
-            # Process result...
-            return result
-
-
-class MetadataCacheMixin:
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        try:
-            self._load_all_metadata()
-        except Exception as e:
-            logger.warning(f"Metadata load failed: {e}")
-
-    def _load_all_metadata(self):
-        # Assumes a working sync connection
-        rows = self.execute_sql(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%_meta'"
-        )
-        for (table,) in rows:
-            if not table.endswith("_meta"):
-                continue
-            entity = table[:-5]
-            meta_rows = self.execute_sql(f"SELECT name, type FROM {table}")
-            meta = {name: typ for name, typ in meta_rows}
-            self._meta_cache[entity] = meta
-            self._keys_cache[entity] = list(meta.keys())
-            self._types_cache[entity] = list(meta.values())
 
 
 class DatabaseFactory:

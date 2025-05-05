@@ -192,32 +192,15 @@ db = DatabaseFactory.create_database("postgres", config)
 async with db.async_connection() as conn:   
     await conn.begin_transaction()    
     try:
-        entities = await conn.save_entities("users",[{'name':'Phil'},{'name':'Karen','surname':'Brown'}])
-        uid = entities[0].get('id', None)
-        
         result = await conn.execute(
             "SELECT * FROM users WHERE id = ?", 
-            (uid,),
+            ('user_id',),
             timeout=5.0,  # Query timeout in seconds
             tags={"operation": "get_user"}  # Optional query tags for logging/metrics
-        ) 
-        # ('Phil',None,'1','2025-05-05T11:00:00.123456','2025-05-05T11:00:00.123456')
-        
-        await conn.save_entity("users",{'id':uid,'name':'Bob','age':24})
-        
-        result = await conn.get_entity("users",uid) # {'name':'Bob','surname':None,'age':'24','id':'1','created_at':'2025-05-05T11:00:00.123456','updated_at':'2025-05-05T11:00:01.789012'}
-        result = await conn.get_entity("users",uid,deserialize=True) # {'name':'Bob','surname':None,'age':24,'id':'1','created_at':datetime.datetime(2025, 5, 5, 11, 0, 0, 123456),'updated_at':datetime.datetime(2025, 5, 5, 11, 0, 1, 789012)}
-        result = await conn.find_entities("users",where_clause="age <= ?",params=(30,),deserialize=False) # [{'name':'Bob','surname':None,'age':'24','id':'1','created_at':'2025-05-05T11:00:00.123456','updated_at':'2025-05-05T11:00:01.789012'}]
-        result = await conn.get_entity_history("users",uid,deserialize=False) # [{'name':'Phil','surname':None,'id':'1','created_at':'2025-05-05T11:00:00.123456','updated_at':'2025-05-05T11:00:00.123456','version':'1'},{'name':'Bob','surname':None,'age':'24','id':'1','created_at':'2025-05-05T11:00:00.123456','updated_at':'2025-05-05T11:00:01.789012','version':'2'}]
-        
-        old_version = await conn.get_entity_by_version("users", uid, 1)        
-        await conn.save_entity("users", old_version)        
-        
-        result = await conn.get_entity("users",uid) # {'name':'Phil','surname':None,'id':'1','created_at':'2025-05-05T11:00:00.123456','updated_at':'2025-05-05T11:00:02.345678'}
-        
+        )
         await conn.commit_transaction()
     except Exception:
-        await conn.rollback_transaction() # For MySql or backends that don't handle DDL well (Oracle), the rollback will be incomplete
+        await conn.rollback_transaction()
         raise
 
 await PoolManager.close_pool(config_hash=config.hash(),timeout=30) # Will close the pool created for this specific config, brute forcing it after 30 seconds
@@ -391,11 +374,11 @@ Abstract base class to manage the lifecycle of asynchronous connection pools. Po
 
 |Decorators| Method |Args|Returns| Category| Description | 
 | ------------------------------ |---| --|---| --| -------------------------------- | 
-|<code style="background-color:pink">@async_method</code> <code style="background-color:lightblue">@classmethod</code>| `close_pool` |`config_hash: str=None` `timeout: float=60`| | Resources Management| Close all or specific pools with proper cleanup. First prevents new connections from being acquired, then attempts to gracefully commit and release all active connections before closing the pool. | 
+|<code style="background-color:pink">@async</code> <code style="background-color:lightblue">@classmethod</code>| `close_pool` |`config_hash: str=None` `timeout: float=60`| | Resources Management| Close all or specific pools with proper cleanup. First prevents new connections from being acquired, then attempts to gracefully commit and release all active connections before closing the pool. | 
 || `get_pool_status` ||`Dict[str, Any]`|Diagnostic|Returns comprehensive status information about the connection pool (initialized, alias, hash, sizes, metrics, etc.) | 
 |<code style="background-color:lightblue">@classmethod</code>|`health_check_all_pools` || `Dict[str, bool]`|Diagnostic|Checks the health of all connection pools.|
 |<code style="background-color:lightblue">@classmethod</code>|`get_pool_metrics`| `config_hash=None` | `Dict[str, Any]`|Diagnostic|Returns metrics (total_acquired, total_released, current_active, peak_active, errors, timeouts, etc.) for specific or all pools.|
-|<code style="background-color:pink">@async_method</code>| `check_for_leaked_connections`| `threshold_seconds=300` | `List[Tuple[AsyncConnection, float, str]]`|Diagnostic|Returns a list of (connection, duration, stack) tuples for connections that have been active for longer than the threshold.|
+|<code style="background-color:pink">@async</code>| `check_for_leaked_connections`| `threshold_seconds=300` | `List[Tuple[AsyncConnection, float, str]]`|Diagnostic|Returns a list of (connection, duration, stack) tuples for connections that have been active for longer than the threshold.|
 
 -------
 ### class `ConnectionManager`(<a href="#class-databaseconfig">DatabaseConfig</a>,<a href="#class-poolmanager">PoolManager</a>)
@@ -406,9 +389,9 @@ Manages synchronized and asynchronous database connection lifecycles. Provides a
 || `get_sync_connection` ||<a href="#class-syncconnection">`SyncConnection`</a>|Connection Management| Returns a synchronized database connection. Returns an existing connection if one is already cached, or creates a new one if needed. |
 || `release_sync_connection` |||Connection Management| Closes and releases the cached synchronous connection. The next call to get_sync_connection() will create a new connection. |
 || `sync_connection` ||<a href="#class-syncconnection">`SyncConnection`</a>|Connection Management| Context manager for safe synchronous connection usage that ensures proper release of resources. |
-|<code style="background-color:pink">@async_method</code>| `get_async_connection` ||<a href="#class-asyncconnection">`AsyncConnection`</a>|Connection Management| Acquires an asynchronous connection from the pool. Ensures the connection pool is initialized, then acquires a connection from it. |
-|<code style="background-color:pink">@async_method</code>| `release_async_connection` |`async_conn:`<a href="#class-asyncconnection">`AsyncConnection`</a>||Connection Management| Releases an asynchronous connection back to the pool when no longer needed to make it available for reuse. |
-|<code style="background-color:pink">@async_method</code>| `async_connection` ||<a href="#class-asyncconnection">`AsyncConnection`</a>|Connection Management| Async context manager for safe asynchronous connection usage that ensures proper release of resources. |
+|<code style="background-color:pink">@async</code>| `get_async_connection` ||<a href="#class-asyncconnection">`AsyncConnection`</a>|Connection Management| Acquires an asynchronous connection from the pool. Ensures the connection pool is initialized, then acquires a connection from it. |
+|<code style="background-color:pink">@async</code>| `release_async_connection` |`async_conn:`<a href="#class-asyncconnection">`AsyncConnection`</a>||Connection Management| Releases an asynchronous connection back to the pool when no longer needed to make it available for reuse. |
+|<code style="background-color:pink">@async</code>| `async_connection` ||<a href="#class-asyncconnection">`AsyncConnection`</a>|Connection Management| Async context manager for safe asynchronous connection usage that ensures proper release of resources. |
 || `is_environment_async` || `bool` |Environment Detection| Determines if code is running in an async environment by checking if an event loop is running in the current thread. |
 
 #### Current implementations: `PostgresDatabase`, `Mysqldatabase`, `SqliteDatabase`
@@ -420,31 +403,25 @@ Abstract base class defining the interface for asynchronous database connections
 |Decorators| Method |Args|Returns| Category| Description |
 | ------------------------------ |---| --|---| --| -------------------------------- |
 |<code style="background-color:lightblue">@property</code>| `parameter_converter` ||<a href="#class-sqlgenerator">`SqlGenerator`</a>|Configuration| Returns the parameter converter for this connection. |
-|<code style="background-color:pink">@async_method</code>| `in_transaction` ||`bool`|Transaction Management| Return True if connection is in an active transaction. |
-|<code style="background-color:pink">@async_method</code>| `begin_transaction` |||Transaction Management| Asynchronously begins a database transaction. |
-|<code style="background-color:pink">@async_method</code>| `commit_transaction` |||Transaction Management| Asynchronously commits the current transaction. |
-|<code style="background-color:pink">@async_method</code>| `rollback_transaction` |||Transaction Management| Asynchronously rolls back the current transaction. |
-|<code style="background-color:pink">@async_method</code>| `close` |||Resource Management| Asynchronously closes the database connection. |
-|<code style="background-color:pink">@async_method</code>| `get_version_details` ||`Dict[str, str]`|Diagnostic| Returns {'db_server_version', 'db_driver'} with version information. |
-|<code style="background-color:pink">@async_method</code>| `execute` |`sql:str` `params:tuple` `timeout:float=None` `tags:Dict[str, Any]=None`|`List[Tuple]`|Query Execution| Asynchronously executes a SQL query with standard ? placeholders. |
-|<code style="background-color:pink">@async_method</code>| `executemany` |`sql:str` `param_list:List[tuple]` `timeout:float=None` `tags:Dict[str, Any]=None`|`List[Tuple]`|Query Execution| Asynchronously executes a SQL query multiple times with different parameters. |
-|<code style="background-color:pink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code>| `get_entity` |`entity_name:str` `entity_id:str` `include_deleted:bool=False` `deserialize:bool=False`|`Optional[Dict[str,Any]]`| Entity | Fetch an entity by ID. Returns None if not found. If deserialize=True, converts field values to appropriate Python types based on metadata. |
-|<code style="background-color:pink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code>| `save_entity` |`entity_name:str` `entity:Dict[str,Any]` `user_id:str=None` `comment:str=None`|`Dict[str,Any]`| Entity | Save an entity (create or update). Adds id, created_at, updated_at, and other system fields. Uses upsert to efficiently handle both new entities and updates. Adds an entry to the history table. |
-|<code style="background-color:pink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code>| `save_entities` |`entity_name:str` `entities:List[Dict[str,Any]]` `user_id:str=None` `comment:str=None`|`List[Dict[str,Any]]`| Entity | Save a list of entities in bulk. Processes each entity similar to save_entity. Returns the list of saved entities with their IDs. |
-|<code style="background-color:pink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code>| `delete_entity` |`entity_name:str` `entity_id:str` `user_id:str=None` `permanent:bool=False`|`bool`| Entity | Delete an entity. By default performs a soft delete (sets deleted_at), but can permanently remove the record if permanent=True. |
-|<code style="background-color:pink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code>| `restore_entity` |`entity_name:str` `entity_id:str` `user_id:str=None`|`bool`| Entity | Restore a soft-deleted entity by clearing the deleted_at field. Returns True if successful. |
-|<code style="background-color:pink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code>| `find_entities` |`entity_name:str` `where_clause:str=None` `params:Tuple=None` `order_by:str=None` `limit:int=None` `offset:int=None` `include_deleted:bool=False` `deserialize:bool=False`|`List[Dict[str,Any]]`| Entity | Query entities with flexible filtering. Returns a list of matching entities. |
-|<code style="background-color:pink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code>| `count_entities` |`entity_name:str` `where_clause:str=None` `params:Tuple=None` `include_deleted:bool=False`|`int`| Entity | Count entities matching the criteria. |
-|<code style="background-color:pink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code>| `get_entity_history` |`entity_name:str` `entity_id:str` `deserialize:bool=False`|`List[Dict[str,Any]]`| Entity | Get the history of all previous versions of an entity. Returns a list of historical entries ordered by version. |
-|<code style="background-color:pink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code>| `get_entity_version` |`entity_name:str` `entity_id:str` `version:int` `deserialize:bool=False`|`Optional[Dict[str,Any]]`| Entity | Get a specific version of an entity from its history or None if not found. |
-|| `register_serializer` |`type_name:str` `serializer_func:Callable` `deserializer_func:Callable`|`None`|Serialization| Register custom serialization functions for handling non-standard types. The `serializer_func` should convert the custom type to a string, and the `deserializer_func` should convert the string back to the custom type. |
+|<code style="background-color:pink">@async</code>| `in_transaction` ||`bool`|Transaction Management| Return True if connection is in an active transaction. |
+|<code style="background-color:pink">@async</code>| `begin_transaction` |||Transaction Management| Asynchronously begins a database transaction. |
+|<code style="background-color:pink">@async</code>| `commit_transaction` |||Transaction Management| Asynchronously commits the current transaction. |
+|<code style="background-color:pink">@async</code>| `rollback_transaction` |||Transaction Management| Asynchronously rolls back the current transaction. |
+|<code style="background-color:pink">@async</code>| `close` |||Resource Management| Asynchronously closes the database connection. |
+|<code style="background-color:pink">@async</code>| `get_version_details` ||`Dict[str, str]`|Diagnostic| Returns {'db_server_version', 'db_driver'} with version information. |
+|<code style="background-color:pink">@async</code>| `execute` |`sql:str` `params:tuple` `timeout:float=None` `tags:Dict[str, Any]=None`|`List[Tuple]`|Query Execution| Asynchronously executes a SQL query with standard ? placeholders. |
+|<code style="background-color:pink">@async</code>| `executemany` |`sql:str` `param_list:List[tuple]` `timeout:float=None` `tags:Dict[str, Any]=None`|`List[Tuple]`|Query Execution| Asynchronously executes a SQL query multiple times with different parameters. |
+|<code style="background-color:pink">@async</code> <code style="background-color:lightgreen">@auto_transaction</code>| `get_entity` |`entity_name:str` `entity_id:str` `include_deleted:bool=False` `deserialize:bool=False`|`Optional[Dict[str,Any]]`| Entity | Fetch an entity by ID. Returns None if not found. If deserialize=True, converts field values to appropriate Python types based on metadata. |
+|<code style="background-color:pink">@async</code> <code style="background-color:lightgreen">@auto_transaction</code>| `save_entity` |`entity_name:str` `entity:Dict[str,Any]` `user_id:str=None` `comment:str=None`|`Dict[str,Any]`| Entity | Save an entity (create or update). Adds id, created_at, updated_at, and other system fields. For updates, only updates the provided fields. Adds an entry to the history table. |
+|<code style="background-color:pink">@async</code> <code style="background-color:lightgreen">@auto_transaction</code>| `save_entities` |`entity_name:str` `entities:List[Dict[str,Any]]` `user_id:str=None` `comment:str=None`|`List[str]`| Entity | Save a list of entities in bulk. Returns their ids. |
+|<code style="background-color:pink">@async</code> <code style="background-color:lightgreen">@auto_transaction</code>| `delete_entity` |`entity_name:str` `entity_id:str` `user_id:str=None` `permanent:bool=False`|`bool`| Entity | Delete an entity. By default performs a soft delete (sets deleted_at), but can permanently remove the record if permanent=True. |
+|<code style="background-color:pink">@async</code> <code style="background-color:lightgreen">@auto_transaction</code>| `restore_entity` |`entity_name:str` `entity_id:str` `user_id:str=None`|`bool`| Entity | Restore a soft-deleted entity by clearing the deleted_at field. Returns True if successful. |
+|<code style="background-color:pink">@async</code> <code style="background-color:lightgreen">@auto_transaction</code>| `find_entities` |`entity_name:str` `where_clause:str=None` `params:Tuple=None` `order_by:str=None` `limit:int=None` `offset:int=None` `include_deleted:bool=False` `deserialize:bool=False`|`List[Dict[str,Any]]`| Entity | Query entities with flexible filtering. Returns a list of matching entities. |
+|<code style="background-color:pink">@async</code> <code style="background-color:lightgreen">@auto_transaction</code>| `count_entities` |`entity_name:str` `where_clause:str=None` `params:Tuple=None` `include_deleted:bool=False`|`int`| Entity | Count entities matching the criteria. |
+|<code style="background-color:pink">@async</code> <code style="background-color:lightgreen">@auto_transaction</code>| `get_entity_history` |`entity_name:str` `entity_id:str` `deserialize:bool=False`|`List[Dict[str,Any]]`| Entity | Get the history of all previous versions of an entity. Returns a list of historical entries ordered by version. |
+|<code style="background-color:pink">@async</code> <code style="background-color:lightgreen">@auto_transaction</code>| `get_entity_by_version` |`entity_name:str` `entity_id:str` `version:int` `deserialize:bool=False`|`Optional[Dict[str,Any]]`| Entity | Get a specific version of an entity from its history or None if nout found. |
 
-**Notes:**
-- An Entity is a dictionary of any serializable values
-- The `@auto_transaction` decorator ensures that each operation runs within a transaction, creating one if needed or using an existing one
-- Schema creation and metadata updates happen automatically when using `save_entity` and `save_entities`
-- Entity values are automatically serialized to database types, but by default are not deserialized (deserialize=False)
-- Set deserialize=True when you need to perform computation on the entity data in your application logic
+
 
 #### Current implementations: `PostgresAsyncConnection`, `MysqlAsyncConnection`, `SqliteAsyncConnection`
 
@@ -452,7 +429,17 @@ Abstract base class defining the interface for asynchronous database connections
 ### class `SyncConnection`
 Abstract base class defining the interface for synchronous database connections.
 
-Has the same API as AsyncConnection (minus the async keyword).
+|Decorators| Method |Args|Returns| Category| Description |
+| ------------------------------ |---| --|---| --| -------------------------------- |
+|<code style="background-color:lightblue">@property</code>| `parameter_converter` ||<a href="#class-sqlgenerator">`SqlGenerator`</a>|Configuration| Returns the parameter converter for this connection. |
+|| `in_transaction` ||`bool`|Transaction Management| Return True if connection is in an active transaction. |
+|| `begin_transaction` |||Transaction Management| Begins a database transaction. |
+|| `commit_transaction` |||Transaction Management| Commits the current transaction. This permanently applies all changes made since begin_transaction() was called. |
+|| `rollback_transaction` |||Transaction Management| Rolls back the current transaction. This discards all changes made since begin_transaction() was called. |
+|| `close` |||Resource Management| Closes the database connection. The connection should not be used after calling this method. |
+|| `get_version_details` ||`Dict[str, str]`|Diagnostic| Returns {'db_server_version', 'db_driver'} with version information. |
+|| `execute` |`sql:str` `params:tuple` `timeout:float=None` `tags:Dict[str, Any]=None`|`List[Tuple]`|Query Execution| Synchronously executes a SQL query with standard ? placeholders. |
+|| `executemany` |`sql:str` `param_list:List[tuple]` `timeout:float=None` `tags:Dict[str, Any]=None`|`List[Tuple]`|Query Execution| Synchronously executes a SQL query multiple times with different parameters. |
 
 #### Current implementations: `PostgresSyncConnection`, `MysqlSyncConnection`, `SqliteSyncConnection`
 
@@ -485,10 +472,10 @@ Abstract connection pool interface that standardizes behavior across database dr
 
 |Decorators| Method |Args|Returns| Category| Description |
 | ------------------------------ |---| --|---| --| -------------------------------- |
-|<code style="background-color:pink">@async_method</code>| `acquire` |`timeout: Optional[float] = None`|`Any`|Connection Management| Acquires a connection from the pool with optional timeout. |
-|<code style="background-color:pink">@async_method</code>| `release` |`connection: Any`||Connection Management| Releases a connection back to the pool. |
-|<code style="background-color:pink">@async_method</code>| `close` |`force: bool = False, timeout: Optional[float] = None`||Resource Management| Closes the pool and all connections. When force=False, waits for all connections to be released naturally. When force=True, terminates any executing operations (may cause data loss). |
-|<code style="background-color:pink">@async_method</code>| `health_check` ||`bool`|Diagnostic| Checks if the pool is healthy by testing a connection. |
+|<code style="background-color:pink">@async</code>| `acquire` |`timeout: Optional[float] = None`|`Any`|Connection Management| Acquires a connection from the pool with optional timeout. |
+|<code style="background-color:pink">@async</code>| `release` |`connection: Any`||Connection Management| Releases a connection back to the pool. |
+|<code style="background-color:pink">@async</code>| `close` |`force: bool = False, timeout: Optional[float] = None`||Resource Management| Closes the pool and all connections. When force=False, waits for all connections to be released naturally. When force=True, terminates any executing operations (may cause data loss). |
+|<code style="background-color:pink">@async</code>| `health_check` ||`bool`|Diagnostic| Checks if the pool is healthy by testing a connection. |
 |<code style="background-color:lightblue">@property</code>| `min_size` ||`int`|Configuration| Gets the minimum number of connections the pool maintains. |
 |<code style="background-color:lightblue">@property</code>| `max_size` ||`int`|Configuration| Gets the maximum number of connections the pool can create. |
 |<code style="background-color:lightblue">@property</code>| `size` ||`int`|Diagnostic| Gets the current number of connections in the pool (both in-use and idle). |
@@ -524,9 +511,7 @@ Circuit breaker implementation that can be used as a decorator for sync and asyn
 
 |Decorators| Function |Args|Returns| Category| Description |
 | ------------------------------ |---| --|---| --| -------------------------------- |
-|| `async_method` |`func`|`Callable`|Documentation| Marks a function as asynchronous for documentation clarity. This is a pass-through decorator that helps identify async methods in the codebase. |
 || `circuit_breaker` |`name=None, failure_threshold=5, recovery_timeout=30.0, half_open_max_calls=3, window_size=60.0`|`Callable`|Resilience| Decorator that applies circuit breaker pattern to a function or method. |
 || `retry_with_backoff` |`max_retries=3, base_delay=0.1, max_delay=10.0, exceptions=None, total_timeout=30.0`|`Callable`|Resilience| Decorator for retrying functions with exponential backoff on specified exceptions. |
 || `track_slow_method` |`threshold=2.0`|`Callable`|Instrumentation| Decorator that logs a warning if the execution of the method took longer than the threshold (in seconds). |
 || `overridable` |`method`|`Callable`|Documentation| Marks a method as overridable for documentation / IDE purposes. |
-|| `auto_transaction` |`func`|`Callable`|Transaction| Decorator that automatically wraps a function in a transaction. If a transaction is already in progress, uses the existing transaction. Otherwise, creates a new transaction, commits if successful, or rolls back on exception. Works with both sync and async methods. Must be applied to methods of a class that offers in_transaction, begin_transaction, commit_transaction, and rollback_transaction methods. |
