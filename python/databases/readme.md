@@ -237,14 +237,29 @@ await PoolManager.close_pool(config_hash=config.hash(),timeout=30) # Will close 
 
 ### Extension
 
-To add a new backend (say Oracle);
+To add a new backend (say Oracle), you need to write the implementation of a few classes:
+* Step 1) <a href="#class-sqlgenerator">`SqlGenerator`</a>: `convert_query_to_native` `get_timeout_sql`
+* Step 2) <a href="#class-sqlgenerator">`Connectionpool`</a>: `__init__` `acquire` `release` `close` `_test_connection` `min_size` `max_size` `size` `in_use` `idle`
+* Step 3) <a href="#class-sqlgenerator">`AsyncConnection`</a>: `__init__` `sql_generator` `_prepare_statement_async` `_execute_statement_async` `in_transaction` `begin_transaction` `commit_transaction` `rollback_transaction` `close` `get_version_details`
+* Step 4) <a href="#class-sqlgenerator">`SyncConnection`</a>: `__init__` `sql_generator` `_prepare_statement_sync` `_execute_statement_sync` `in_transaction` `begin_transaction` `commit_transaction` `rollback_transaction` `close` `get_version_details`
+* Step 5) <a href="#class-sqlgenerator">`ConnectionManager`</a>: `_create_sync_connection` `create_pool` `_wrap_async_connection` `_wrap_sync_connection`
+
+<br>
+
+**Notes**: in the connection classes, the sql_generator property should return an instance of the class defined in Step 1.
+
+To add the Entity Framework, you will need to define the relavant sql for the backend: simply add <a href="#class-sqlentitygenerator">`SqlEntityGenerator`</a> in the inheritance list of the class defined in Step 1 and define all the needed sql (`get_upsert_sql` etc.).
+Note that the Entity logic is automatically injected to your connection classes from step 3 and 4.
+
+<br>
 
 ```python
 
 import {oracle_asyn_driver} as async_driver
 import {oracle_sync_driver} as sync_driver
 
-class OracleSqlGenerator(SqlGenerator):
+# STEP 1
+class OracleSqlGenerator(SqlGenerator, SqlEntityGenerator):
     def convert_query_to_native(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
         if not params:
             return sql, []
@@ -255,7 +270,15 @@ class OracleSqlGenerator(SqlGenerator):
         if timeout:
             return f"SET LOCAL statement_timeout = {int(timeout * 1000)}" # adjust sql as needed
         return None  
+    
+    # Entity specific sqls:
 
+    def get_upsert_sql(self, entity_name: str, fields: List[str]) -> str:
+        pass
+
+    # .. and all the other Entity specific sqls generation methods
+
+# STEP 2
 class OracleConnectionPool(ConnectionPool):
     def __init__(self, pool, timeout: float = 10.0):
         self._pool = pool # the async Oracle driver pool, created by _create_pool in OracleDatabase
@@ -309,14 +332,14 @@ class OracleConnectionPool(ConnectionPool):
         # probably similar to: return len(self._pool._free)
         pass
 
+# STEP 3
 class OracleAsyncConnection(AsyncConnection):
     def __init__(self, conn):
         self._conn = conn # The async Oracle driver's connection (generated in the Pool acquire method)
-        self._param_converter = OracleSqlGenerator()
-
+        
     @property
-    def parameter_converter(self) -> SqlGenerator:
-        return self._param_converter
+    def sql_generator(self) -> SqlGenerator:
+        return OracleSqlGenerator()
 
     async def _prepare_statement_async(self, native_sql: str) -> Any:
         pass
@@ -346,9 +369,11 @@ class OracleAsyncConnection(AsyncConnection):
     async def get_version_details(self) -> Dict[str, str]:
         return {'db_server_version':'to do', 'db_driver':'to do'}
 
+# STEP 4
 class OracleSyncConnection(SyncConnection):
     # similar to the Async version
 
+# STEP 5
 class OracleDatabase(ConnectionManager):
     def _create_sync_connection(self, config: Dict):     
         # probably: return sync_driver.connect(**config)
@@ -383,8 +408,19 @@ class OracleDatabase(ConnectionManager):
 
 ## 📖 Public API
 
+
+You will first have to define a the details needed to connect to a database, and can do so by creating an instance of:
+
+
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
+
+
 ### class `DatabaseConfig`
+
 Base configuration object for databases.
+
+<details>
+<summary><strong>Public Methods</strong></summary>
 
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
@@ -396,6 +432,12 @@ Base configuration object for databases.
 | | `env` | | `str` | Configuration | Returns the database environment ('prod', 'dev', 'test', etc.). |
 | | `hash` | | `str` | Configuration | Returns a stable, hash-based key for the database configuration based on all parameters except password. |
 
+</details>
+
+<br>
+
+
+
 <details>
 <summary><strong>Private/Internal Methods</strong></summary>
 
@@ -404,44 +446,46 @@ Base configuration object for databases.
 | | `__init__` | `database: str`, `host: str="localhost"`, `port: int=5432`, `user: str=None`, `password: str=None`, `alias: str=None`, `env: str='prod'` | | Initialization | Initializes database configuration with connection parameters. |
 </details>
 
--------
-### class `PoolManager`
-Abstract base class to manage the lifecycle of asynchronous connection pools. Pools are created lazily, shared across instances with the same configuration, and can be properly closed during application shutdown.
+<br>
 
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `alias` | | `str` | Configuration | Returns the friendly name of this pool manager. |
-| | `hash` | | `str` | Configuration | Returns the unique hash for this pool manager. |
-| | `get_pool_status` | | `Dict[str, Any]` | Diagnostic | Gets comprehensive status information about the connection pool. |
-| <code style="background-color:lightpink">@async_method</code> <code style="background-color:gainsboro">@classmethod</code> | `health_check_all_pools` | | `Dict[str, bool]` | Diagnostic | Checks the health of all connection pools. |
-| <code style="background-color:gainsboro">@classmethod</code> | `get_pool_metrics` | `config_hash=None` | `Dict` | Metrics | Get metrics for specific or all connection pools. |
-| <code style="background-color:lightpink">@async_method</code> | `check_for_leaked_connections` | `threshold_seconds=300` | `List[Tuple[AsyncConnection, float, str]]` | Leak Detection | Check for connections that have been active for longer than the threshold. |
-| <code style="background-color:gainsboro">@classmethod</code> | `close_pool` | `config_hash: Optional[str] = None`, `timeout: Optional[float]=60` | `None` | Resource Management | Closes one or all shared connection pools with proper cleanup. |
+
+</div>
+
+
+You can then pass this config to the factory below:
+
+
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
+
+### class `DatabaseFactory`
+Factory for creating database instances.
 
 <details>
-<summary><strong>Private/Internal Methods</strong></summary>
+<summary><strong>Public Methods</strong></summary>
 
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `__init__` | `alias: str=uuid.uuid4()`, `hash: str=uuid.uuid4()` | | Initialization | Initializes a pool manager with unique identifiers. |
-| | `_calculate_pool_size` | | `Tuple[int, int]` | Configuration | Calculate optimal pool size based on workload characteristics, system resources, and expected concurrency. |
-| | `_track_metrics` | `is_new: bool=True`, `error: Exception=None`, `is_timeout: bool=False` | | Metrics | Track connection acquisition and release metrics for monitoring. |
-| <code style="background-color:gainsboro">@property</code> | `_pool` | | `Optional[Any]` | Pool Management | Gets the connection pool for this instance's configuration. |
-| `@_pool.setter` | `_pool` | `value: Any` | `None` | Pool Management | Sets or clears the connection pool for this instance's configuration. |
-| <code style="background-color:gainsboro">@property</code> | `_pool_lock` | | `asyncio.Lock` | Concurrency | Gets the lock for this instance's configuration to ensure thread-safe initialization. |
-| <code style="background-color:gainsboro">@property</code> | `_connections` | | `Set[AsyncConnection]` | Connection Management | Gets the set of active connections for this instance's configuration. |
-| | `_get_connection_from_pool` | `wrap_raw_connection: Callable` | `AsyncConnection` | Connection Management | Acquires a connection from the pool with timeout handling and leak tracking. |
-| | `_release_connection_to_pool` | `async_conn: AsyncConnection` | `None` | Connection Management | Releases a connection back to the pool with proper error handling. |
-| | `_initialize_pool_if_needed` | | `None` | Pool Management | Initializes the connection pool if it doesn't exist or isn't usable. |
-| | `_test_connection` | `conn: Any` | `None` | Diagnostic | Tests if a connection is usable by executing a simple query. |
-| <code style="background-color:gainsboro">@classmethod</code> | `_cleanup_connection` | `async_conn: AsyncConnection` | | Resource Management | Clean up a connection by committing and releasing it properly. |
-| <code style="background-color:gainsboro">@classmethod</code> | `_release_pending_connections` | `key`, `timeout` | | Resource Management | Release all active connections for a specific pool configuration. |
-| <code style="background-color:gainsboro">@abstractmethod</code> | `_create_pool` | `config: Dict` | `ConnectionPool` | Pool Management | Creates a new connection pool for the specific database backend. |
+|Decorators| Method |Args|Returns| Category| Description |
+| ------------------------------ |---| --|---| --| -------------------------------- |
+<code style="background-color:gainsboro">@staticmethod</code>| `create_database` |`db_type:str` <code>db_config:<a href="#class-databaseconfig">DatabaseConfig</a></code>|<a href="#class-connectionmanager">`ConnectionManager`</a>|Factory| Factory method to create the appropriate database instance (PostgreSQL, MySQL, SQLite). |
+
 </details>
 
--------
-### class `ConnectionManager`(<a href="#class-databaseconfig">DatabaseConfig</a>,<a href="#class-poolmanager">PoolManager</a>)
+<br>
+
+
+</div>
+
+
+The factory (or direct instanciation) will then give you a:
+
+
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
+
+### class `ConnectionManager`
+
 Manages synchronized and asynchronous database connection lifecycles. Provides a unified interface for obtaining both sync and async database connections, with proper resource management through context managers. Handles connection pooling for async connections and caching for sync connections.
+
+<details>
+<summary><strong>Public Methods</strong></summary>
 
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
@@ -453,6 +497,11 @@ Manages synchronized and asynchronous database connection lifecycles. Provides a
 | <code style="background-color:lightpink">@async_method</code> | `release_async_connection` | `async_conn: AsyncConnection` | | Connection Management | Releases an asynchronous connection back to the pool. |
 | <code style="background-color:lightpink">@async_method</code> `@contextlib.asynccontextmanager` | `async_connection` | | `Iterator[AsyncConnection]` | Connection Management | Async context manager for safe asynchronous connection usage. |
 
+</details>
+
+<br>
+
+
 <details>
 <summary><strong>Private/Internal Methods</strong></summary>
 
@@ -463,37 +512,22 @@ Manages synchronized and asynchronous database connection lifecycles. Provides a
 | <code style="background-color:gainsboro">@abstractmethod</code> | `_wrap_sync_connection` | `raw_conn: Any` | `SyncConnection` | Connection Wrapping | Wraps a raw database connection in the SyncConnection interface. |
 | <code style="background-color:gainsboro">@abstractmethod</code> | `_wrap_async_connection` | `raw_conn: Any` | `AsyncConnection` | Connection Wrapping | Wraps a raw database connection in the AsyncConnection interface. |
 | <code style="background-color:gainsboro">@abstractmethod</code> | `_create_sync_connection` | `config: Dict` | `Any` | Connection Creation | Creates a new synchronous database connection. |
-| | `_leak_detection_task` | | | Background Task | Background task that periodically checks for and recovers from connection leaks. |
+
 </details>
 
 #### Current implementations: `PostgresDatabase`, `Mysqldatabase`, `SqliteDatabase`
 
--------
-### class `BaseConnection`
+</div>
 
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | | | | | |
+This manager give access to a connection (either sync or async) that offer database manipulations methods:
 
-<details>
-<summary><strong>Private/Internal Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `__init__` | | | Initialization | Initializes a base connection with statement cache. |
-| | `_normalize_result` | `raw_result: Any` | `List[Tuple]` | Data Conversion | Normalizes query results to a list of tuples regardless of input format. |
-| | `_finalize_sql` | `sql: str`, `timeout: Optional[float] = None`, `tags: Optional[Dict[str, Any]] = None` | `str` | Query Preparation | Combines SQL with timeout and comment directives. |
-| | `_get_statement_async` | `sql: str`, `timeout: Optional[float] = None`, `tags: Optional[Dict[str, Any]] = None` | `Any` | Statement Management | Gets or creates a prepared statement asynchronously. |
-| | `_get_statement_sync` | `sql: str`, `timeout: Optional[float] = None`, `tags: Optional[Dict[str, Any]] = None` | `Any` | Statement Management | Gets or creates a prepared statement synchronously. |
-| <code style="background-color:gainsboro">@abstractmethod</code> | `_prepare_statement_sync` | `native_sql: str` | `Any` | Statement Management | Prepares a statement using database-specific sync API. |
-| <code style="background-color:gainsboro">@abstractmethod</code> | `_execute_statement_sync` | `statement: Any`, `params=None` | `Any` | Statement Management | Executes a prepared statement with parameters synchronously. |
-| <code style="background-color:gainsboro">@abstractmethod</code> | `_prepare_statement_async` | `native_sql: str` | `Any` | Statement Management | Prepares a statement using database-specific async API. |
-| <code style="background-color:gainsboro">@abstractmethod</code> | `_execute_statement_async` | `statement: Any`, `params=None` | `Any` | Statement Management | Executes a prepared statement with parameters asynchronously. |
-| <code style="background-color:gainsboro">@property</code> <code style="background-color:gainsboro">@abstractmethod</code> | `_parameter_converter` | | `SqlGenerator` | Configuration | Returns the parameter converter for this connection. |
-</details>
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
 
 ### class `AsyncConnection`
 Abstract base class defining the interface for asynchronous database connections.
+
+<details>
+<summary><strong>Public Methods</strong></summary>
 
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
@@ -516,6 +550,11 @@ Abstract base class defining the interface for asynchronous database connections
 |<code style="background-color:pink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code>| `get_entity_version` |`entity_name:str` `entity_id:str` `version:int` `deserialize:bool=False`|`Optional[Dict[str,Any]]`| Entity | Get a specific version of an entity from its history or None if not found. |
 || `register_serializer` |`type_name:str` `serializer_func:Callable` `deserializer_func:Callable`|`None`|Serialization| Register custom serialization functions for handling non-standard types. The `serializer_func` should convert the custom type to a string, and the `deserializer_func` should convert the string back to the custom type. |
 
+</details>
+
+<br>
+
+
 <details>
 <summary><strong>Private/Internal Methods</strong></summary>
 
@@ -529,6 +568,8 @@ Abstract base class defining the interface for asynchronous database connections
 | <code style="background-color:gainsboro">@property</code> | `_is_leaked` | | `bool` | Connection Management | Check if this connection has been marked as leaked. |
 </details>
 
+<br>
+
 **Notes:**
 - An Entity is a dictionary of any serializable values
 - The <code style="background-color:lightgreen">@auto_transaction</code> decorator ensures that each operation runs within a transaction, creating one if needed or using an existing one
@@ -538,11 +579,113 @@ Abstract base class defining the interface for asynchronous database connections
 
 #### Current implementations: `PostgresAsyncConnection`, `MysqlAsyncConnection`, `SqliteAsyncConnection`
 
+The <a href="#class-syncconnection">`SyncConnection`</a> class exposes the same public methods.
+
+
+</div>
+
+
+That's all you need to safely write and read from the database, but if you're using the async features, you will have the responsabilty of manually closing the connection(s) properly, by calling the `close_pool` class method of:
+
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
+
+
+### class `PoolManager`
+
+Class to manage the lifecycle of asynchronous connection pools. Pools are created lazily, shared across instances with the same configuration, and can be properly closed during application shutdown.
+This class offers a few metrics and other diagnostic tools to monitor the health of the pool and its connections.
+
+<details>
+<summary><strong>Public Methods</strong></summary>
+
+| Decorators | Method | Args | Returns | Category | Description |
+|------------|--------|------|---------|----------|-------------|
+| | `alias` | | `str` | Configuration | Returns the friendly name of this pool manager. |
+| | `hash` | | `str` | Configuration | Returns the unique hash for this pool manager. |
+| | `get_pool_status` | | `Dict[str, Any]` | Diagnostic | Gets comprehensive status information about the connection pool. |
+| <code style="background-color:lightpink">@async_method</code> <code style="background-color:gainsboro">@classmethod</code> | `health_check_all_pools` | | `Dict[str, bool]` | Diagnostic | Checks the health of all connection pools. |
+| <code style="background-color:gainsboro">@classmethod</code> | `get_pool_metrics` | `config_hash=None` | `Dict` | Metrics | Get metrics for specific or all connection pools. |
+| <code style="background-color:lightpink">@async_method</code> | `check_for_leaked_connections` | `threshold_seconds=300` | `List[Tuple[AsyncConnection, float, str]]` | Leak Detection | Check for connections that have been active for longer than the threshold. |
+| <code style="background-color:gainsboro">@classmethod</code> | `close_pool` | `config_hash: Optional[str] = None`, `timeout: Optional[float]=60` | `None` | Resource Management | Closes one or all shared connection pools with proper cleanup. |
+
+</details>
+
+<br>
+
+
+<details>
+<summary><strong>Private/Internal Methods</strong></summary>
+
+| Decorators | Method | Args | Returns | Category | Description |
+|------------|--------|------|---------|----------|-------------|
+| | `__init__` | `alias: str=uuid.uuid4()`, `hash: str=uuid.uuid4()` | | Initialization | Initializes a pool manager with unique identifiers. |
+| | `_calculate_pool_size` | | `Tuple[int, int]` | Configuration | Calculate optimal pool size based on workload characteristics, system resources, and expected concurrency. |
+| | `_track_metrics` | `is_new: bool=True`, `error: Exception=None`, `is_timeout: bool=False` | | Metrics | Track connection acquisition and release metrics for monitoring. |
+| <code style="background-color:gainsboro">@property</code> | `_pool` | | `Optional[Any]` | Pool Management | Gets the connection pool for this instance's configuration. |
+| `@_pool.setter` | `_pool` | `value: Any` | `None` | Pool Management | Sets or clears the connection pool for this instance's configuration. |
+| <code style="background-color:gainsboro">@property</code> | `_pool_lock` | | `asyncio.Lock` | Concurrency | Gets the lock for this instance's configuration to ensure thread-safe initialization. |
+| <code style="background-color:gainsboro">@property</code> | `_connections` | | `Set[AsyncConnection]` | Connection Management | Gets the set of active connections for this instance's configuration. |
+| | `_get_connection_from_pool` | `wrap_raw_connection: Callable` | `AsyncConnection` | Connection Management | Acquires a connection from the pool with timeout handling and leak tracking. |
+| | `_release_connection_to_pool` | `async_conn: AsyncConnection` | `None` | Connection Management | Releases a connection back to the pool with proper error handling. |
+| | `_initialize_pool_if_needed` | | `None` | Pool Management | Initializes the connection pool if it doesn't exist or isn't usable. |
+| | `_test_connection` | `conn: Any` | `None` | Diagnostic | Tests if a connection is usable by executing a simple query. |
+| <code style="background-color:gainsboro">@classmethod</code> | `_cleanup_connection` | `async_conn: AsyncConnection` | | Resource Management | Clean up a connection by committing and releasing it properly. |
+| <code style="background-color:gainsboro">@classmethod</code> | `_release_pending_connections` | `key`, `timeout` | | Resource Management | Release all active connections for a specific pool configuration. |
+| <code style="background-color:gainsboro">@abstractmethod</code> | `_create_pool` | `config: Dict` | `ConnectionPool` | Pool Management | Creates a new connection pool for the specific database backend. |
+| | `_leak_detection_task` | | | Background Task | Background task that periodically checks for and recovers from connection leaks. |
+
+</details>
+
+<br>
+
+
+</div>
+
 -------
+`
+
+## 📖 Utilities
+
+
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
+
+### class `BaseConnection`
+
+This is the base class of <a href="#class-asyncconnection">`AsyncConnection`</a> and <a href="#class-syncconnection">`SyncConnection`</a>.
+Internally, it normalizes the results from all backends to list of tuples (instead of records or whatever the database drivers' are sending back), inject timeout and comment into any sql, and harbor a <a href="#class-statementcache">`StatementCache`</a> to cache the conversions of sqls into satements (potentially saving up to 5ms in a given query). 
+
+
+<details>
+<summary><strong>Private/Internal Methods</strong></summary>
+
+| Decorators | Method | Args | Returns | Category | Description |
+|------------|--------|------|---------|----------|-------------|
+| | `__init__` | | | Initialization | Initializes a base connection with statement cache. |
+| | `_normalize_result` | `raw_result: Any` | `List[Tuple]` | Data Conversion | Normalizes query results to a list of tuples regardless of input format. |
+| | `_finalize_sql` | `sql: str`, `timeout: Optional[float] = None`, `tags: Optional[Dict[str, Any]] = None` | `str` | Query Preparation | Combines SQL with timeout and comment directives. |
+| | `_get_statement_async` | `sql: str`, `timeout: Optional[float] = None`, `tags: Optional[Dict[str, Any]] = None` | `Any` | Statement Management | Gets or creates a prepared statement asynchronously. |
+| | `_get_statement_sync` | `sql: str`, `timeout: Optional[float] = None`, `tags: Optional[Dict[str, Any]] = None` | `Any` | Statement Management | Gets or creates a prepared statement synchronously. |
+| <code style="background-color:gainsboro">@abstractmethod</code> | `_prepare_statement_sync` | `native_sql: str` | `Any` | Statement Management | Prepares a statement using database-specific sync API. |
+| <code style="background-color:gainsboro">@abstractmethod</code> | `_execute_statement_sync` | `statement: Any`, `params=None` | `Any` | Statement Management | Executes a prepared statement with parameters synchronously. |
+| <code style="background-color:gainsboro">@abstractmethod</code> | `_prepare_statement_async` | `native_sql: str` | `Any` | Statement Management | Prepares a statement using database-specific async API. |
+| <code style="background-color:gainsboro">@abstractmethod</code> | `_execute_statement_async` | `statement: Any`, `params=None` | `Any` | Statement Management | Executes a prepared statement with parameters asynchronously. |
+| <code style="background-color:gainsboro">@property</code> <code style="background-color:gainsboro">@abstractmethod</code> | `_sql_generator` | | `SqlGenerator` | Configuration | Returns the parameter converter for this connection. |
+</details>
+
+<br>
+
+
+</div>
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
+
 ### class `SyncConnection`
+
 Abstract base class defining the interface for synchronous database connections.
 
 Has the same API as AsyncConnection (minus the async keyword).
+
+<details>
+<summary><strong>Public Methods</strong></summary>
 
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
@@ -555,6 +698,11 @@ Has the same API as AsyncConnection (minus the async keyword).
 | <code style="background-color:gainsboro">@abstractmethod</code> | `close` | | `None` | Connection Management | Closes the database connection. |
 | <code style="background-color:gainsboro">@abstractmethod</code> | `get_version_details` | | `Dict[str, str]` | Diagnostic | Returns {'db_server_version', 'db_driver'} |
 
+</details>
+
+<br>
+
+
 <details>
 <summary><strong>Private/Internal Methods</strong></summary>
 
@@ -562,14 +710,21 @@ Has the same API as AsyncConnection (minus the async keyword).
 |------------|--------|------|---------|----------|-------------|
 | | `__init__` | `conn: Any` | | Initialization | Initializes sync connection with statement cache. |
 | | `_get_raw_connection` | | `Any` | Connection Management | Return the underlying database connection (as defined by the driver). |
-| <code style="background-color:gainsboro">@property</code> <code style="background-color:gainsboro">@abstractmethod</code> | `_parameter_converter` | | `SqlGenerator` | Configuration | Returns the parameter converter for this connection. |
+| <code style="background-color:gainsboro">@property</code> <code style="background-color:gainsboro">@abstractmethod</code> | `_sql_generator` | | `SqlGenerator` | Configuration | Returns the parameter converter for this connection. |
 </details>
 
 #### Current implementations: `PostgresSyncConnection`, `MysqlSyncConnection`, `SqliteSyncConnection`
 
------
+</div>
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
+
 ### class `SqlGenerator`
+
+Internally used by <a href="#class-asyncconnection">`AsyncConnection`</a> and its sync equivalent.
 Abstract base class for SQL parameter placeholder conversion and sql generation for usual operations. This class provides a way to convert between a standard format (? placeholders) and database-specific formats for positional parameters.
+
+<details>
+<summary><strong>Public Methods</strong></summary>
 
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
@@ -577,15 +732,23 @@ Abstract base class for SQL parameter placeholder conversion and sql generation 
 | `@overridable` | `get_timeout_sql` | `timeout: Optional[float]` | `Optional[str]` | Query Conversion | Return a SQL statement to enforce query timeout if applicable to the database. |
 | `@overridable` | `convert_query_to_native` | `sql: str`, `params: Optional[Tuple] = None` | `Tuple[str, Any]` | Query Conversion | Converts a standard SQL query with ? placeholders to a database-specific format. |
 
-<details>
-<summary><strong>Private/Internal Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | | | | | No private/internal methods |
 </details>
 
+<br>
+
+
+</div>
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
+
 ### class `SqlEntityGenerator`
+
+Internally used by <a href="#class-entityasyncmixin">`EntityAsyncMixin`</a> and its sync equivalent.
+Inherits from <a href="#class-sqlgenerator">`SqlGenerator`</a>
+Abstract class that offers Entity manipulation sqls.
+The subclasses must implement the generaton of the sql matching the targeted database.
+
+<details>
+<summary><strong>Public Methods</strong></summary>
 
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
@@ -610,35 +773,32 @@ Abstract base class for SQL parameter placeholder conversion and sql generation 
 | <code style="background-color:gainsboro">@abstractmethod</code> | `get_pragma_or_settings_sql` | | `List[str]` | SQL Generation | Get a list of database-specific PRAGMA or settings statements. |
 | <code style="background-color:gainsboro">@abstractmethod</code> | `get_next_sequence_value_sql` | `sequence_name: str` | `Optional[str]` | SQL Generation | Generate SQL to get the next value from a sequence. |
 
-<details>
-<summary><strong>Private/Internal Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | | | | | No private/internal methods |
 </details>
 
 #### Current implementations: `PostgresSqlGenerator`, `MysqlSqlGenerator`, `SqliteSqlGenerator`
 
-------
-### class `DatabaseFactory`
-Factory for creating database instances.
+</div>
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
 
-|Decorators| Method |Args|Returns| Category| Description |
-| ------------------------------ |---| --|---| --| -------------------------------- |
-<code style="background-color:gainsboro">@staticmethod</code>| `create_database` |`db_type:str` <code>db_config:<a href="#class-databaseconfig">DatabaseConfig</a></code>|<a href="#class-connectionmanagerdatabaseconfigpoolmanager">`ConnectionManager`</a>|Factory| Factory method to create the appropriate database instance (PostgreSQL, MySQL, SQLite). |
+### class `EntityUtility`
+
+Offers way to serialize/deserialize an Entity (which is a dictionary).
+You can add your custom serializer with the `register_serializer` method, that will be exposed in <a href="#class-asyncconnection">`AsyncConnection`</a> and <a href="#class-syncconnection">`SyncConnection`</a> (via injection of the subclasses <a href="#class-entityasyncmixin">`EntityAsyncMixin`</a> and <a href="#class-entityasyncmixin">`EntitySyncMixin`</a> by the <code style="background-color:azure">@inject_mixin</code> decorator)
 
 <details>
-<summary><strong>Private/Internal Methods</strong></summary>
+<summary><strong>Public Methods</strong></summary>
 
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
-| | | | | | No private/internal methods |
+| | `register_serializer` | `type_name: str`, `serializer_func`, `deserializer_func` | | Serialization | Register custom serialization functions for handling non-standard types. |
+
 </details>
 
-## 📖 Utilities
+<br>
 
-### class `EntityUtility`
+
+<details>
+<summary><strong>Private/Internal Methods</strong></summary>
 
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
@@ -655,17 +815,25 @@ Factory for creating database instances.
 | | `_internal_operation` | `is_async: bool`, `func_sync`, `func_async`, `*args`, `**kwargs` | | Utility | Execute an operation in either sync or async mode. |
 | | `_create_sync_method` | `internal_method`, `*args`, `**kwargs` | `Callable` | Utility | Create a synchronous wrapper for an internal method. |
 | | `_create_async_method` | `internal_method`, `*args`, `**kwargs` | `Callable` | Utility | Create an asynchronous wrapper for an internal method. |
-| | `register_serializer` | `type_name: str`, `serializer_func`, `deserializer_func` | | Serialization | Register custom serialization functions for handling non-standard types. |
+
+</details>
+
+<br>
+
+
+</div>
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
 
 ### class `EntityAsyncMixin`
 
+Injected into <a href="#class-asyncconnection">`AsyncConnection`</a> via the <code style="background-color:azure">@inject_mixin</code> decorator.
+Inherit from <a href="#class-entityutility">`EntityUtility`</a>.
+
+<details>
+<summary><strong>Public Methods</strong></summary>
+
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
-| <code style="background-color:lightpink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code> | `_ensure_entity_schema` | `entity_name: str`, `sample_entity: Optional[Dict[str, Any]] = None` | `None` | Schema Management | Ensure entity tables and metadata exist, creating if needed. |
-| <code style="background-color:lightpink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code> | `_update_entity_metadata` | `entity_name: str`, `entity: Dict[str, Any]` | `None` | Schema Management | Update metadata table based on entity fields and their types. |
-| <code style="background-color:lightpink">@async_method</code> | `_get_entity_metadata` | `entity_name: str`, `use_cache: bool = True` | `Dict[str, str]` | Schema Management | Get metadata for an entity type, mapping field names to types. |
-| <code style="background-color:lightpink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code> | `_add_to_history` | `entity_name: str`, `entity: Dict[str, Any]`, `user_id: Optional[str] = None`, `comment: Optional[str] = None` | `None` | Entity Operations | Add an entry to entity history, tracking versions. |
-| <code style="background-color:lightpink">@async_method</code> | `_deserialize_entity` | `entity_name: str`, `entity: Dict[str, Optional[str]]` | `Dict[str, Any]` | Serialization | Deserialize entity values based on metadata from strings to typed values. |
 | <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `get_entity` | `entity_name: str`, `entity_id: str`, `include_deleted: bool = False`, `deserialize: bool = False` | `Optional[Dict[str, Any]]` | Entity Operations | Fetch an entity by ID, optionally including soft-deleted entities and deserializing values. |
 | <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `save_entity` | `entity_name: str`, `entity: Dict[str, Any]`, `user_id: Optional[str] = None`, `comment: Optional[str] = None`, `timeout: Optional[float] = 60` | `Dict[str, Any]` | Entity Operations | Save an entity (create or update), preparing it with system fields and updating metadata. |
 | <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `save_entities` | `entity_name: str`, `entities: List[Dict[str, Any]]`, `user_id: Optional[str] = None`, `comment: Optional[str] = None`, `timeout: Optional[float] = 60` | `List[Dict[str, Any]]` | Entity Operations | Save multiple entities in a single transaction with batch operations. |
@@ -676,9 +844,40 @@ Factory for creating database instances.
 | <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `get_entity_history` | `entity_name: str`, `entity_id: str`, `deserialize: bool = False` | `List[Dict[str, Any]]` | Entity Operations | Get the history of an entity with all previous versions. |
 | <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `get_entity_by_version` | `entity_name: str`, `entity_id: str`, `version: int`, `deserialize: bool = False` | `Optional[Dict[str, Any]]` | Entity Operations | Get a specific version of an entity from history. |
 
+</details>
+
+<br>
+
+
+<details>
+<summary><strong>Private/Internal Methods</strong></summary>
+
+| Decorators | Method | Args | Returns | Category | Description |
+|------------|--------|------|---------|----------|-------------|
+| <code style="background-color:lightpink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code> | `_ensure_entity_schema` | `entity_name: str`, `sample_entity: Optional[Dict[str, Any]] = None` | `None` | Schema Management | Ensure entity tables and metadata exist, creating if needed. |
+| <code style="background-color:lightpink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code> | `_update_entity_metadata` | `entity_name: str`, `entity: Dict[str, Any]` | `None` | Schema Management | Update metadata table based on entity fields and their types. |
+| <code style="background-color:lightpink">@async_method</code> | `_get_entity_metadata` | `entity_name: str`, `use_cache: bool = True` | `Dict[str, str]` | Schema Management | Get metadata for an entity type, mapping field names to types. |
+| <code style="background-color:lightpink">@async_method</code> <code style="background-color:lightgreen">@auto_transaction</code> | `_add_to_history` | `entity_name: str`, `entity: Dict[str, Any]`, `user_id: Optional[str] = None`, `comment: Optional[str] = None` | `None` | Entity Operations | Add an entry to entity history, tracking versions. |
+| <code style="background-color:lightpink">@async_method</code> | `_deserialize_entity` | `entity_name: str`, `entity: Dict[str, Optional[str]]` | `Dict[str, Any]` | Serialization | Deserialize entity values based on metadata from strings to typed values. |
+
+</details>
+
+<br>
+
+`EntitySyncMixin` is the same class (except that the methods are turned into sync versions via asyncio) and is injected into <a href="#class-syncconnection">`SyncConnection`</a> via the <code style="background-color:azure">@inject_mixin</code> decorator.
+
+
+</div>
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
 
 ### class `ConnectionPool`
+
+Used internally by <a href="#class-poolmanager">`PoolManager`</a>.
+
 Abstract connection pool interface that standardizes behavior across database drivers. This interface provides a consistent API for connection pool operations, regardless of the underlying database driver. It abstracts away driver-specific details and ensures that all pools implement the core functionality needed by the connection management system.
+
+<details>
+<summary><strong>Public Methods</strong></summary>
 
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
@@ -692,6 +891,11 @@ Abstract connection pool interface that standardizes behavior across database dr
 | <code style="background-color:gainsboro">@property</code> <code style="background-color:gainsboro">@abstractmethod</code> | `in_use` | | `int` | Diagnostic | Gets the number of connections currently in use. |
 | <code style="background-color:gainsboro">@property</code> <code style="background-color:gainsboro">@abstractmethod</code> | `idle` | | `int` | Diagnostic | Gets the number of idle connections in the pool. |
 
+</details>
+
+<br>
+
+
 <details>
 <summary><strong>Private/Internal Methods</strong></summary>
 
@@ -700,9 +904,21 @@ Abstract connection pool interface that standardizes behavior across database dr
 | <code style="background-color:gainsboro">@abstractmethod</code> | `_test_connection` | `connection: Any` | `None` | Diagnostic | Run a database-specific test query on the connection. |
 </details>
 
------
+<br>
+
+
+</div>
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
+
 ### class `StatementCache`
+
+Ussed internally by <a href="#class-baseconnection">`BaseConnection`</a>.
+
 Thread-safe cache for prepared SQL statements with dynamic sizing.
+
+
+<details>
+<summary><strong>Public Methods</strong></summary>
 
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
@@ -710,6 +926,11 @@ Thread-safe cache for prepared SQL statements with dynamic sizing.
 | <code style="background-color:gainsboro">@property</code> | `hit_ratio` | | `float` | Metrics | Calculate the cache hit ratio (hits / total operations). |
 | | `get` | `sql_hash` | `Optional[Tuple[Any, str]]` | Cache Management | Get a prepared statement from the cache in a thread-safe manner. |
 | | `put` | `sql_hash`, `statement`, `sql` | | Cache Management | Add a prepared statement to the cache in a thread-safe manner, using LRU eviction. |
+
+</details>
+
+<br>
+
 
 <details>
 <summary><strong>Private/Internal Methods</strong></summary>
@@ -720,9 +941,20 @@ Thread-safe cache for prepared SQL statements with dynamic sizing.
 | | `_check_resize` | | | Cache Management | Dynamically resize the cache based on hit ratio and usage patterns. |
 </details>
 
------
+<br>
+
+
+</div>
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
+
 ### class `CircuitBreaker`
+
+Used internally by the <code style="background-color:orange">@circuit_breaker</code> decorator.
+
 Circuit breaker implementation that can be used as a decorator for sync and async methods. The circuit breaker pattern prevents cascading system failures by monitoring error rates. If too many failures occur within a time window, the circuit 'opens' and immediately rejects new requests without attempting to call the failing service. After a recovery timeout period, the circuit transitions to 'half-open' state, allowing a few test requests through. If these succeed, the circuit 'closes' and normal operation resumes; if they fail, the circuit opens again to protect system resources.
+
+<details>
+<summary><strong>Public Methods</strong></summary>
 
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
@@ -731,6 +963,11 @@ Circuit breaker implementation that can be used as a decorator for sync and asyn
 | | `record_success` | | | State Management | Record a successful call through the circuit breaker. |
 | | `record_failure` | | | State Management | Record a failed call through the circuit breaker. |
 | | `allow_request` | | `bool` | State Management | Check if a request should be allowed through the circuit breaker based on current state. |
+
+</details>
+
+<br>
+
 
 <details>
 <summary><strong>Private/Internal Methods</strong></summary>
@@ -741,7 +978,11 @@ Circuit breaker implementation that can be used as a decorator for sync and asyn
 | | `_check_state_transitions` | | | State Management | Check and apply state transitions based on timing and success/failure counts. |
 </details>
 
------
+<br>
+
+
+</div>
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
 
 ### Functions
 
@@ -755,3 +996,5 @@ Circuit breaker implementation that can be used as a decorator for sync and asyn
 || `track_slow_method` |`threshold=2.0`|`Callable`|Instrumentation| Decorator that logs a warning if the execution of the method took longer than the threshold (in seconds). |
 || `overridable` |`method`|`Callable`|Documentation| Marks a method as overridable for documentation / IDE purposes. |
 || `auto_transaction` |`func`|`Callable`|Transaction| Decorator that automatically wraps a function in a transaction. If a transaction is already in progress, uses the existing transaction. Otherwise, creates a new transaction, commits if successful, or rolls back on exception. Works with both sync and async methods. Must be applied to methods of a class that offers in_transaction, begin_transaction, commit_transaction, and rollback_transaction methods. |
+
+</div>

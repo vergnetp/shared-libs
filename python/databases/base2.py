@@ -801,9 +801,27 @@ class StatementCache:
             self._cache[sql_hash] = (statement, sql)
             if sql_hash in self._lru:
                 self._lru.remove(sql_hash)
-            self._lru.append(sql_hash)
-      
-class BaseConnection:
+            self._lru.append(sql_hash) 
+
+class ConnectionInterface(ABC):
+    """Interface that defines the required methods and properties for connections."""
+    @abstractmethod
+    def execute(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
+        """Execute SQL with parameters"""
+        raise NotImplementedError("This method must be implemented by the host class")
+    
+    @abstractmethod
+    def executemany(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
+        """Execute SQL multiple times with different parameters"""
+        raise NotImplementedError("This method must be implemented by the host class")
+    
+    @abstractmethod
+    @property
+    def sql_generator(self) -> SqlGenerator:
+        """Returns the SQL parameter converter to use"""
+        raise NotImplementedError("This property must be implemented by the host class")
+    
+class BaseConnection(ABC, ConnectionInterface):
     """
     Base class for database connections.
     """
@@ -867,12 +885,12 @@ class BaseConnection:
         combined_parts = []
 
         if tags:
-            comment_sql = self._parameter_converter.get_comment_sql(tags)
+            comment_sql = self.sql_generator.get_comment_sql(tags)
             if comment_sql:
                 combined_parts.append(comment_sql)
 
         if timeout:
-            timeout_sql = self._parameter_converter.get_timeout_sql(timeout)
+            timeout_sql = self.sql_generator.get_timeout_sql(timeout)
             if timeout_sql:
                 combined_parts.append(timeout_sql)
 
@@ -901,7 +919,7 @@ class BaseConnection:
         if stmt_tuple:
             return stmt_tuple[0]  # First element is the statement
             
-        converted_sql, _ = self._parameter_converter.convert_query_to_native(final_sql)
+        converted_sql, _ = self.sql_generator.convert_query_to_native(final_sql)
         stmt = await self._prepare_statement_async(converted_sql)
         self._statement_cache.put(sql_hash, stmt, final_sql)
         return stmt
@@ -925,7 +943,7 @@ class BaseConnection:
         if stmt_tuple:
             return stmt_tuple[0]  # First element is the statement
             
-        converted_sql, _ = self._parameter_converter.convert_query_to_native(final_sql)
+        converted_sql, _ = self.sql_generator.convert_query_to_native(final_sql)
         stmt = self._prepare_statement_sync(converted_sql)
         self._statement_cache.put(sql_hash, stmt, final_sql)
         return stmt
@@ -986,19 +1004,13 @@ class BaseConnection:
             Raw execution result
         """
         pass
-
-    @property
-    @abstractmethod
-    def _parameter_converter(self) -> SqlGenerator:
-        """Returns the parameter converter for this connection."""
-        pass
     
     # endregion --------------------------------
 
 from __future__ import annotations
 
 @inject_mixin(EntityAsyncMixin)
-class AsyncConnection(BaseConnection, ABC):
+class AsyncConnection(ABC, BaseConnection):
     """
     Abstract base class defining the interface for asynchronous database connections.
     
@@ -1251,7 +1263,7 @@ class SyncConnection(ABC, BaseConnection):
 
     @property
     @abstractmethod
-    def _parameter_converter(self) -> SqlGenerator:
+    def sql_generator(self) -> SqlGenerator:
         """Returns the parameter converter for this connection."""
         pass
 
@@ -1510,8 +1522,74 @@ class PoolManager(ABC):
     
     def __init__(self, alias: str=uuid.uuid4(), hash: str=uuid.uuid4()):
         self._alias = alias
-        self._hash = hash
+        self._hash = hash        
+        
+        # Try to initialize pool and start leak detection task if in async environment
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._initialize_pool_if_needed())
+            loop.create_task(self._leak_detection_task())
+        except RuntimeError:
+            # Not in an async environment, which is fine
+            pass
 
+    async def _leak_detection_task(self):
+        """Background task that periodically checks for and recovers from connection leaks"""
+        IDLE_TIMEOUT = 1800  # 30 minutes idle time before considering a connection dead
+        
+        while True:
+            try:
+                # Wait to avoid excessive CPU usage
+                try:
+                    await asyncio.sleep(300)  # Check every 5 minutes
+                except asyncio.CancelledError:
+                    logger.info("Leak detection task cancelled")
+                    break
+                
+                # Check for leaked connections
+                leaked_conns = await self.check_for_leaked_connections(threshold_seconds=300)
+                
+                # Additionally check for idle connections
+                now = time.time()
+                idle_conns = []
+                
+                for conn in self._connections:
+                    if conn._is_idle(IDLE_TIMEOUT) and not conn._is_leaked:
+                        idle_conns.append(conn)
+                
+                # Log idle connections
+                if idle_conns:
+                    logger.warning(f"Found {len(idle_conns)} idle connections in {self.alias()} pool that haven't been active for 30+ minutes")
+                
+                # Attempt recovery for leaked connections
+                for conn, duration, stack in leaked_conns:
+                    try:
+                        # Mark as leaked to avoid duplicate recovery attempts
+                        conn._mark_leaked()
+                        
+                        # Try to gracefully return to the pool
+                        logger.warning(f"Attempting to recover leaked connection in {self.alias()} pool (leaked for {duration:.2f}s)")
+                        await self._release_connection_to_pool(conn)
+                        logger.info(f"Successfully recovered leaked connection in {self.alias()} pool")
+                    except Exception as e:
+                        logger.error(f"Failed to recover leaked connection: {e}")
+                        self._connections.discard(conn)  # Explicitly discard leaked connection
+                        # Try to close directly as a last resort
+                        try:
+                            await conn.close()
+                        except Exception:
+                            pass
+                
+                # Also recover idle connections
+                for conn in idle_conns:
+                    try:
+                        logger.warning(f"Recovering idle connection in {self.alias()} pool")
+                        await self._release_connection_to_pool(conn)
+                    except Exception as e:
+                        logger.error(f"Failed to recover idle connection: {e}")
+            except Exception as e:
+                logger.error(f"Error in connection leak detection task: {e}")
+                
     def alias(self):
         return self._alias
 
@@ -1793,7 +1871,8 @@ class PoolManager(ABC):
             logger.error(f"Connection release failed for {self.alias()} pool: {e}, pool info: {pool_info}")
             await self._track_metrics(False, e)
             raise
-        self._connections.discard(async_conn)
+        finally:
+            self._connections.discard(async_conn)
 
     @async_method
     async def check_for_leaked_connections(self, threshold_seconds=300) -> List[Tuple[AsyncConnection, float, str]]:
@@ -2180,73 +2259,8 @@ class ConnectionManager():
         self._local = threading.local()
         self._local._sync_conn = None     
 
-        if self.is_environment_async():
-            try:
-                asyncio.get_running_loop().create_task(self._initialize_pool_if_needed())
-                asyncio.get_running_loop().create_task(self._leak_detection_task())
-            except RuntimeError:
-                self._local._sync_conn = self.get_sync_connection()
-        else:
+        if not self.is_environment_async():
             self._local._sync_conn = self.get_sync_connection()
-
-
-
-    async def _leak_detection_task(self):
-        """Background task that periodically checks for and recovers from connection leaks"""
-        IDLE_TIMEOUT = 1800  # 30 minutes idle time before considering a connection dead
-        
-        while True:
-            try:
-                # Wait to avoid excessive CPU usage
-                try:
-                    await asyncio.sleep(300)  # Check every 5 minutes
-                except asyncio.CancelledError:
-                    logger.info("Leak detection task cancelled")
-                    break
-                
-                # Check for leaked connections
-                leaked_conns = await self.check_for_leaked_connections(threshold_seconds=300)
-                
-                # Additionally check for idle connections
-                now = time.time()
-                idle_conns = []
-                
-                for conn in self._connections:
-                    if conn._is_idle(IDLE_TIMEOUT) and not conn._is_leaked:
-                        idle_conns.append(conn)
-                
-                # Log idle connections
-                if idle_conns:
-                    logger.warning(f"Found {len(idle_conns)} idle connections in {self.config.alias()} pool that haven't been active for 30+ minutes")
-                
-                # Attempt recovery for leaked connections
-                for conn, duration, stack in leaked_conns:
-                    try:
-                        # Mark as leaked to avoid duplicate recovery attempts
-                        conn._mark_leaked()
-                        
-                        # Try to gracefully return to the pool
-                        logger.warning(f"Attempting to recover leaked connection in {self.config.alias()} pool (leaked for {duration:.2f}s)")
-                        await self._release_connection_to_pool(conn)
-                        logger.info(f"Successfully recovered leaked connection in {self.config.alias()} pool")
-                    except Exception as e:
-                        logger.error(f"Failed to recover leaked connection: {e}")
-                        self._connections.discard(conn)  # Explicitly discard leaked connection
-                        # Try to close directly as a last resort
-                        try:
-                            await conn.close()
-                        except Exception:
-                            pass
-                
-                # Also recover idle connections
-                for conn in idle_conns:
-                    try:
-                        logger.warning(f"Recovering idle connection in {self.config.alias()} pool")
-                        await self._release_connection_to_pool(conn)
-                    except Exception as e:
-                        logger.error(f"Failed to recover idle connection: {e}")
-            except Exception as e:
-                logger.error(f"Error in connection leak detection task: {e}")
 
     def is_environment_async(self) -> bool:
         """
@@ -2395,8 +2409,6 @@ class ConnectionManager():
             await self._poolManager._release_connection_to_pool(async_conn)
         except Exception as e:
             logger.error(f"{self.config.alias()} failed to release async connection: {e}")
-            # Even if release failed, remove from tracking to prevent memory leaks
-            self._connections.discard(async_conn)
             
             # Try to close the connection directly to prevent resource leaks
             try:
@@ -3787,7 +3799,7 @@ class EntityUtils:
         
         return async_method
   
-class EntityAsyncMixin(EntityUtils):
+class EntityAsyncMixin(EntityUtils, ConnectionInterface):
     """
     Mixin that adds entity operations to async connections.
     
@@ -3820,7 +3832,7 @@ class EntityAsyncMixin(EntityUtils):
             Entity dictionary or None if not found
         """
         # Generate the SQL
-        sql = self.parameter_converter.get_entity_by_id_sql(entity_name, include_deleted)
+        sql = self.sql_generator.get_entity_by_id_sql(entity_name, include_deleted)
         
         # Execute the query
         result = await self.execute(sql, (entity_id,))
@@ -3875,7 +3887,7 @@ class EntityAsyncMixin(EntityUtils):
             # Always use targeted upsert with exactly the fields provided
             # (plus system fields added by _prepare_entity)
             fields = list(serialized.keys())
-            sql = self.parameter_converter.get_upsert_sql(entity_name, fields)
+            sql = self.sql_generator.get_upsert_sql(entity_name, fields)
             
             # Execute the upsert
             params = tuple(serialized[field] for field in fields)
@@ -3939,12 +3951,12 @@ class EntityAsyncMixin(EntityUtils):
             # Batch update the metadata
             meta_params = [(field_name, field_type) for field_name, field_type in meta.items()]
             if meta_params:
-                sql = self.parameter_converter.get_meta_upsert_sql(entity_name)
+                sql = self.sql_generator.get_meta_upsert_sql(entity_name)
                 await self.executemany(sql, meta_params)
             
             # Add all entities to the database with batch upsert
             fields = list(all_fields)
-            sql = self.parameter_converter.get_upsert_sql(entity_name, fields)
+            sql = self.sql_generator.get_upsert_sql(entity_name, fields)
             
             # Prepare parameters for batch upsert
             batch_params = []
@@ -4034,7 +4046,7 @@ class EntityAsyncMixin(EntityUtils):
         
         # For soft deletion, use an UPDATE
         now = datetime.datetime.utcnow().isoformat()
-        sql = self.parameter_converter.get_soft_delete_sql(entity_name)
+        sql = self.sql_generator.get_soft_delete_sql(entity_name)
         result = await self.execute(sql, (now, now, user_id, entity_id))
         
         # Add to history if soft-deleted
@@ -4077,7 +4089,7 @@ class EntityAsyncMixin(EntityUtils):
         now = datetime.datetime.utcnow().isoformat()
         
         # Generate restore SQL
-        sql = self.parameter_converter.get_restore_entity_sql(entity_name)
+        sql = self.sql_generator.get_restore_entity_sql(entity_name)
         result = await self.execute(sql, (now, user_id, entity_id))
         
         # Add to history if restored
@@ -4121,7 +4133,7 @@ class EntityAsyncMixin(EntityUtils):
             List of entity dictionaries
         """
         # Generate query SQL
-        sql = self.parameter_converter.get_query_builder_sql(
+        sql = self.sql_generator.get_query_builder_sql(
             entity_name, where_clause, order_by, limit, offset, include_deleted
         )
         
@@ -4167,7 +4179,7 @@ class EntityAsyncMixin(EntityUtils):
             Count of matching entities
         """
         # Generate count SQL
-        sql = self.parameter_converter.get_count_entities_sql(
+        sql = self.sql_generator.get_count_entities_sql(
             entity_name, where_clause, include_deleted
         )
         
@@ -4198,7 +4210,7 @@ class EntityAsyncMixin(EntityUtils):
             List of historical versions
         """
         # Generate SQL
-        sql, params = self.parameter_converter.get_entity_history_sql(entity_name, entity_id)
+        sql, params = self.sql_generator.get_entity_history_sql(entity_name, entity_id)
         
         # Execute the query
         result = await self.execute(sql, params)
@@ -4241,7 +4253,7 @@ class EntityAsyncMixin(EntityUtils):
             Entity version or None if not found
         """
         # Generate SQL
-        sql, params = self.parameter_converter.get_entity_version_sql(entity_name, entity_id, version)
+        sql, params = self.sql_generator.get_entity_version_sql(entity_name, entity_id, version)
         
         # Execute the query
         result = await self.execute(sql, params)
@@ -4273,24 +4285,24 @@ class EntityAsyncMixin(EntityUtils):
             sample_entity: Optional example entity to infer schema
         """
         # Check if the main table exists
-        main_exists_sql, main_params = self.parameter_converter.get_check_table_exists_sql(entity_name)
+        main_exists_sql, main_params = self.sql_generator.get_check_table_exists_sql(entity_name)
         main_result = await self.execute(main_exists_sql, main_params)
         main_exists = main_result and len(main_result) > 0
         
         # Check if the meta table exists
-        meta_exists_sql, meta_params = self.parameter_converter.get_check_table_exists_sql(f"{entity_name}_meta")
+        meta_exists_sql, meta_params = self.sql_generator.get_check_table_exists_sql(f"{entity_name}_meta")
         meta_result = await self.execute(meta_exists_sql, meta_params)
         meta_exists = meta_result and len(meta_result) > 0
         
         # Check if the history table exists
-        history_exists_sql, history_params = self.parameter_converter.get_check_table_exists_sql(f"{entity_name}_history")
+        history_exists_sql, history_params = self.sql_generator.get_check_table_exists_sql(f"{entity_name}_history")
         history_result = await self.execute(history_exists_sql, history_params)
         history_exists = history_result and len(history_result) > 0
         
         # Get columns if the main table exists
         columns = []
         if main_exists:
-            columns_sql, columns_params = self.parameter_converter.get_list_columns_sql(entity_name)
+            columns_sql, columns_params = self.sql_generator.get_list_columns_sql(entity_name)
             columns_result = await self.execute(columns_sql, columns_params)
             if columns_result:
                 columns = [(row[0], row[1]) for row in columns_result]
@@ -4307,7 +4319,7 @@ class EntityAsyncMixin(EntityUtils):
                     ("updated_by", "TEXT"),
                     ("deleted_at", "TEXT")
                 ]
-                main_sql = self.parameter_converter.get_create_table_sql(entity_name, default_columns)
+                main_sql = self.sql_generator.get_create_table_sql(entity_name, default_columns)
             else:
                 # Use sample entity to determine columns
                 columns = [(field, "TEXT") for field in sample_entity.keys()]
@@ -4316,7 +4328,7 @@ class EntityAsyncMixin(EntityUtils):
                 for col in req_columns:
                     if col not in sample_entity:
                         columns.append((col, "TEXT"))
-                main_sql = self.parameter_converter.get_create_table_sql(entity_name, columns)
+                main_sql = self.sql_generator.get_create_table_sql(entity_name, columns)
                 
             await self.execute(main_sql, ())
             
@@ -4326,20 +4338,20 @@ class EntityAsyncMixin(EntityUtils):
             
         # Create meta table if needed
         if not meta_exists:
-            meta_sql = self.parameter_converter.get_create_meta_table_sql(entity_name)
+            meta_sql = self.sql_generator.get_create_meta_table_sql(entity_name)
             await self.execute(meta_sql, ())
             
         # Create history table if needed
         if not history_exists:
             # Get current columns if table exists and columns empty
             if not columns and main_exists:
-                columns_sql, columns_params = self.parameter_converter.get_list_columns_sql(entity_name)
+                columns_sql, columns_params = self.sql_generator.get_list_columns_sql(entity_name)
                 columns_result = await self.execute(columns_sql, columns_params)
                 if columns_result:
                     columns = [(row[0], row[1]) for row in columns_result]
                 
             # Create history table with current columns plus history-specific ones
-            history_sql = self.parameter_converter.get_create_history_table_sql(entity_name, columns)
+            history_sql = self.sql_generator.get_create_history_table_sql(entity_name, columns)
             await self.execute(history_sql, ())
             
         # Update metadata if sample entity provided
@@ -4357,11 +4369,11 @@ class EntityAsyncMixin(EntityUtils):
             entity: Entity dictionary with fields to register
         """
         # Ensure tables exist
-        main_exists_sql, main_params = self.parameter_converter.get_check_table_exists_sql(f"{entity_name}_meta")
+        main_exists_sql, main_params = self.sql_generator.get_check_table_exists_sql(f"{entity_name}_meta")
         meta_exists = bool(await self.execute(main_exists_sql, main_params))
         
         if not meta_exists:
-            meta_sql = self.parameter_converter.get_create_meta_table_sql(entity_name)
+            meta_sql = self.sql_generator.get_create_meta_table_sql(entity_name)
             await self.execute(meta_sql, ())
         
         # Get existing metadata
@@ -4377,7 +4389,7 @@ class EntityAsyncMixin(EntityUtils):
             value_type = self._infer_type(value)
             
             # Add to metadata
-            sql = self.parameter_converter.get_meta_upsert_sql(entity_name)
+            sql = self.sql_generator.get_meta_upsert_sql(entity_name)
             await self.execute(sql, (field_name, value_type))
             
             # Update cache
@@ -4405,7 +4417,7 @@ class EntityAsyncMixin(EntityUtils):
             return self._meta_cache[entity_name]
             
         # Check if meta table exists
-        meta_exists_sql, meta_params = self.parameter_converter.get_check_table_exists_sql(f"{entity_name}_meta")
+        meta_exists_sql, meta_params = self.sql_generator.get_check_table_exists_sql(f"{entity_name}_meta")
         meta_exists = bool(await self.execute(meta_exists_sql, meta_params))
         
         # Return empty dict if table doesn't exist
@@ -4505,7 +4517,7 @@ class EntityAsyncMixin(EntityUtils):
         
         return result
     
-class EntitySyncMixin(EntityUtils):    
+class EntitySyncMixin(EntityUtils, ConnectionInterface):    
     """
     Mixin that adds entity operations to sync connections.
     
@@ -4591,7 +4603,7 @@ class PostgresSyncConnection(SyncConnection):
                 return next(self.counter)
         
     @property
-    def _parameter_converter(self) -> SqlGenerator:
+    def sql_generator(self) -> SqlGenerator:
         """Returns the PostgreSQL parameter converter."""
         return PostgresSqlGenerator(False)
     
@@ -4688,7 +4700,7 @@ class PostgresAsyncConnection(AsyncConnection):
         self._tx = None 
 
     @property
-    def _parameter_converter(self) -> SqlGenerator:
+    def sql_generator(self) -> SqlGenerator:
         """Returns the PostgreSQL parameter converter."""
         return PostgresSqlGenerator(True)
 
@@ -4986,7 +4998,7 @@ class MysqlSyncConnection(SyncConnection):
         self._cursor = self._conn.cursor()
 
     @property
-    def _parameter_converter(self) -> SqlGenerator:
+    def sql_generator(self) -> SqlGenerator:
         """Returns the MySql parameter converter."""
         return MySqlSqlGenerator()
     
@@ -5073,7 +5085,7 @@ class MysqlAsyncConnection(AsyncConnection):
         super().__init__(conn)        
 
     @property
-    def _parameter_converter(self) -> SqlGenerator:
+    def sql_generator(self) -> SqlGenerator:
         """Returns the SQL parameter converter."""
         return MySqlSqlGenerator()
 
@@ -5368,7 +5380,7 @@ class SqliteSyncConnection(SyncConnection):
         self._cursor = self._conn.cursor()
 
     @property
-    def _parameter_converter(self) -> SqlGenerator:
+    def sql_generator(self) -> SqlGenerator:
         """Returns the SQL parameter converter."""
         return SqliteSqlGenerator()
 
@@ -5454,7 +5466,7 @@ class SqliteAsyncConnection(AsyncConnection):
         super().__init__(conn) 
 
     @property
-    def _parameter_converter(self) -> SqlGenerator:
+    def sql_generator(self) -> SqlGenerator:
         """Returns the SQL parameter converter."""
         return SqliteSqlGenerator()
 
