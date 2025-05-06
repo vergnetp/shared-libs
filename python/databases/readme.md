@@ -239,10 +239,11 @@ await PoolManager.close_pool(config_hash=config.hash(),timeout=30) # Will close 
 
 To add a new backend (say Oracle), you need to write the implementation of a few classes:
 * Step 1) <a href="#class-sqlgenerator">`SqlGenerator`</a>: `convert_query_to_native` `get_timeout_sql`
-* Step 2) <a href="#class-sqlgenerator">`Connectionpool`</a>: `__init__` `acquire` `release` `close` `_test_connection` `min_size` `max_size` `size` `in_use` `idle`
-* Step 3) <a href="#class-sqlgenerator">`AsyncConnection`</a>: `__init__` `sql_generator` `_prepare_statement_async` `_execute_statement_async` `in_transaction` `begin_transaction` `commit_transaction` `rollback_transaction` `close` `get_version_details`
-* Step 4) <a href="#class-sqlgenerator">`SyncConnection`</a>: `__init__` `sql_generator` `_prepare_statement_sync` `_execute_statement_sync` `in_transaction` `begin_transaction` `commit_transaction` `rollback_transaction` `close` `get_version_details`
-* Step 5) <a href="#class-sqlgenerator">`ConnectionManager`</a>: `_create_sync_connection` `create_pool` `_wrap_async_connection` `_wrap_sync_connection`
+* Step 2) <a href="#class-connectionpool">`Connectionpool`</a>: `__init__` `acquire` `release` `close` `_test_connection` `min_size` `max_size` `size` `in_use` `idle`
+* Step 3) <a href="#class-poolmanager">`PoolManager`</a>: `_create_pool`
+* Step 4) <a href="#class-asyncconnection">`AsyncConnection`</a>: `__init__` `sql_generator` `_prepare_statement_async` `_execute_statement_async` `in_transaction` `begin_transaction` `commit_transaction` `rollback_transaction` `close` `get_version_details`
+* Step 5) <a href="#class-syncconnection">`SyncConnection`</a>: `__init__` `sql_generator` `_prepare_statement_sync` `_execute_statement_sync` `in_transaction` `begin_transaction` `commit_transaction` `rollback_transaction` `close` `get_version_details`
+* Step 6) <a href="#class-connectionmanager">`ConnectionManager`</a>: `_create_sync_connection` `create_pool` `_wrap_async_connection` `_wrap_sync_connection`
 
 <br>
 
@@ -333,13 +334,37 @@ class OracleConnectionPool(ConnectionPool):
         pass
 
 # STEP 3
+class OraclePoolManager(PoolManager):
+
+    async def _create_pool(self, config: Dict) -> OracleConnectionPool:  
+        # probably:
+        """     
+        min_size, max_size = self._calculate_pool_size()
+        raw_pool = await async_driver.create_pool(
+            min_size=min_size, 
+            max_size=max_size, 
+            command_timeout=60.0, 
+            **config
+        )
+        return OracleConnectionPool(
+            raw_pool, 
+            timeout=self.connection_acquisition_timeout
+        )
+        """
+        pass
+
+# STEP 4
 class OracleAsyncConnection(AsyncConnection):
     def __init__(self, conn):
+        super().__init__(conn)
         self._conn = conn # The async Oracle driver's connection (generated in the Pool acquire method)
-        
+        self._sql_generator = None
+
     @property
     def sql_generator(self) -> SqlGenerator:
-        return OracleSqlGenerator()
+        if not self._sql_generator:
+            self._sql_generator = OracleSqlGenerator()
+        return self._sql_generator
 
     async def _prepare_statement_async(self, native_sql: str) -> Any:
         pass
@@ -369,32 +394,26 @@ class OracleAsyncConnection(AsyncConnection):
     async def get_version_details(self) -> Dict[str, str]:
         return {'db_server_version':'to do', 'db_driver':'to do'}
 
-# STEP 4
+# STEP 5
 class OracleSyncConnection(SyncConnection):
     # similar to the Async version
 
-# STEP 5
+# STEP 6
 class OracleDatabase(ConnectionManager):
+        def __init__(self, **kwargs):
+        super().__init__(**kwargs) 
+        self._pool_manager = None
+        
+    # region -- Implementation of Abstract methods ---------
+    @property
+    def pool_manager(self):
+        if not self._pool_manager:
+            self._pool_manager = OraclePoolManager(self.config.alias(), self.config.hash(), self.connection_acquisition_timeout)
+        return self._pool_manager
+
     def _create_sync_connection(self, config: Dict):     
         # probably: return sync_driver.connect(**config)
-        pass      
-
-    async def _create_pool(self, config: Dict) -> ConnectionPool:  
-        # probably:
-        """     
-        min_size, max_size = self._calculate_pool_size()
-        raw_pool = await async_driver.create_pool(
-            min_size=min_size, 
-            max_size=max_size, 
-            command_timeout=60.0, 
-            **config
-        )
-        return OracleConnectionPool(
-            raw_pool, 
-            timeout=self.connection_acquisition_timeout
-        )
-        """
-        pass
+        pass 
 
     def _wrap_async_connection(self, raw_conn):
         return OracleAsyncConnection(raw_conn)

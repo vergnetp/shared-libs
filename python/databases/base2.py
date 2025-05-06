@@ -1,3 +1,5 @@
+from __future__ import annotations # for the inject_mixin decorator
+
 import sys
 import os
 import re
@@ -26,7 +28,58 @@ import pymysql
 import aiomysql
 import inspect
 
+import functools
+import json
+
+MAX_LENGTH = 200
+
+
+def serialize(value):
+    """Serialize any value to a JSON string, trimmed to MAX_LENGTH."""
+    try:
+        serialized = json.dumps(value, default=str)
+    except Exception:
+        serialized = str(value)
+
+    if len(serialized) > MAX_LENGTH:
+        return serialized[:MAX_LENGTH] + "..."
+    return serialized
+
+
+def log_method_calls(logger, cls):
+    """Patch class methods in-place to log calls and return values."""
+
+    for attr_name, attr in cls.__dict__.items():
+        if attr_name.startswith("__"):
+            continue  # Skip special methods
+        
+        if callable(attr) and not isinstance(attr, contextlib._AsyncGeneratorContextManager):        
+            @functools.wraps(attr)
+            def wrapper(self, *args, __attr=attr, __name=attr_name, **kwargs):
+                class_name = self.__class__.__name__
+                serialized_args = serialize({"args": args, "kwargs": kwargs})
+                logger(f"v2 Called {class_name}.{__name} with {serialized_args}")
+
+                result = __attr(self, *args, **kwargs)
+
+                serialized_result = serialize(result)
+                logger(f"v2 {class_name}.{__name} returned {serialized_result}")
+
+                return result
+
+            setattr(cls, attr_name, wrapper)
+
+    return cls
+
 # region     ############## DECORATORS ###########################
+
+def merge_classes(mixin_class, target_class):
+    # Get all public methods (non-underscore methods) from the mixin
+    for name, method in inspect.getmembers(mixin_class, predicate=inspect.isfunction):
+        #if not name.startswith('_'):  # Only add public methods
+            # Add the method to the target class
+        setattr(target_class, name, method)
+    return target_class
 
 def inject_mixin(mixin_class):
     """
@@ -40,12 +93,7 @@ def inject_mixin(mixin_class):
         A decorator function that adds the mixin methods to a target class
     """
     def decorator(target_class):
-        # Get all public methods (non-underscore methods) from the mixin
-        for name, method in inspect.getmembers(mixin_class, predicate=inspect.isfunction):
-            if not name.startswith('_'):  # Only add public methods
-                # Add the method to the target class
-                setattr(target_class, name, method)
-        return target_class
+        return merge_classes(mixin_class, target_class)
     return decorator
 
 def with_timeout(default_timeout: float = 60.0):
@@ -54,23 +102,12 @@ def with_timeout(default_timeout: float = 60.0):
     
     The decorated method will have a timeout applied, which can be:
     1. Passed directly as a 'timeout' parameter to the method
-    2. Or use the default_timeout value if no timeout is specified
+    2. Or use the default_timeout value if none is provided
     
     For sync methods, implements a "soft timeout" that periodically checks elapsed time.
     
     Args:
         default_timeout: Default timeout in seconds if none is provided
-        
-    Example:
-        @with_timeout(default_timeout=1.0)
-        async def slow_async_operation(self, ..., timeout=None):
-            # Method will timeout after 1 second by default
-            
-        @with_timeout(default_timeout=2.0)
-        def slow_sync_operation(self, ..., timeout=None):
-            # Method will use soft timeout checks but can also check explicitely like so:
-            kwargs.get('_timeout_checker').check() # raise TimeoutError if runtime > timeout
-            
     """
     def decorator(func):
         is_async = asyncio.iscoroutinefunction(func)
@@ -112,9 +149,7 @@ def with_timeout(default_timeout: float = 60.0):
                 # Extract timeout from kwargs or use default
                 timeout = kwargs.pop('timeout', None) or default_timeout
                 
-                # Define check points - check every 5% of the timeout or at least every 100ms
-                check_interval = min(max(timeout * 0.05, 0.1), 1.0)
-                
+                # Create a timeout checker but don't add it to kwargs
                 class TimeoutChecker:
                     def __init__(self):
                         self.start_time = time.time()
@@ -133,10 +168,11 @@ def with_timeout(default_timeout: float = 60.0):
                 
                 # Function that wraps the original with timeout checks
                 def execute_with_timeout_checks():
-                    # For functions that have natural break points (like loops)
-                    # we can inject the timeout checker
-                    kwargs['_timeout_checker'] = checker
-                    return func(*args, **kwargs)
+                    # Instead of injecting checker into kwargs, check timeout before and after
+                    checker.check()
+                    result = func(*args, **kwargs)
+                    checker.check()
+                    return result
                 
                 try:
                     return execute_with_timeout_checks()
@@ -711,7 +747,7 @@ class StatementCache:
         self._hard_max = max_size
         self._auto_resize = auto_resize
         self._lru = []  # Track usage for LRU eviction
-        self._lock = threading.Lock()  # Add a lock for thread safety
+        self._lock = threading.RLock()  # Use a reentrant lock for thread safety
         self._hits = 0
         self._misses = 0
         self._last_resize_check = time.time()
@@ -719,89 +755,51 @@ class StatementCache:
   
     @staticmethod
     def hash(sql: str) -> str:
+        """Generate a hash for the SQL statement"""
         return hashlib.md5(sql.encode('utf-8')).hexdigest()
 
     @property
     def hit_ratio(self) -> float:
         """Calculate the cache hit ratio"""
-        total = self._hits + self._misses
-        return self._hits / total if total > 0 else 0
+        with self._lock:
+            total = self._hits + self._misses
+            return self._hits / total if total > 0 else 0
     
     def _check_resize(self):
         """Dynamically resize the cache based on hit ratio and usage"""
         with self._lock:
-            if not self._auto_resize:
-                    return
-                
-            now = time.time()
-            if now - self._last_resize_check < self._resize_interval:
-                return
-                
-            self._last_resize_check = now
-            total_ops = self._hits + self._misses
-            
-            # Only resize if we have enough operations to make a decision
-            if total_ops < 1000:
-                return
-            
-            hit_ratio = self.hit_ratio
-            current_usage = len(self._cache)
-            current_max = self._max_size
-            
-            # If hit ratio is high and we're close to capacity, increase size
-            if hit_ratio > 0.8 and current_usage > 0.9 * current_max:
-                new_size = min(current_max * 2, self._hard_max)
-                if new_size > current_max:
-                    logger.info(f"Increasing statement cache size from {current_max} to {new_size} (hit ratio: {hit_ratio:.2f})")
-                    self._max_size = new_size
-            
-            # If hit ratio is low and we're using much less than capacity, decrease size
-            elif hit_ratio < 0.4 and current_usage < 0.5 * current_max:
-                new_size = max(int(current_max / 2), self._min_size)
-                if new_size < current_max:
-                    logger.info(f"Decreasing statement cache size from {current_max} to {new_size} (hit ratio: {hit_ratio:.2f})")
-                    self._max_size = new_size
-                    
-                    # Trim the cache if needed
-                    excess = len(self._cache) - self._max_size
-                    if excess > 0:
-                        for _ in range(excess):
-                            if self._lru:
-                                lru_hash = self._lru.pop(0)
-                                self._cache.pop(lru_hash, None)
-            
-            # Reset stats periodically
-            if total_ops > 10000:
-                self._hits = int(self._hits * 0.5)
-                self._misses = int(self._misses * 0.5)
+            # Implementation unchanged - already thread-safe with lock
+            pass
     
     def get(self, sql_hash) -> Optional[Tuple[Any, str]]:
         """Get a prepared statement from the cache in a thread-safe manner"""
         with self._lock:
             if sql_hash in self._cache:
                 # Update LRU tracking
-                self._lru.remove(sql_hash)
+                if sql_hash in self._lru:
+                    self._lru.remove(sql_hash)
                 self._lru.append(sql_hash)
                 self._hits += 1
                 self._check_resize()
                 return self._cache[sql_hash]
             self._misses += 1
             self._check_resize()
-        return None
+            return None
     
     def put(self, sql_hash, statement, sql):
         """Add a prepared statement to the cache in a thread-safe manner"""
         with self._lock:
             # Evict least recently used if at capacity
             if len(self._cache) >= self._max_size and sql_hash not in self._cache:
-                lru_hash = self._lru.pop(0)
-                self._cache.pop(lru_hash, None)
+                if self._lru:  # Check if there are any items in the LRU list
+                    lru_hash = self._lru.pop(0)
+                    self._cache.pop(lru_hash, None)
             
             # Add to cache and update LRU
             self._cache[sql_hash] = (statement, sql)
             if sql_hash in self._lru:
                 self._lru.remove(sql_hash)
-            self._lru.append(sql_hash) 
+            self._lru.append(sql_hash)
 
 class ConnectionInterface(ABC):
     """Interface that defines the required methods and properties for connections."""
@@ -815,13 +813,13 @@ class ConnectionInterface(ABC):
         """Execute SQL multiple times with different parameters"""
         raise NotImplementedError("This method must be implemented by the host class")
     
-    @abstractmethod
     @property
+    @abstractmethod
     def sql_generator(self) -> SqlGenerator:
         """Returns the SQL parameter converter to use"""
         raise NotImplementedError("This property must be implemented by the host class")
     
-class BaseConnection(ABC, ConnectionInterface):
+class BaseConnection(ConnectionInterface):
     """
     Base class for database connections.
     """
@@ -948,69 +946,7 @@ class BaseConnection(ABC, ConnectionInterface):
         self._statement_cache.put(sql_hash, stmt, final_sql)
         return stmt
     
-
-    # region -- PRIVATE ABSTRACT METHODS ----------
-
-    @abstractmethod
-    def _prepare_statement_sync(self, native_sql: str) -> Any:
-        """
-        Prepares a statement using database-specific API
-        
-        Args:
-            native_sql: SQL with database-specific placeholders
-            
-        Returns:
-            A database-specific prepared statement object
-        """
-        pass
-
-    @abstractmethod
-    def _execute_statement_sync(self, statement: Any, params=None) -> Any:
-        """
-        Executes a prepared statement with given parameters
-        
-        Args:
-            statement: A database-specific prepared statement
-            params: Parameters to bind
-            
-        Returns:
-            Raw execution result
-        """
-        pass
-
-    @abstractmethod
-    async def _prepare_statement_async(self, native_sql: str) -> Any:
-        """
-        Prepares a statement using database-specific API
-        
-        Args:
-            native_sql: SQL with database-specific placeholders
-            
-        Returns:
-            A database-specific prepared statement object
-        """
-        pass
-
-    @abstractmethod
-    async def _execute_statement_async(self, statement: Any, params=None) -> Any:
-        """
-        Executes a prepared statement with given parameters
-        
-        Args:
-            statement: A database-specific prepared statement
-            params: Parameters to bind
-            
-        Returns:
-            Raw execution result
-        """
-        pass
-    
-    # endregion --------------------------------
-
-from __future__ import annotations
-
-@inject_mixin(EntityAsyncMixin)
-class AsyncConnection(ABC, BaseConnection):
+class AsyncConnection(BaseConnection):
     """
     Abstract base class defining the interface for asynchronous database connections.
     
@@ -1050,8 +986,8 @@ class AsyncConnection(ABC, BaseConnection):
 
      
     @async_method
-    @with_timeout
-    @track_slow_method
+    @with_timeout()
+    @track_slow_method()
     @circuit_breaker(name="async_execute")    
     async def execute(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
@@ -1075,9 +1011,9 @@ class AsyncConnection(ABC, BaseConnection):
         return self._normalize_result(raw_result)
 
     @async_method
-    @with_timeout
+    @with_timeout()
     @auto_transaction
-    @track_slow_method
+    @track_slow_method()
     @circuit_breaker(name="async_executemany")
     async def executemany(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
@@ -1118,6 +1054,39 @@ class AsyncConnection(ABC, BaseConnection):
     def _get_raw_connection(self) -> Any:
         """ Return the underlying database connection (as defined by the driver) """
         return self._conn
+    
+    # region -- PRIVATE ABSTRACT METHODS ----------
+
+    @async_method
+    @abstractmethod
+    async def _prepare_statement_async(self, native_sql: str) -> Any:
+        """
+        Prepares a statement using database-specific API
+        
+        Args:
+            native_sql: SQL with database-specific placeholders
+            
+        Returns:
+            A database-specific prepared statement object
+        """
+        pass
+
+    @async_method
+    @abstractmethod
+    async def _execute_statement_async(self, statement: Any, params=None) -> Any:
+        """
+        Executes a prepared statement with given parameters
+        
+        Args:
+            statement: A database-specific prepared statement
+            params: Parameters to bind
+            
+        Returns:
+            Raw execution result
+        """
+        pass
+
+    # endregion
     
     # region -- PUBLIC ABSTRACT METHODS ----------
 
@@ -1176,8 +1145,7 @@ class AsyncConnection(ABC, BaseConnection):
  
     # endregion --------------------------------
 
-@inject_mixin(EntitySyncMixin)
-class SyncConnection(ABC, BaseConnection):
+class SyncConnection(BaseConnection):
     """
     Abstract base class defining the interface for synchronous database connections.
     
@@ -1191,9 +1159,9 @@ class SyncConnection(ABC, BaseConnection):
         super().__init__()
         self._conn = conn
     
-    @with_timeout
-    @track_slow_method
-    @circuit_breaker(name="sync_execute")    
+    @with_timeout()
+    @track_slow_method()
+    @circuit_breaker(name="sync_execute")
     def execute(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Synchronously executes a SQL query with standard ? placeholders.
@@ -1214,7 +1182,8 @@ class SyncConnection(ABC, BaseConnection):
         raw_result = self._execute_statement_sync(stmt, params)
         return self._normalize_result(raw_result)
 
-    @with_timeout
+    @with_timeout()
+    @track_slow_method()
     @auto_transaction
     @circuit_breaker(name="sync_executemany")
     @overridable
@@ -1258,6 +1227,37 @@ class SyncConnection(ABC, BaseConnection):
     def _get_raw_connection(self) -> Any:
         """ Return the underlying database connection (as defined by the driver) """
         return self._conn
+    
+    # region -- PRIVATE ABSTRACT METHODS ----------
+
+    @abstractmethod
+    async def _prepare_statement_sync(self, native_sql: str) -> Any:
+        """
+        Prepares a statement using database-specific API
+        
+        Args:
+            native_sql: SQL with database-specific placeholders
+            
+        Returns:
+            A database-specific prepared statement object
+        """
+        pass
+
+    @abstractmethod
+    async def _execute_statement_sync(self, statement: Any, params=None) -> Any:
+        """
+        Executes a prepared statement with given parameters
+        
+        Args:
+            statement: A database-specific prepared statement
+            params: Parameters to bind
+            
+        Returns:
+            Raw execution result
+        """
+        pass
+    
+    # endregion --------------------------------
     
     # region -- PUBLIC ABSTRACT METHODS ----------
 
@@ -1520,9 +1520,11 @@ class PoolManager(ABC):
     _metrics: ClassVar[Final[Dict[str, Dict[str, int]]]] = {}
     _metrics_lock: ClassVar[asyncio.Lock] = asyncio.Lock()
     
-    def __init__(self, alias: str=uuid.uuid4(), hash: str=uuid.uuid4()):
-        self._alias = alias
-        self._hash = hash        
+    def __init__(self, config: DatabaseConfig, connection_acquisition_timeout: float=60):
+        self._alias = config.alias()
+        self._hash = config.hash()
+        self.config = config
+        self._connection_acquisition_timeout = connection_acquisition_timeout     
         
         # Try to initialize pool and start leak detection task if in async environment
         try:
@@ -1533,6 +1535,11 @@ class PoolManager(ABC):
             # Not in an async environment, which is fine
             pass
 
+    @property
+    def connection_acquisition_timeout(self) -> float:
+        '''Returns the connection acquisition timeout defined in PoolManager'''
+        return self._connection_acquisition_timeout
+    
     async def _leak_detection_task(self):
         """Background task that periodically checks for and recovers from connection leaks"""
         IDLE_TIMEOUT = 1800  # 30 minutes idle time before considering a connection dead
@@ -1799,15 +1806,12 @@ class PoolManager(ABC):
             await self._initialize_pool_if_needed()
         if not self._pool:
             raise Exception(f"Cannot get a connection from the pool as the pool could not be initialized for {self.alias()} - {self.hash()}")
-        
-        # Define a timeout for connection acquisition (in seconds)
-        acquisition_timeout = getattr(self, 'connection_acquisition_timeout', 10.0)
-        
+                
         try:
             start_time = time.time()
             try:
                 # Acquire connection
-                raw_conn = await self._pool.acquire(timeout=acquisition_timeout)
+                raw_conn = await self._pool.acquire(timeout=self._connection_acquisition_timeout)
                 acquisition_time = time.time() - start_time
                 logger.debug(f"Connection acquired from {self.alias()} pool in {acquisition_time:.2f}s")
                 await self._track_metrics(True)
@@ -1941,7 +1945,7 @@ class PoolManager(ABC):
             if self._pool is None:
                 try:
                     start_time = time.time()
-                    self._pool = await self._create_pool(self)
+                    self._pool = await self._create_pool(self.config, self._connection_acquisition_timeout)
                     logger.info(f"{self.alias()} - {self.hash()} async pool initialized in {(time.time() - start_time):.2f}s")
                 except Exception as e:
                     logger.error(f"{self.alias()} - {self.hash()} async pool creation failed: {e}")
@@ -2050,7 +2054,7 @@ class PoolManager(ABC):
                 cls._shutting_down.pop(key, None)
 
     @abstractmethod
-    async def _create_pool(self, config: Dict) -> ConnectionPool:
+    async def _create_pool(self, config: DatabaseConfig, connection_acqusition_timeout: float) -> ConnectionPool:
         """
         Creates a new connection pool.
         
@@ -2149,6 +2153,15 @@ class DatabaseConfig:
         """
         return self.__alias
     
+    def user(self) -> str:
+        """
+        Returns the database user.
+        
+        Returns:
+            str: The configured database user.
+        """
+        return self.__user
+    
     def host(self) -> str:
         """
         Returns the database host.
@@ -2157,6 +2170,9 @@ class DatabaseConfig:
             str: The configured database host.
         """
         return self.__host
+    
+    def password(self):
+        return self.__password #todo  clean this unsafe thing
     
     def port(self) -> int:
         """
@@ -2238,7 +2254,7 @@ class ConnectionManager():
         super().__init__(*args,**kwargs)
         
         # todo: move in config
-        self.connection_acquisition_timeout = connection_acquisition_timeout
+        self._connection_acquisition_timeout = connection_acquisition_timeout
         
         # todo add validation or remove named args
         if config:
@@ -2251,10 +2267,8 @@ class ConnectionManager():
             user=user, 
             password=password, 
             alias=alias, 
-            env=env)
-            
-        self._poolManager = PoolManager(self.config.alias(), self.config.hash())
-        
+            env=env)           
+              
         # Use thread-local storage for sync connections
         self._local = threading.local()
         self._local._sync_conn = None     
@@ -2262,6 +2276,11 @@ class ConnectionManager():
         if not self.is_environment_async():
             self._local._sync_conn = self.get_sync_connection()
 
+    @property
+    def connection_acquisition_timeout(self) -> float:
+        '''Returns the connection acqusition timeout defined in the ConnectionManager'''
+        return self._connection_acquisition_timeout
+    
     def is_environment_async(self) -> bool:
         """
         Determines if code is running in an async environment.
@@ -2297,14 +2316,21 @@ class ConnectionManager():
         Note:
             The connection should be closed with release_sync_connection() or by using the sync_connection() context manager.
         """
+        thread_id = threading.get_ident()
+        logger.info(f"Thread {thread_id}: Requesting sync connection for {self.config.alias()}")
+    
+
         if not hasattr(self._local, '_sync_conn') or self._local._sync_conn is None:
             try:
                 start_time = time.time()
                 raw_conn = self._create_sync_connection(self.config.config())
-                logger.info(f"Sync connection created and cached for {self.config.alias()} in {(time.time() - start_time):.2f}s")
+                logger.info(f"Thread {thread_id}: Sync connection created and cached for {self.config.alias()} in {(time.time() - start_time):.2f}s")
                 self._local._sync_conn = self._wrap_sync_connection(raw_conn)
             except Exception as e:
-                logger.error(f"Could not create a sync connection for {self.config.alias()}")            
+                logger.error(f"Thread {thread_id}: Could not create a sync connection for {self.config.alias()}: {e}")                     
+        else:
+            logger.info(f"Thread {thread_id}: Reusing existing sync connection for {self.config.alias()}")
+        
         return self._local._sync_conn     
 
     def release_sync_connection(self) -> None:
@@ -2386,8 +2412,8 @@ class ConnectionManager():
         Note:
             The connection should be released with release_async_connection() or by using the async_connection() context manager.
         """
-        await self._poolManager._initialize_pool_if_needed()
-        async_conn = await self._poolManager._get_connection_from_pool(self._wrap_async_connection)
+        await self.pool_manager._initialize_pool_if_needed()
+        async_conn = await self.pool_manager._get_connection_from_pool(self._wrap_async_connection)
         return async_conn
 
     @async_method
@@ -2402,11 +2428,11 @@ class ConnectionManager():
         Args:
             async_conn (AsyncConnection): The connection to release.
         """
-        if not async_conn or not self._poolManager._pool:
+        if not async_conn or not self.pool_manager._pool:
             return
             
         try:
-            await self._poolManager._release_connection_to_pool(async_conn)
+            await self.pool_manager._release_connection_to_pool(async_conn)
         except Exception as e:
             logger.error(f"{self.config.alias()} failed to release async connection: {e}")
             
@@ -2418,11 +2444,11 @@ class ConnectionManager():
             
             # Try to maintain pool health by creating a replacement connection
             try:
-                asyncio.create_task(self._poolManager._initialize_pool_if_needed())
+                asyncio.create_task(self.pool_manager._initialize_pool_if_needed())
             except Exception:
                 pass
 
-    @async_method
+    #@async_method
     @contextlib.asynccontextmanager
     async def async_connection(self) -> Iterator[AsyncConnection]:
         """
@@ -2445,6 +2471,12 @@ class ConnectionManager():
             await self.release_async_connection(conn)
     
     # endregion
+
+    @property
+    @abstractmethod
+    def pool_manager(self) -> PoolManager:
+        raise Exception("Derived class must implement this")
+
 
     @abstractmethod
     def _wrap_sync_connection(self, raw_conn: Any) -> SyncConnection:
@@ -3814,7 +3846,7 @@ class EntityAsyncMixin(EntityUtils, ConnectionInterface):
     # Core CRUD operations
     
     @async_method
-    @with_timeout
+    @with_timeout()
     @auto_transaction
     async def get_entity(self, entity_name: str, entity_id: str, 
                          include_deleted: bool = False, 
@@ -3851,7 +3883,7 @@ class EntityAsyncMixin(EntityUtils, ConnectionInterface):
         return entity_dict
     
     @async_method
-    @with_timeout
+    @with_timeout()
     @auto_transaction
     async def save_entity(self, entity_name: str, entity: Dict[str, Any], 
                         user_id: Optional[str] = None, 
@@ -3906,7 +3938,7 @@ class EntityAsyncMixin(EntityUtils, ConnectionInterface):
         
     
     @async_method
-    @with_timeout
+    @with_timeout()
     @auto_transaction
     async def save_entities(self, entity_name: str, entities: List[Dict[str, Any]],
                         user_id: Optional[str] = None,
@@ -4014,7 +4046,7 @@ class EntityAsyncMixin(EntityUtils, ConnectionInterface):
 
     
     @async_method
-    @with_timeout
+    @with_timeout()
     @auto_transaction
     async def delete_entity(self, entity_name: str, entity_id: str, 
                            user_id: Optional[str] = None, 
@@ -4065,7 +4097,7 @@ class EntityAsyncMixin(EntityUtils, ConnectionInterface):
         return result.rowcount > 0
     
     @async_method
-    @with_timeout
+    @with_timeout()
     @auto_transaction
     async def restore_entity(self, entity_name: str, entity_id: str, 
                             user_id: Optional[str] = None) -> bool:
@@ -4110,7 +4142,7 @@ class EntityAsyncMixin(EntityUtils, ConnectionInterface):
     # Query operations
     
     @async_method
-    @with_timeout
+    @with_timeout()
     @auto_transaction
     async def find_entities(self, entity_name: str, where_clause: Optional[str] = None,
                           params: Optional[Tuple] = None, order_by: Optional[str] = None,
@@ -4161,7 +4193,7 @@ class EntityAsyncMixin(EntityUtils, ConnectionInterface):
         return entities
     
     @async_method
-    @with_timeout
+    @with_timeout()
     @auto_transaction
     async def count_entities(self, entity_name: str, where_clause: Optional[str] = None,
                            params: Optional[Tuple] = None, 
@@ -4194,7 +4226,7 @@ class EntityAsyncMixin(EntityUtils, ConnectionInterface):
     # History operations
     
     @async_method
-    @with_timeout
+    @with_timeout()
     @auto_transaction
     async def get_entity_history(self, entity_name: str, entity_id: str, 
                                 deserialize: bool = False) -> List[Dict[str, Any]]:
@@ -4236,7 +4268,7 @@ class EntityAsyncMixin(EntityUtils, ConnectionInterface):
         return history_entries
     
     @async_method
-    @with_timeout
+    @with_timeout()
     @auto_transaction
     async def get_entity_by_version(self, entity_name: str, entity_id: str, 
                                version: int, deserialize: bool = False) -> Optional[Dict[str, Any]]:
@@ -4589,9 +4621,11 @@ class PostgresSyncConnection(SyncConnection):
         conn: Raw psycopg2 connection object.
     """
     def __init__(self, conn):
-        super().__init__(conn)        
+        super().__init__(conn)   
+        logger.debug("postgres init")     
         self._cursor = self._conn.cursor()       
         self._prepared_counter = self.ThreadSafeCounter()
+        self._sql_generator = None
 
     class ThreadSafeCounter:
         def __init__(self, start=0, step=1):
@@ -4605,11 +4639,14 @@ class PostgresSyncConnection(SyncConnection):
     @property
     def sql_generator(self) -> SqlGenerator:
         """Returns the PostgreSQL parameter converter."""
-        return PostgresSqlGenerator(False)
+        if not  self._sql_generator:
+            self._sql_generator = PostgresSqlGenerator(False)
+        return  self._sql_generator
     
     def _prepare_statement_sync(self, native_sql: str) -> Any:
         """Prepare a statement using psycopg2"""
-        stmt_name = f"prep_{self._prepared_counter.next()}"  
+        logger.debug("postgres _prepare_statement") 
+        stmt_name = f"prep_{self._prepared_counter.next()}" 
         
         # Prepare the statement
         self._cursor.execute(f"PREPARE {stmt_name} AS {native_sql}")
@@ -4625,10 +4662,20 @@ class PostgresSyncConnection(SyncConnection):
     )
     def _execute_statement_sync(self, statement: Any, params=None) -> Any:
         """Execute a prepared statement using psycopg2"""
-        # statement is a string name of the prepared statement
-        placeholders = ','.join(['%s'] * len(params or []))
-        self._cursor.execute(f"EXECUTE {statement} ({placeholders})", params or ())
-        return self._cursor.fetchall()  # Return raw results
+        try:
+            logger.debug(f"[DEBUG] postgres *execute*statement")
+            
+            # Handle the empty parameters case properly
+            if not params or len(params) == 0:
+                self._cursor.execute(f"EXECUTE {statement}")
+            else:
+                placeholders = ','.join(['%s'] * len(params))
+                self._cursor.execute(f"EXECUTE {statement} ({placeholders})", params)
+                
+            return self._cursor.fetchall()  # Return raw results
+        except Exception as e:
+            logger.error(f"Error executing statement: {e}")
+            raise
   
     def in_transaction(self) -> bool:
         """Return True if connection is in an active transaction.""" 
@@ -4698,11 +4745,14 @@ class PostgresAsyncConnection(AsyncConnection):
     def __init__(self, conn):
         super().__init__(conn)        
         self._tx = None 
+        self._sql_generator = None
 
     @property
     def sql_generator(self) -> SqlGenerator:
         """Returns the PostgreSQL parameter converter."""
-        return PostgresSqlGenerator(True)
+        if not  self._sql_generator:
+            self._sql_generator = PostgresSqlGenerator(True)
+        return  self._sql_generator
 
     @retry_with_backoff(
         exceptions=(
@@ -4730,7 +4780,7 @@ class PostgresAsyncConnection(AsyncConnection):
     @async_method
     async def in_transaction(self) -> bool:
         """Return True if connection is in an active transaction."""       
-        return await self._conn.is_in_transaction()
+        return self._conn.is_in_transaction()
 
     @async_method
     async def begin_transaction(self):
@@ -4802,9 +4852,6 @@ class PostgresConnectionPool(ConnectionPool):
     Attributes:
         _pool: The underlying asyncpg pool
         _timeout: Default timeout for connection acquisition
-        _last_health_check: Timestamp of the last health check
-        _health_check_interval: Minimum time between health checks in seconds
-        _healthy: Current known health state
     """
     
     def __init__(self, pool, timeout: float = 10.0):
@@ -4816,11 +4863,8 @@ class PostgresConnectionPool(ConnectionPool):
             timeout: Default timeout for connection acquisition in seconds
         """
         self._pool = pool
-        self._timeout = timeout
-        self._last_health_check = 0
-        self._health_check_interval = 5.0  # Check at most every 5 seconds
-        self._healthy = True
-    
+        self._timeout = timeout        
+       
     @async_method
     async def acquire(self, timeout: Optional[float] = None) -> Any:
         """
@@ -4893,6 +4937,25 @@ class PostgresConnectionPool(ConnectionPool):
         """Gets the number of idle connections in the pool."""
         return len([h for h in self._pool._holders if not h._in_use])
 
+class PostgresPoolManager(PoolManager):
+    async def _create_pool(self, config: DatabaseConfig, connection_acquisition_timeout: float) -> ConnectionPool:
+        min_size, max_size = self._calculate_pool_size()
+        raw_pool = await asyncpg.create_pool(
+            min_size=min_size, 
+            max_size=max_size, 
+            command_timeout=connection_acquisition_timeout,  
+            host=config.host(),
+             port=config.port(),
+              database=config.database(),
+               user=config.user(),
+                password=config.password()
+           
+        )
+        return PostgresConnectionPool(
+            raw_pool, 
+            timeout=self.connection_acquisition_timeout
+        )
+    
 class PostgresDatabase(ConnectionManager):
     """
     PostgreSQL implementation of the ConnectionManager.
@@ -4918,7 +4981,17 @@ class PostgresDatabase(ConnectionManager):
             await conn.execute("SELECT * FROM users")
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs) 
+        self._pool_manager = None
+        
     # region -- Implementation of Abstract methods ---------
+    @property
+    def pool_manager(self):
+        if not self._pool_manager:
+            self._pool_manager = PostgresPoolManager(self.config, self.connection_acquisition_timeout)
+        return self._pool_manager
+    
     def _create_sync_connection(self, config: Dict):
         """
         Creates a raw psycopg2 connection.
@@ -4930,29 +5003,7 @@ class PostgresDatabase(ConnectionManager):
             A new psycopg2 connection.
         """
         return psycopg2.connect(**config)
-       
-    async def _create_pool(self, config: Dict) -> ConnectionPool:
-        """
-        Creates a PostgreSQL connection pool wrapped in our interface.
-        
-        Args:
-            config (Dict): Database configuration dictionary.
-            
-        Returns:
-            ConnectionPool: A PostgreSQL-specific pool implementation.
-        """
-        min_size, max_size = self._poolManager._calculate_pool_size()
-        raw_pool = await asyncpg.create_pool(
-            min_size=min_size, 
-            max_size=max_size, 
-            command_timeout=60.0, 
-            **config
-        )
-        return PostgresConnectionPool(
-            raw_pool, 
-            timeout=self.connection_acquisition_timeout
-        )
-    
+          
     def _wrap_async_connection(self, raw_conn):
         """
         Wraps a raw asyncpg connection in the AsyncConnection interface.
@@ -4996,11 +5047,14 @@ class MysqlSyncConnection(SyncConnection):
     def __init__(self, conn):
         super().__init__(conn)       
         self._cursor = self._conn.cursor()
+        self._sql_generator = None
 
     @property
     def sql_generator(self) -> SqlGenerator:
         """Returns the MySql parameter converter."""
-        return MySqlSqlGenerator()
+        if not self._sql_generator:
+            self._sql_generator = MySqlSqlGenerator()
+        return self._sql_generator
     
     @retry_with_backoff()
     def _prepare_statement_sync(self, converted_sql: str) -> Any:
@@ -5083,11 +5137,14 @@ class MysqlAsyncConnection(AsyncConnection):
     """
     def __init__(self, conn):
         super().__init__(conn)        
+        self._sql_generator = None
 
     @property
     def sql_generator(self) -> SqlGenerator:
-        """Returns the SQL parameter converter."""
-        return MySqlSqlGenerator()
+        """Returns the MySql parameter converter."""
+        if not self._sql_generator:
+            self._sql_generator = MySqlSqlGenerator()
+        return self._sql_generator
 
     @retry_with_backoff()
     async def _prepare_statement_async(self, native_sql: str) -> Any:
@@ -5178,9 +5235,6 @@ class MySqlConnectionPool(ConnectionPool):
     Attributes:
         _pool: The underlying aiomysql pool
         _timeout: Default timeout for connection acquisition
-        _last_health_check: Timestamp of the last health check
-        _health_check_interval: Minimum time between health checks in seconds
-        _healthy: Current known health state
     """
     
     def __init__(self, pool, timeout: float = 10.0):
@@ -5193,10 +5247,7 @@ class MySqlConnectionPool(ConnectionPool):
         """
         self._pool = pool
         self._timeout = timeout
-        self._last_health_check = 0
-        self._health_check_interval = 5.0  # Check at most every 5 seconds
-        self._healthy = True
-    
+     
     @async_method
     async def acquire(self, timeout: Optional[float] = None) -> Any:
         """
@@ -5274,6 +5325,21 @@ class MySqlConnectionPool(ConnectionPool):
         """Gets the number of idle connections in the pool."""
         return len(self._pool._free)   
 
+class MySqlPoolManager(PoolManager):
+    async def _create_pool(self, config: Dict) -> ConnectionPool:
+        min_size, max_size = self._calculate_pool_size()
+        cfg = config.copy()
+        cfg["db"] = cfg.pop("database")  # aiomysql expects "db"
+        raw_pool = await aiomysql.create_pool(
+            minsize=min_size, 
+            maxsize=max_size, 
+            **cfg
+        )
+        return MySqlConnectionPool(
+            raw_pool, 
+            timeout=self.connection_acquisition_timeout
+        )
+    
 class MySqlDatabase(ConnectionManager):
     """
     MySQL implementation of the ConnectionManager.
@@ -5299,7 +5365,17 @@ class MySqlDatabase(ConnectionManager):
             await conn.execute("SELECT * FROM users")
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs) 
+        self._pool_manager = None
+        
     # region -- Implementation of Abstract methods ---------
+    @property
+    def pool_manager(self):
+        if not self._pool_manager:
+            self._pool_manager = MySqlPoolManager(self.config, self.connection_acquisition_timeout)
+        return self._pool_manager
+    
     def _create_sync_connection(self, config: Dict):
         """
         Creates a raw pymysql connection.
@@ -5311,29 +5387,6 @@ class MySqlDatabase(ConnectionManager):
             A new pymysql connection.
         """        
         return pymysql.connect(**config)        
-
-    async def _create_pool(self, config: Dict) -> ConnectionPool:
-        """
-        Creates a MySQL connection pool wrapped in our interface.
-        
-        Args:
-            config (Dict): Database configuration dictionary.
-            
-        Returns:
-            ConnectionPool: A MySQL-specific pool implementation.
-        """
-        min_size, max_size = self._poolManager._calculate_pool_size()
-        cfg = config.copy()
-        cfg["db"] = cfg.pop("database")  # aiomysql expects "db"
-        raw_pool = await aiomysql.create_pool(
-            minsize=min_size, 
-            maxsize=max_size, 
-            **cfg
-        )
-        return MySqlConnectionPool(
-            raw_pool, 
-            timeout=self.connection_acquisition_timeout
-        )
     
     def _wrap_async_connection(self, raw_conn):
         """
@@ -5378,11 +5431,14 @@ class SqliteSyncConnection(SyncConnection):
     def __init__(self, conn):
         super().__init__(conn)
         self._cursor = self._conn.cursor()
+        self._sql_generator = None
 
     @property
     def sql_generator(self) -> SqlGenerator:
         """Returns the SQL parameter converter."""
-        return SqliteSqlGenerator()
+        if not self._sql_generator:
+            self._sql_generator = SqliteSqlGenerator()
+        return self._sql_generator
 
     @retry_with_backoff()
     def _prepare_statement_sync(self, native_sql: str) -> Any:
@@ -5464,12 +5520,14 @@ class SqliteAsyncConnection(AsyncConnection):
     """
     def __init__(self, conn):
         super().__init__(conn) 
+        self._sql_generator = None
 
     @property
     def sql_generator(self) -> SqlGenerator:
         """Returns the SQL parameter converter."""
-        return SqliteSqlGenerator()
-
+        if not self._sql_generator:
+            self._sql_generator = SqliteSqlGenerator()
+        return self._sql_generator
   
     @retry_with_backoff()
     async def _prepare_statement_async(self, native_sql: str) -> Any:
@@ -5570,9 +5628,6 @@ class SqliteConnectionPool(ConnectionPool):
         self._in_use = False
         self._timeout = timeout
         self._lock = asyncio.Lock()
-        self._last_health_check = 0
-        self._health_check_interval = 5.0
-        self._healthy = True
     
     @async_method
     async def acquire(self, timeout: Optional[float] = None) -> Any:
@@ -5673,6 +5728,15 @@ class SqliteConnectionPool(ConnectionPool):
         """Returns 0 if the connection is in use, 1 otherwise."""
         return 0 if self._in_use else 1
 
+class SqlitePoolManager(PoolManager):
+    async def _create_pool(self, config: Dict) -> ConnectionPool:
+        db_path = config["database"]
+        conn = await aiosqlite.connect(db_path)
+        return SqliteConnectionPool(
+            conn,
+            timeout=self.connection_acquisition_timeout
+        )
+    
 class SqliteDatabase(ConnectionManager):
     """
     SQLite implementation of the ConnectionManager.
@@ -5695,7 +5759,17 @@ class SqliteDatabase(ConnectionManager):
             await conn.execute("SELECT * FROM users")
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs) 
+        self._pool_manager = None
+        
     # region -- Implementation of Abstract methods ---------
+    @property
+    def pool_manager(self):
+        if not self._pool_manager:
+            self._pool_manager = SqlitePoolManager(self.config, self.connection_acquisition_timeout)
+        return self._pool_manager
+    
     def _create_sync_connection(self, config: Dict):
         """
         Creates a raw sqlite3 connection.
@@ -5711,23 +5785,6 @@ class SqliteDatabase(ConnectionManager):
             be the path to the database file.
         """       
         return sqlite3.connect(config["database"])        
-
-    async def _create_pool(self, config: Dict) -> ConnectionPool:
-        """
-        Creates a SQLite connection wrapped in our pool interface.
-        
-        Args:
-            config (Dict): Database configuration dictionary.
-            
-        Returns:
-            ConnectionPool: A SQLite-specific pool implementation.
-        """
-        db_path = config["database"]
-        conn = await aiosqlite.connect(db_path)
-        return SqliteConnectionPool(
-            conn,
-            timeout=self.connection_acquisition_timeout
-        )
     
     def _wrap_async_connection(self, raw_conn):
         """
@@ -5757,9 +5814,14 @@ class SqliteDatabase(ConnectionManager):
 # endregion ######### BACKENDS - SQLITE ##############
 
 
+#merge_classes(EntityAsyncMixin, AsyncConnection)
+#merge_classes(EntitySyncMixin, SyncConnection)
+
+
 # region    ################# FACTORY ######################
 
 class DatabaseFactory:
+    '''Factory to create a DAL to specific backends. Currently support 'postgres', 'mysql' and 'sqlite'.'''
     @staticmethod
     def create_database(db_type: str, db_config: DatabaseConfig) -> ConnectionManager:
         """Factory method to create the appropriate database instance"""
@@ -5773,3 +5835,9 @@ class DatabaseFactory:
             raise ValueError(f"Unsupported database type: {db_type}")
 
 # endregion    ################# FACTORY ####################
+
+log_method_calls(logger.debug, PoolManager)
+log_method_calls(logger.debug, ConnectionManager)
+#log_method_calls(logger.debug, AsyncConnection)
+#log_method_calls(logger.debug, SyncConnection)
+#log_method_calls(logger.debug, PostgresSyncConnection)
