@@ -30,6 +30,11 @@ class PatchManager:
         if TYPE_CHECKING:
             class Foo(Foo, MyMixin): pass
     
+            
+    Important Constraint:
+     * Mixin cannot have non optional parameter in the init (so either no init, or no argument, or optional ones)
+     * The Mixin ancestors cannot have rquired arument sin their init (so either no init, or no argument, or optional ones, or *args or **kwargs)
+
     Important Parameter Handling:
         When using a patched class, you need to provide parameters for ALL classes
         in the inheritance chain. Parameters are consumed in order of the MRO:
@@ -184,7 +189,7 @@ class PatchManager:
 
     def patch_class(self, *args):
         """
-        Patch a class to inherit from a mixin by directly modifying its __bases__.
+        Patch a class to inherit from a mixin.
         
         Args:
             Either (orig_cls, mixin_cls) or (module, cls_name, mixin_cls)
@@ -210,24 +215,206 @@ class PatchManager:
 
         self.validate_mixin(orig_cls, mixin_cls)
         
-        # MUCH SIMPLER APPROACH:
-        # Instead of creating a new class, just modify the original class's __bases__
-        # by inserting the mixin at the beginning
-        orig_cls.__bases__ = (mixin_cls,) + orig_cls.__bases__
+        try:
+            # Direct approach: Modify __bases__ in-place
+            orig_cls.__bases__ = (mixin_cls,) + orig_cls.__bases__
+            patched_cls = orig_cls
+            logger.debug(f"[PatchManager] Successfully patched {cls_name} using direct __bases__ modification")
+        except TypeError as e:
+            # If direct approach fails due to memory layout issues,
+            # use method copying (monkey patching) instead
+            logger.debug(f"[PatchManager] Direct __bases__ modification failed for {cls_name}, using method copying: {e}")
+            
+            # First, handle __init__ specially to ensure both inits are called
+            orig_init = orig_cls.__dict__.get('__init__')
+            mixin_init = mixin_cls.__dict__.get('__init__')
+            
+
+            # Define a new __init__ that calls both initialization chains
+            def combined_init(self, *args, **kwargs):
+                # First call the original class init
+                if orig_init:
+                    orig_init(self, *args, **kwargs)
+                
+                # Then create a temporary instance of mixin to call its __init__ chain properly
+                try:
+                    # This creates a temporary instance to trigger its __init__ chain
+                    logger.debug("****** creating a temp mixin instance")
+                    temp_mixin = type('TempMixin', (mixin_cls,), {})()
+                    logger.debug("****** Finshed creating a temp mixin instance")
+                    
+                    # Get ALL instance attributes, not just those returned by dir()
+                    # This uses the internal __dict__ where most instance attributes are stored
+                    temp_attrs = vars(temp_mixin)  # Same as temp_mixin.__dict__
+                    logger.debug(f"Temp mixin attributes: {list(temp_attrs.keys())}")
+                    
+                    # Copy all attributes from the temp instance
+                    for attr_name, attr_value in temp_attrs.items():
+                        # Skip methods and existing attributes, but copy all others
+                        if callable(attr_value) or hasattr(self, attr_name):
+                            continue
+                        
+                        # Copy the attribute value
+                        logger.debug(f"Copying attribute {attr_name} from temp mixin")
+                        setattr(self, attr_name, attr_value)
+                    
+                    # Also check for properties that might not be in __dict__
+                    for attr_name in dir(temp_mixin):
+                        if attr_name.startswith('__') or attr_name in temp_attrs:
+                            continue
+                            
+                        try:
+                            attr_value = getattr(temp_mixin, attr_name)
+                            # Skip methods and existing attributes
+                            if callable(attr_value) or hasattr(self, attr_name):
+                                continue
+                                
+                            logger.debug(f"Copying property or descriptor {attr_name} from temp mixin")
+                            setattr(self, attr_name, attr_value)
+                        except Exception as e:
+                            logger.debug(f"Could not copy attribute {attr_name}: {e}")
+                    
+                except Exception as e:
+                    # Fall back to direct init call if the above fails
+                    logger.debug(f"Failed to initialize mixin chain properly: {e}")
+                    try:
+                        mixin_init(self)
+                    except Exception as inner_e:
+                        logger.debug(f"Failed to call mixin.__init__ directly: {inner_e}")
+            
+            # Set the combined init
+            setattr(orig_cls, '__init__', combined_init)
+            todel = type('TempTodel', (orig_cls,), {})(4) # todo: delete this
+
+            # Copy all other methods from the mixin hierarchy to the target class
+            mixin_classes = []
+            # Get all bases except object
+            for base in mixin_cls.__mro__:
+                if base is not object:
+                    mixin_classes.append(base)
+            
+            # Process in reverse order to ensure methods from derived classes override base classes
+            for mixin in reversed(mixin_classes):
+                for name, attr in mixin.__dict__.items():
+                    if name in ('__dict__', '__weakref__', '__module__', '__doc__', '__init__'):
+                        continue
+                    
+                    # Skip if this is already in the target class
+                    if hasattr(orig_cls, name):
+                        continue
+                        
+                    # For methods and properties, copy them over
+                    setattr(orig_cls, name, attr)
+            
+            patched_cls = orig_cls
+            
+            # Add a note that we used the fallback approach
+            logger.debug(f"[PatchManager] {cls_name} patched using method copying")
         
-        # Store for reference
-        self.patched[key] = orig_cls
+        # Store the patched class
+        self.patched[key] = patched_cls
         
-        # Apply decorators if needed
-        orig_cls = self.apply_class_decorators(orig_cls)
+        # Check MRO and add IDE support
+        self.check_mro(patched_cls)
+        patched_cls.__class_getitem__ = classmethod(lambda cls, _: cls)
         
-        # Check MRO for issues
-        self.check_mro(orig_cls)
-        
-        # Add IDE support
-        orig_cls.__class_getitem__ = classmethod(lambda cls, _: cls)
-        
-        return orig_cls
+        return patched_cls
 
 # Create a global instance for convenient use
 patcher = PatchManager()
+
+class Base:
+    def __init__(self,base_arg):
+        self._base_arg=base_arg
+    def base_method(self):
+        print('base')
+
+class Target(Base):
+    def __init__(self,target_arg):
+        super().__init__(target_arg)
+        self._member = 8
+        self.target_arg=target_arg
+
+    def target_method(self):
+        print('target vs '+self._base_arg)
+
+class Utility:
+    def __init__(self,utility_arg=None):
+        pass
+    def utility_method(self):
+        print('utility')
+
+class Mixin(Utility):
+    def __init__(self):       
+        self._smtg = 4
+    def mixin_method(self):
+        print('mixin: '+self._smtg)
+
+# patch Mxin into targt, equvalent to writing this code for Target:
+
+class target(Base):
+    def __init__(self,*args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._member = 8
+        self.target_arg=args[0]
+        self._smtg = 4
+
+    def target_method(self):
+        print('target vs '+self._base_arg)   
+    
+    def mixin_method(self):
+        print('mixin: '+self._smtg)
+
+    def utility_method(self):
+        print('utility')
+
+
+
+class Base:
+    def __init__(self,base_arg):
+        self._base_arg=base_arg
+    def base_method(self):
+        print('base')
+
+class Target(Base):
+    def __init__(self,target_arg):
+        super().__init__(target_arg)
+        self.target_arg=target_arg
+
+    def target_method(self):
+        print('target vs '+self._base_arg)
+
+class Utility:
+    def __init__(self,utility_arg):
+        pass
+    def utility_method(self):
+        print('utility')
+
+class Mixin(Utility):
+    def __init__(self,mixin_arg,mixin_arg2):
+        super().__init__(mixin_arg)
+        self._mixin_arg2=mixin_arg2
+        self._smtg = 4
+    def mixin_method(self):
+        print('mixin: '+self._mixin_arg2)
+
+# patch Mxin into targt, equvalent to writing this code for Target:
+
+class target(Base):
+    def __init__(self,target_arg):
+        super().__init__(target_arg)
+        self.target_arg=target_arg
+        self._smtg = 4
+        
+    def target_method(self):
+        print('target vs '+self._base_arg)  # print f'target vs {self._base_arg}' 
+    
+    def mixin_method(self):
+        print('mixin: '+self._mixin_arg2)
+
+    def utility_method(self):
+        print('utility')
+
+
+
+
