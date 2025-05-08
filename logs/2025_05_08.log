@@ -1,0 +1,226 @@
+2025-05-08 12:02:43.957 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: NoInit.__init__ receives parameters {'required_param'} from below that it doesn't accept.
+MRO path: Child -> NoInit
+Culprits that forward unexpected parameters:
+ - Child forwards: {'required_param'}
+2025-05-08 12:02:43.957 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:02:44.237 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: EmptyInitNoSuper.__init__ receives parameters {'required_param'} from below that it doesn't accept.
+MRO path: Child -> EmptyInitNoSuper
+Culprits that forward unexpected parameters:
+ - Child forwards: {'required_param'}
+2025-05-08 12:02:44.237 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:02:44.278 [WARN] [WARN] Parameter flow warning: Parameters {'a', 'b'} are defined but never consumed in the inheritance chain
+MRO path: Child -> PositionalMatchWithSuper
+2025-05-08 12:02:44.300 [WARN] [WARN] Parameter flow warning: Parameters {'a', 'b'} are defined but never consumed in the inheritance chain
+MRO path: Child -> WithDefaults
+2025-05-08 12:02:44.562 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: BadMixin.__init__ receives parameters {'required_param'} from below that it doesn't accept.
+MRO path: Child -> BadMixin
+Culprits that forward unexpected parameters:
+ - Child forwards: {'required_param'}
+2025-05-08 12:02:44.562 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:09:08.799 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: NoInit.__init__ receives parameters {'required_param'} from below that it doesn't accept.
+MRO path: Child -> NoInit
+Culprits that forward unexpected parameters:
+ - Child forwards: {'required_param'}
+2025-05-08 12:09:08.799 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:09:08.994 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: EmptyInitNoSuper.__init__ receives parameters {'required_param'} from below that it doesn't accept.
+MRO path: Child -> EmptyInitNoSuper
+Culprits that forward unexpected parameters:
+ - Child forwards: {'required_param'}
+2025-05-08 12:09:08.994 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:09:09.040 [WARN] [WARN] Parameter flow warning: Parameters {'b', 'a'} are defined but never consumed in the inheritance chain
+MRO path: Child -> PositionalMatchWithSuper
+2025-05-08 12:09:09.066 [WARN] [WARN] Parameter flow warning: Parameters {'b', 'a'} are defined but never consumed in the inheritance chain
+MRO path: Child -> WithDefaults
+2025-05-08 12:09:09.299 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: BadMixin.__init__ receives parameters {'required_param'} from below that it doesn't accept.
+MRO path: Child -> BadMixin
+Culprits that forward unexpected parameters:
+ - Child forwards: {'required_param'}
+2025-05-08 12:09:09.299 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:13:12.879 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: PositionalMatchWithSuper.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> PositionalMatchWithSuper
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:13:12.880 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:13:12.934 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: WithDefaults.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: Child -> WithDefaults
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:13:12.935 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:13:12.986 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: MixedArgsComplete.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> MixedArgsComplete
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:13:12.986 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:13:12.994 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: MixedKwargsComplete.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> MixedKwargsComplete
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:13:12.994 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:13:13.002 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: FullMixed.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> FullMixed
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:13:13.002 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:13:13.008 [ERROR] [ERROR] Validation error while patching SimpleChild: Unsafe patch: ArgsInMiddle.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: SimpleChild -> ArgsInMiddle
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:13:13.008 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:13:13.019 [ERROR] [ERROR] Validation error while patching ChildWithKwargs: Unsafe patch: KeywordOnly.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: ChildWithKwargs -> KeywordOnly
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:13:13.019 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:13:13.022 [ERROR] [ERROR] Validation error while patching ChildWithPositional: Unsafe patch: KeywordOnly.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: ChildWithPositional -> KeywordOnly
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:13:13.022 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:32:59.689 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: PositionalMatchWithSuper.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> PositionalMatchWithSuper
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:32:59.690 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:32:59.740 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: WithDefaults.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: Child -> WithDefaults
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:32:59.740 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:32:59.803 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: MixedArgsComplete.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> MixedArgsComplete
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:32:59.803 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:32:59.815 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: MixedKwargsComplete.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> MixedKwargsComplete
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:32:59.815 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:32:59.821 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: FullMixed.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> FullMixed
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:32:59.821 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:32:59.836 [ERROR] [ERROR] Validation error while patching SimpleChild: Unsafe patch: ArgsInMiddle.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: SimpleChild -> ArgsInMiddle
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:32:59.836 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:32:59.842 [ERROR] [ERROR] Validation error while patching ChildWithKwargs: Unsafe patch: KeywordOnly.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: ChildWithKwargs -> KeywordOnly
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:32:59.842 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:32:59.849 [ERROR] [ERROR] Validation error while patching ChildWithPositional: Unsafe patch: KeywordOnly.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: ChildWithPositional -> KeywordOnly
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:32:59.849 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:37:46.844 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: PositionalMatchWithSuper.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> PositionalMatchWithSuper
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:37:46.844 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:37:46.892 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: WithDefaults.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: Child -> WithDefaults
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:37:46.892 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:37:46.946 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: MixedArgsComplete.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> MixedArgsComplete
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:37:46.947 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:37:46.952 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: MixedKwargsComplete.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> MixedKwargsComplete
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:37:46.952 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:37:46.959 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: FullMixed.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> FullMixed
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:37:46.959 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:37:46.965 [ERROR] [ERROR] Validation error while patching SimpleChild: Unsafe patch: ArgsInMiddle.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: SimpleChild -> ArgsInMiddle
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:37:46.965 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 12:37:46.972 [ERROR] [ERROR] Validation error while patching ChildWithKwargs: Unsafe patch: KeywordOnly.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: ChildWithKwargs -> KeywordOnly
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 12:37:46.972 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 13:52:35.103 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: PositionalMatchWithSuper.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> PositionalMatchWithSuper
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 13:52:35.103 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 13:52:35.143 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: WithDefaults.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: Child -> WithDefaults
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 13:52:35.143 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 13:52:35.190 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: MixedArgsComplete.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> MixedArgsComplete
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 13:52:35.191 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 13:52:35.196 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: MixedKwargsComplete.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> MixedKwargsComplete
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 13:52:35.196 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 13:52:35.205 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: FullMixed.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> FullMixed
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 13:52:35.205 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 13:52:35.215 [ERROR] [ERROR] Validation error while patching SimpleChild: Unsafe patch: ArgsInMiddle.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: SimpleChild -> ArgsInMiddle
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 13:52:35.215 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 13:52:35.220 [ERROR] [ERROR] Validation error while patching ChildWithKwargs: Unsafe patch: KeywordOnly.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: ChildWithKwargs -> KeywordOnly
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 13:52:35.220 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 13:56:53.081 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: PositionalMatchWithSuper.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> PositionalMatchWithSuper
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 13:56:53.081 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 13:56:53.123 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: WithDefaults.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: Child -> WithDefaults
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 13:56:53.124 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 13:56:53.168 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: MixedArgsComplete.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> MixedArgsComplete
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 13:56:53.168 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 13:56:53.173 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: MixedKwargsComplete.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> MixedKwargsComplete
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 13:56:53.173 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 13:56:53.179 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: FullMixed.__init__ requires parameters {'a', 'b'} that aren't forwarded from classes below.
+MRO path: Child -> FullMixed
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 13:56:53.180 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 13:56:53.188 [ERROR] [ERROR] Validation error while patching SimpleChild: Unsafe patch: ArgsInMiddle.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: SimpleChild -> ArgsInMiddle
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 13:56:53.188 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 13:56:53.198 [ERROR] [ERROR] Validation error while patching ChildWithKwargs: Unsafe patch: KeywordOnly.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: ChildWithKwargs -> KeywordOnly
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 13:56:53.198 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 14:06:55.384 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: PositionalMatchWithSuper.__init__ requires parameters {'b', 'a'} that aren't forwarded from classes below.
+MRO path: Child -> PositionalMatchWithSuper
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 14:06:55.384 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 14:06:55.434 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: WithDefaults.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: Child -> WithDefaults
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 14:06:55.434 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 14:06:55.533 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: MixedArgsComplete.__init__ requires parameters {'b', 'a'} that aren't forwarded from classes below.
+MRO path: Child -> MixedArgsComplete
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 14:06:55.533 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 14:06:55.573 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: MixedKwargsComplete.__init__ requires parameters {'b', 'a'} that aren't forwarded from classes below.
+MRO path: Child -> MixedKwargsComplete
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 14:06:55.573 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 14:06:55.637 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: FullMixed.__init__ requires parameters {'b', 'a'} that aren't forwarded from classes below.
+MRO path: Child -> FullMixed
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 14:06:55.637 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 14:06:55.740 [ERROR] [ERROR] Validation error while patching SimpleChild: Unsafe patch: ArgsInMiddle.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: SimpleChild -> ArgsInMiddle
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 14:06:55.740 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 14:06:55.758 [ERROR] [ERROR] Validation error while patching ChildWithKwargs: Unsafe patch: KeywordOnly.__init__ requires parameters {'a'} that aren't forwarded from classes below.
+MRO path: ChildWithKwargs -> KeywordOnly
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 14:06:55.758 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 14:45:27.711 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: Mixin.__init__ requires parameters {'c'} that aren't forwarded from classes below.
+MRO path: Child -> Mixin
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 14:45:27.711 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 14:47:04.984 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: Mixin.__init__ requires parameters {'c'} that aren't forwarded from classes below.
+MRO path: Child -> Mixin
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 14:47:04.984 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues
+2025-05-08 14:47:46.302 [ERROR] [ERROR] Validation error while patching Child: Unsafe patch: Mixin.__init__ requires parameters {'c'} that aren't forwarded from classes below.
+MRO path: Child -> Mixin
+No specific culprits identified - check parameter flow in the chain
+2025-05-08 14:47:46.302 [WARN] [WARN] Continuing despite validation error; parameter inconsistencies may cause runtime issues

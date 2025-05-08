@@ -10,9 +10,9 @@ from datetime import datetime, timedelta
 from ..base2 import (
     DatabaseConfig, 
     DatabaseFactory,
-    PoolManager,
-    ConnectionManager
+    PoolManager
 )
+
 
 # Fixture for PostgreSQL database connection
 @pytest.fixture
@@ -131,7 +131,8 @@ def test_sync(postgres_db):
     conn.close()
            
 @pytest.mark.asyncio
-async def test_async(postgres_db_async):    
+async def test_async(postgres_db_async):  
+
     l = asyncio.get_running_loop()
     assert (True)
     db, _ = postgres_db_async

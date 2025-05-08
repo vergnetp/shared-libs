@@ -5,7 +5,7 @@ from pathlib import Path
 import secrets
 
 from ..log import init_logger, info
-from ..databases import DatabaseFactory
+
 from .deployment.docker import generate_docker_compose
 from .deployment.deployment import generate_deployment_scripts
 
@@ -94,7 +94,7 @@ class AppFactory:
             db_password = os.getenv(self.config.database.password_env_var)
             
             try:
-                db = DatabaseFactory(
+              """   db = DatabaseFactory(
                     self.config.database.type,
                     database=self.config.database.database,
                     host=self.config.database.host,
@@ -103,8 +103,8 @@ class AppFactory:
                     password=db_password,
                     alias=self.config.app_name
                 )
-                app.state.db = db
-                info(f"Database connection established: {self.config.database.type}")
+                app.state.db = db """
+                #info(f"Database connection established: {self.config.database.type}")
             except Exception as e:
                 info(f"Failed to connect to database: {e}")
         

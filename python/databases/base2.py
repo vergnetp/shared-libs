@@ -12,7 +12,7 @@ import uuid
 import asyncio
 import contextlib
 import traceback
-from typing import Set, Awaitable, Callable, Optional, Tuple, List, Any, Dict, final, Union, ClassVar, Final, AsyncIterator, Iterator
+from typing import Set, Awaitable, Callable, Optional, Tuple, List, Any, Dict, final, Union, ClassVar, Final, AsyncIterator, Iterator, TYPE_CHECKING
 import itertools
 import threading
 import enum
@@ -20,6 +20,7 @@ import functools
 from abc import ABC, abstractmethod
 from ..errors import TrackError
 from .. import log as logger
+from ..utils.patching import patcher
 import sqlite3
 import aiosqlite
 import psycopg2
@@ -5817,6 +5818,18 @@ class SqliteDatabase(ConnectionManager):
 #merge_classes(EntityAsyncMixin, AsyncConnection)
 #merge_classes(EntitySyncMixin, SyncConnection)
 
+
+
+from typing import TYPE_CHECKING
+patcher.patch_class(PostgresAsyncConnection, EntityAsyncMixin)
+
+if TYPE_CHECKING:
+    class PostgresAsyncConnection(PostgresAsyncConnection, EntityAsyncMixin): pass
+ 
+
+db=PostgresAsyncConnection()
+db.register_serializer('foo',None,None)
+print("OK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 # region    ################# FACTORY ######################
 
