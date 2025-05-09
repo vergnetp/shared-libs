@@ -4,6 +4,7 @@ from pathlib import Path
 from .. import logging as mylog
 from ... import utils
 
+
 def patch_utils(monkeypatch, tmp_path):
     monkeypatch.setattr(utils, "get_root", lambda: str(tmp_path))
 
