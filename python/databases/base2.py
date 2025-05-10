@@ -685,9 +685,26 @@ class SqlGenerator(ABC):
     """
     Abstract base class defining the interface for database-specific SQL generation.
     
-    This class defines the contract that all database-specific SQL generators must implement.
-    Each database backend (PostgreSQL, SQLite, MySQL, etc.) will have its own implementation
-    that handles the specific SQL dialect and features of that database.
+    SQL Generation Syntax Conventions:
+    ---------------------------------
+    The database layer follows SQL Server-style syntax conventions that are automatically 
+    translated to each database's native syntax:
+    
+    1. Identifiers (table and column names) should be wrapped in square brackets:
+    - Correct: SELECT [column_name] FROM [table_name]
+    - Incorrect: SELECT column_name FROM table_name
+    
+    2. Parameter placeholders should use question marks:
+    - Correct: WHERE [id] = ?
+    - Incorrect: WHERE [id] = $1 or WHERE [id] = %s
+    
+    Examples:
+        - Basic query: "SELECT [id], [name] FROM [customers] WHERE [status] = ?"
+        - Insert: "INSERT INTO [orders] ([id], [product]) VALUES (?, ?)"
+        - Update: "UPDATE [users] SET [last_login] = ? WHERE [id] = ?"
+    
+    These conventions ensure SQL statements work safely across all supported 
+    databases and properly handle reserved SQL keywords.
     """
     
     @final
@@ -719,10 +736,18 @@ class SqlGenerator(ABC):
         """
         return None 
     
-    @overridable
+    def escape_identifier(self, identifier: str) -> str:
+        """
+        Escape a SQL identifier (table or column name).
+        
+        This must be implemented by each database-specific generator.
+        """
+        raise NotImplementedError("Subclasses must implement escape_identifier")
+    
     def convert_query_to_native(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
         """
-        Converts a standard SQL query with ? placeholders to a database-specific format.
+        Converts a standard SQL query with ? placeholders to a database-specific format and
+        escapes SQL identifiers.
         
         Args:
             sql: SQL query with ? placeholders
@@ -730,7 +755,29 @@ class SqlGenerator(ABC):
             
         Returns:
             Tuple containing the converted SQL and the converted parameters
-        """        
+        """
+        # First, temporarily replace escaped brackets
+        sql = sql.replace('[[', '___OPEN_BRACKET___').replace(']]', '___CLOSE_BRACKET___')
+        
+        # Process identifiers - replace [identifier] with properly escaped version
+        pattern = r'\[(\w+)\]'
+        
+        def replace_id(match):
+            return self.escape_identifier(match.group(1))
+        
+        escaped_sql = re.sub(pattern, replace_id, sql)
+        
+        # Restore escaped brackets
+        escaped_sql = escaped_sql.replace('___OPEN_BRACKET___', '[').replace('___CLOSE_BRACKET___', ']')
+        
+        # Now handle parameter placeholders
+        return self._convert_parameters(escaped_sql, params)
+    
+    def _convert_parameters(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
+        """
+        Convert parameter placeholders.
+        This should be implemented by each subclass based on their parameter style.
+        """
         return sql, params
    
 # endregion      ############# SQL ##########################
@@ -2546,8 +2593,34 @@ class SqlEntityGenerator(ABC):
     This class defines the contract that all database-specific SQL generators must implement.
     Each database backend (PostgreSQL, SQLite, MySQL, etc.) will have its own implementation
     that handles the specific SQL dialect and features of that database.
-    """ 
-       
+    """
+    @abstractmethod
+    def escape_identifier(self, identifier: str) -> str:
+        """
+        Escape a SQL identifier (table or column name).
+        
+        Args:
+            identifier: The identifier to escape
+            
+        Returns:
+            Escaped identifier according to database-specific syntax
+        """
+        raise NotImplementedError("Subclasses must implement escape_identifier")
+    
+    @abstractmethod
+    def _convert_parameters(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
+        """
+        Convert parameter placeholders.
+        
+        Args:
+            sql: SQL with standard ? placeholders
+            params: Parameters for the placeholders
+            
+        Returns:
+            Tuple of (converted SQL, converted parameters)
+        """
+        raise NotImplementedError("Subclasses must implement _convert_parameters")
+     
     @abstractmethod
     def get_upsert_sql(self, entity_name: str, fields: List[str]) -> str:
         """
@@ -2827,6 +2900,18 @@ class SqlEntityGenerator(ABC):
             SQL string for getting the next sequence value, or None
         """
         pass
+    
+    def get_timeout_sql(self, timeout: Optional[float]) -> Optional[str]:
+        """
+        Return a SQL statement to enforce query timeout (if applicable).
+
+        Args:
+            timeout (Optional[float]): Timeout in seconds.
+
+        Returns:
+            Optional[str]: SQL statement to enforce timeout, or None if not supported.
+        """
+        return None
 
 class PostgresSqlGenerator(SqlGenerator, SqlEntityGenerator):
     """
@@ -2837,11 +2922,14 @@ class PostgresSqlGenerator(SqlGenerator, SqlEntityGenerator):
     def __init__(self, is_async):
         self._is_async = is_async
     
-    """Converter for PostgreSQL numeric placeholders ($1, $2, etc.) if async or positional '?' if sync"""    
-    def convert_query_to_native(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
+    def escape_identifier(self, identifier: str) -> str:
+        """Escape a column or table name for PostgreSQL."""
+        return f"\"{identifier}\""
+    
+    def _convert_parameters(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
         """Convert standard ? placeholders to PostgreSQL $1, $2, etc. format"""        
         if not params:
-            params = []
+            return sql, []
             
         if self._is_async:           
             # Use regex to safely replace placeholders with indexed parameters
@@ -2875,23 +2963,23 @@ class PostgresSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     def get_upsert_sql(self, entity_name: str, fields: List[str]) -> str:
         """Generate PostgreSQL-specific upsert SQL for an entity."""
-        fields_str = ', '.join(fields)
+        fields_str = ', '.join([f"[{field}]" for field in fields])
         placeholders = ', '.join(['?'] * len(fields))
-        update_clause = ', '.join([f"{field}=EXCLUDED.{field}" for field in fields if field != 'id'])
+        update_clause = ', '.join([f"[{field}]=EXCLUDED.[{field}]" for field in fields if field != 'id'])
         
-        return f"INSERT INTO {entity_name} ({fields_str}) VALUES ({placeholders}) ON CONFLICT(id) DO UPDATE SET {update_clause}"
+        return f"INSERT INTO [{entity_name}] ({fields_str}) VALUES ({placeholders}) ON CONFLICT([id]) DO UPDATE SET {update_clause}"
     
     def get_create_table_sql(self, entity_name: str, columns: List[Tuple[str, str]]) -> str:
         """Generate PostgreSQL-specific CREATE TABLE SQL."""
         column_defs = []
         for name, type_name in columns:
             if name == 'id':
-                column_defs.append(f"id TEXT PRIMARY KEY")
+                column_defs.append(f"[id] TEXT PRIMARY KEY")
             else:
-                column_defs.append(f"{name} TEXT")
+                column_defs.append(f"[{name}] TEXT")
         
         return f"""
-            CREATE TABLE IF NOT EXISTS {entity_name} (
+            CREATE TABLE IF NOT EXISTS [{entity_name}] (
                 {', '.join(column_defs)}
             )
         """
@@ -2899,24 +2987,24 @@ class PostgresSqlGenerator(SqlGenerator, SqlEntityGenerator):
     def get_create_meta_table_sql(self, entity_name: str) -> str:
         """Generate PostgreSQL-specific SQL for creating a metadata table."""
         return f"""
-            CREATE TABLE IF NOT EXISTS {entity_name}_meta (
-                name TEXT PRIMARY KEY,
-                type TEXT
+            CREATE TABLE IF NOT EXISTS [{entity_name}_meta] (
+                [name] TEXT PRIMARY KEY,
+                [type] TEXT
             )
         """
     
     def get_create_history_table_sql(self, entity_name: str, columns: List[Tuple[str, str]]) -> str:
         """Generate PostgreSQL-specific history table SQL."""
-        column_defs = [f"{name} TEXT" for name, _ in columns]
-        column_defs.append("version INTEGER")
-        column_defs.append("history_timestamp TEXT")
-        column_defs.append("history_user_id TEXT")
-        column_defs.append("history_comment TEXT")
+        column_defs = [f"[{name}] TEXT" for name, _ in columns]
+        column_defs.append("[version] INTEGER")
+        column_defs.append("[history_timestamp] TEXT")
+        column_defs.append("[history_user_id] TEXT")
+        column_defs.append("[history_comment] TEXT")
         
         return f"""
-            CREATE TABLE IF NOT EXISTS {entity_name}_history (
+            CREATE TABLE IF NOT EXISTS [{entity_name}_history] (
                 {', '.join(column_defs)},
-                PRIMARY KEY (id, version)
+                PRIMARY KEY ([id], [version])
             )
         """
     
@@ -2939,11 +3027,11 @@ class PostgresSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     def get_meta_upsert_sql(self, entity_name: str) -> str:
         """Generate PostgreSQL-specific upsert SQL for a metadata table."""
-        return f"INSERT INTO {entity_name}_meta VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET type=EXCLUDED.type"
+        return f"INSERT INTO [{entity_name}_meta] VALUES (?, ?) ON CONFLICT([name]) DO UPDATE SET [type]=EXCLUDED.[type]"
     
     def get_add_column_sql(self, table_name: str, column_name: str) -> str:
         """Generate SQL to add a column to an existing PostgreSQL table."""
-        return f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS {column_name} TEXT"
+        return f"ALTER TABLE [{table_name}] ADD COLUMN IF NOT EXISTS [{column_name}] TEXT"
     
     def get_check_table_exists_sql(self, table_name: str) -> Tuple[str, tuple]:
         """Generate SQL to check if a table exists in PostgreSQL."""
@@ -2961,43 +3049,43 @@ class PostgresSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     def get_entity_by_id_sql(self, entity_name: str, include_deleted: bool = False) -> str:
         """Generate SQL to retrieve an entity by ID in PostgreSQL."""
-        query = f"SELECT * FROM {entity_name} WHERE id = ?"
+        query = f"SELECT * FROM [{entity_name}] WHERE [id] = ?"
         
         if not include_deleted:
-            query += " AND deleted_at IS NULL"
+            query += " AND [deleted_at] IS NULL"
             
         return query
     
     def get_entity_history_sql(self, entity_name: str, id: str) -> Tuple[str, tuple]:
         """Generate SQL to retrieve the history of an entity in PostgreSQL."""
         return (
-            f"SELECT * FROM {entity_name}_history WHERE id = ? ORDER BY version DESC",
+            f"SELECT * FROM [{entity_name}_history] WHERE [id] = ? ORDER BY [version] DESC",
             (id,)
         )
     
     def get_entity_version_sql(self, entity_name: str, id: str, version: int) -> Tuple[str, tuple]:
         """Generate SQL to retrieve a specific version of an entity in PostgreSQL."""
         return (
-            f"SELECT * FROM {entity_name}_history WHERE id = ? AND version = ?",
+            f"SELECT * FROM [{entity_name}_history] WHERE [id] = ? AND [version] = ?",
             (id, version)
         )
     
     def get_soft_delete_sql(self, entity_name: str) -> str:
         """Generate SQL for soft-deleting an entity in PostgreSQL."""
-        return f"UPDATE {entity_name} SET deleted_at = ?, updated_at = ?, updated_by = ? WHERE id = ?"
+        return f"UPDATE [{entity_name}] SET [deleted_at] = ?, [updated_at] = ?, [updated_by] = ? WHERE [id] = ?"
     
     def get_restore_entity_sql(self, entity_name: str) -> str:
         """Generate SQL for restoring a soft-deleted entity in PostgreSQL."""
-        return f"UPDATE {entity_name} SET deleted_at = NULL, updated_at = ?, updated_by = ? WHERE id = ?"
+        return f"UPDATE [{entity_name}] SET [deleted_at] = NULL, [updated_at] = ?, [updated_by] = ? WHERE [id] = ?"
     
     def get_count_entities_sql(self, entity_name: str, where_clause: Optional[str] = None,
                               include_deleted: bool = False) -> str:
         """Generate SQL for counting entities in PostgreSQL."""
-        query = f"SELECT COUNT(*) FROM {entity_name}"
+        query = f"SELECT COUNT(*) FROM [{entity_name}]"
         conditions = []
         
         if not include_deleted:
-            conditions.append("deleted_at IS NULL")
+            conditions.append("[deleted_at] IS NULL")
             
         if where_clause:
             conditions.append(where_clause)
@@ -3011,11 +3099,11 @@ class PostgresSqlGenerator(SqlGenerator, SqlEntityGenerator):
                             order_by: Optional[str] = None, limit: Optional[int] = None,
                             offset: Optional[int] = None, include_deleted: bool = False) -> str:
         """Generate SQL for a flexible query in PostgreSQL."""
-        query = f"SELECT * FROM {entity_name}"
+        query = f"SELECT * FROM [{entity_name}]"
         conditions = []
         
         if not include_deleted:
-            conditions.append("deleted_at IS NULL")
+            conditions.append("[deleted_at] IS NULL")
             
         if where_clause:
             conditions.append(where_clause)
@@ -3036,8 +3124,8 @@ class PostgresSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     def get_update_fields_sql(self, entity_name: str, fields: List[str]) -> str:
         """Generate SQL for updating specific fields of an entity in PostgreSQL."""
-        set_clause = ", ".join([f"{field} = ?" for field in fields])
-        return f"UPDATE {entity_name} SET {set_clause}, updated_at = ?, updated_by = ? WHERE id = ?"
+        set_clause = ", ".join([f"[{field}] = ?" for field in fields])
+        return f"UPDATE [{entity_name}] SET {set_clause}, [updated_at] = ?, [updated_by] = ? WHERE [id] = ?"
     
     def get_pragma_or_settings_sql(self) -> List[str]:
         """Get optimal PostgreSQL settings."""
@@ -3057,10 +3145,12 @@ class MySqlSqlGenerator(SqlGenerator, SqlEntityGenerator):
     This class provides SQL generation tailored to MySQL's dialect and features.
     """
     
-    """Converter for MySQL placeholders (?)"""    
-    def convert_query_to_native(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
+    def escape_identifier(self, identifier: str) -> str:
+        """Escape a column or table name for MySQL."""
+        return f"`{identifier}`"
+    
+    def _convert_parameters(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
         """Convert standard ? placeholders to MySQL %s placeholders."""
-                    
         # For MySQL, replace ? with %s but handle escaped ?? properly
         new_sql = ''
         i = 0
@@ -3082,23 +3172,23 @@ class MySqlSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     def get_upsert_sql(self, entity_name: str, fields: List[str]) -> str:
         """Generate MySQL-specific upsert SQL for an entity."""
-        fields_str = ', '.join(fields)
+        fields_str = ', '.join([f"[{field}]" for field in fields])
         placeholders = ', '.join(['?'] * len(fields))
-        update_clause = ', '.join([f"{field}=VALUES({field})" for field in fields if field != 'id'])
+        update_clause = ', '.join([f"[{field}]=VALUES([{field}])" for field in fields if field != 'id'])
         
-        return f"INSERT INTO {entity_name} ({fields_str}) VALUES ({placeholders}) ON DUPLICATE KEY UPDATE {update_clause}"
+        return f"INSERT INTO [{entity_name}] ({fields_str}) VALUES ({placeholders}) ON DUPLICATE KEY UPDATE {update_clause}"
     
     def get_create_table_sql(self, entity_name: str, columns: List[Tuple[str, str]]) -> str:
         """Generate MySQL-specific CREATE TABLE SQL."""
         column_defs = []
         for name, type_name in columns:
             if name == 'id':
-                column_defs.append(f"id VARCHAR(36) PRIMARY KEY")
+                column_defs.append(f"[id] VARCHAR(36) PRIMARY KEY")
             else:
-                column_defs.append(f"{name} TEXT")
+                column_defs.append(f"[{name}] TEXT")
         
         return f"""
-            CREATE TABLE IF NOT EXISTS {entity_name} (
+            CREATE TABLE IF NOT EXISTS [{entity_name}] (
                 {', '.join(column_defs)}
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """
@@ -3106,9 +3196,9 @@ class MySqlSqlGenerator(SqlGenerator, SqlEntityGenerator):
     def get_create_meta_table_sql(self, entity_name: str) -> str:
         """Generate MySQL-specific SQL for creating a metadata table."""
         return f"""
-            CREATE TABLE IF NOT EXISTS {entity_name}_meta (
-                name VARCHAR(255) PRIMARY KEY,
-                type VARCHAR(50)
+            CREATE TABLE IF NOT EXISTS [{entity_name}_meta] (
+                [name] VARCHAR(255) PRIMARY KEY,
+                [type] VARCHAR(50)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """
     
@@ -3117,19 +3207,19 @@ class MySqlSqlGenerator(SqlGenerator, SqlEntityGenerator):
         column_defs = []
         for name, _ in columns:
             if name == 'id':
-                column_defs.append(f"id VARCHAR(36)")
+                column_defs.append(f"[id] VARCHAR(36)")
             else:
-                column_defs.append(f"{name} TEXT")
+                column_defs.append(f"[{name}] TEXT")
                 
-        column_defs.append("version INT")
-        column_defs.append("history_timestamp TEXT")
-        column_defs.append("history_user_id TEXT")
-        column_defs.append("history_comment TEXT")
+        column_defs.append("[version] INT")
+        column_defs.append("[history_timestamp] TEXT")
+        column_defs.append("[history_user_id] TEXT")
+        column_defs.append("[history_comment] TEXT")
         
         return f"""
-            CREATE TABLE IF NOT EXISTS {entity_name}_history (
+            CREATE TABLE IF NOT EXISTS [{entity_name}_history] (
                 {', '.join(column_defs)},
-                PRIMARY KEY (id, version)
+                PRIMARY KEY ([id], [version])
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """
     
@@ -3152,12 +3242,12 @@ class MySqlSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     def get_meta_upsert_sql(self, entity_name: str) -> str:
         """Generate MySQL-specific upsert SQL for a metadata table."""
-        return f"INSERT INTO {entity_name}_meta VALUES (?, ?) AS new ON DUPLICATE KEY UPDATE type=new.type"
+        return f"INSERT INTO [{entity_name}_meta] VALUES (?, ?) AS new ON DUPLICATE KEY UPDATE [type]=new.[type]"
     
     def get_add_column_sql(self, table_name: str, column_name: str) -> str:
         """Generate SQL to add a column to an existing MySQL table."""
         # MySQL doesn't support IF NOT EXISTS for columns, so the caller must check first
-        return f"ALTER TABLE {table_name} ADD COLUMN {column_name} TEXT"
+        return f"ALTER TABLE [{table_name}] ADD COLUMN [{column_name}] TEXT"
     
     def get_check_table_exists_sql(self, table_name: str) -> Tuple[str, tuple]:
         """Generate SQL to check if a table exists in MySQL."""
@@ -3177,43 +3267,43 @@ class MySqlSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     def get_entity_by_id_sql(self, entity_name: str, include_deleted: bool = False) -> str:
         """Generate SQL to retrieve an entity by ID in MySQL."""
-        query = f"SELECT * FROM {entity_name} WHERE id = ?"
+        query = f"SELECT * FROM [{entity_name}] WHERE [id] = ?"
         
         if not include_deleted:
-            query += " AND deleted_at IS NULL"
+            query += " AND [deleted_at] IS NULL"
             
         return query
     
     def get_entity_history_sql(self, entity_name: str, id: str) -> Tuple[str, tuple]:
         """Generate SQL to retrieve the history of an entity in MySQL."""
         return (
-            f"SELECT * FROM {entity_name}_history WHERE id = ? ORDER BY version DESC",
+            f"SELECT * FROM [{entity_name}_history] WHERE [id] = ? ORDER BY [version] DESC",
             (id,)
         )
     
     def get_entity_version_sql(self, entity_name: str, id: str, version: int) -> Tuple[str, tuple]:
         """Generate SQL to retrieve a specific version of an entity in MySQL."""
         return (
-            f"SELECT * FROM {entity_name}_history WHERE id = ? AND version = ?",
+            f"SELECT * FROM [{entity_name}_history] WHERE [id] = ? AND [version] = ?",
             (id, version)
         )
     
     def get_soft_delete_sql(self, entity_name: str) -> str:
         """Generate SQL for soft-deleting an entity in MySQL."""
-        return f"UPDATE {entity_name} SET deleted_at = ?, updated_at = ?, updated_by = ? WHERE id = ?"
+        return f"UPDATE [{entity_name}] SET [deleted_at] = ?, [updated_at] = ?, [updated_by] = ? WHERE [id] = ?"
     
     def get_restore_entity_sql(self, entity_name: str) -> str:
         """Generate SQL for restoring a soft-deleted entity in MySQL."""
-        return f"UPDATE {entity_name} SET deleted_at = NULL, updated_at = ?, updated_by = ? WHERE id = ?"
+        return f"UPDATE [{entity_name}] SET [deleted_at] = NULL, [updated_at] = ?, [updated_by] = ? WHERE [id] = ?"
     
     def get_count_entities_sql(self, entity_name: str, where_clause: Optional[str] = None,
                               include_deleted: bool = False) -> str:
         """Generate SQL for counting entities in MySQL."""
-        query = f"SELECT COUNT(*) FROM {entity_name}"
+        query = f"SELECT COUNT(*) FROM [{entity_name}]"
         conditions = []
         
         if not include_deleted:
-            conditions.append("deleted_at IS NULL")
+            conditions.append("[deleted_at] IS NULL")
             
         if where_clause:
             conditions.append(where_clause)
@@ -3227,11 +3317,11 @@ class MySqlSqlGenerator(SqlGenerator, SqlEntityGenerator):
                             order_by: Optional[str] = None, limit: Optional[int] = None,
                             offset: Optional[int] = None, include_deleted: bool = False) -> str:
         """Generate SQL for a flexible query in MySQL."""
-        query = f"SELECT * FROM {entity_name}"
+        query = f"SELECT * FROM [{entity_name}]"
         conditions = []
         
         if not include_deleted:
-            conditions.append("deleted_at IS NULL")
+            conditions.append("[deleted_at] IS NULL")
             
         if where_clause:
             conditions.append(where_clause)
@@ -3252,8 +3342,8 @@ class MySqlSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     def get_update_fields_sql(self, entity_name: str, fields: List[str]) -> str:
         """Generate SQL for updating specific fields of an entity in MySQL."""
-        set_clause = ", ".join([f"{field} = ?" for field in fields])
-        return f"UPDATE {entity_name} SET {set_clause}, updated_at = ?, updated_by = ? WHERE id = ?"
+        set_clause = ", ".join([f"[{field}] = ?" for field in fields])
+        return f"UPDATE [{entity_name}] SET {set_clause}, [updated_at] = ?, [updated_by] = ? WHERE [id] = ?"
     
     def get_pragma_or_settings_sql(self) -> List[str]:
         """Get optimal MySQL settings."""
@@ -3271,15 +3361,20 @@ class MySqlSqlGenerator(SqlGenerator, SqlEntityGenerator):
         # For MySQL, we return None as there's no direct sequence support
         # The application would need to use auto-increment or a custom sequence table
         return None
-    
+
 class SqliteSqlGenerator(SqlGenerator, SqlEntityGenerator):
     """
     SQLite-specific SQL generator implementation.
     
     This class provides SQL generation tailored to SQLite's dialect and features.
-    """   
-
-    def convert_query_to_native(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:   
+    """
+    
+    def escape_identifier(self, identifier: str) -> str:
+        """Escape a column or table name for SQLite."""
+        return f"\"{identifier}\""
+    
+    def _convert_parameters(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
+        """Convert placeholders - SQLite already uses ? so just handle escaped ??"""
         new_sql = ''
         i = 0
         while i < len(sql):
@@ -3297,22 +3392,22 @@ class SqliteSqlGenerator(SqlGenerator, SqlEntityGenerator):
 
     def get_upsert_sql(self, entity_name: str, fields: List[str]) -> str:
         """Generate SQLite-specific upsert SQL for an entity."""
-        fields_str = ', '.join(fields)
+        fields_str = ', '.join([f"[{field}]" for field in fields])
         placeholders = ', '.join(['?'] * len(fields))
         
-        return f"INSERT OR REPLACE INTO {entity_name} ({fields_str}) VALUES ({placeholders})"
+        return f"INSERT OR REPLACE INTO [{entity_name}] ({fields_str}) VALUES ({placeholders})"
     
     def get_create_table_sql(self, entity_name: str, columns: List[Tuple[str, str]]) -> str:
         """Generate SQLite-specific CREATE TABLE SQL."""
         column_defs = []
         for name, type_name in columns:
             if name == 'id':
-                column_defs.append(f"id TEXT PRIMARY KEY")
+                column_defs.append(f"[id] TEXT PRIMARY KEY")
             else:
-                column_defs.append(f"{name} TEXT")
+                column_defs.append(f"[{name}] TEXT")
         
         return f"""
-            CREATE TABLE IF NOT EXISTS {entity_name} (
+            CREATE TABLE IF NOT EXISTS [{entity_name}] (
                 {', '.join(column_defs)}
             )
         """
@@ -3320,25 +3415,25 @@ class SqliteSqlGenerator(SqlGenerator, SqlEntityGenerator):
     def get_create_meta_table_sql(self, entity_name: str) -> str:
         """Generate SQLite-specific SQL for creating a metadata table."""
         return f"""
-            CREATE TABLE IF NOT EXISTS {entity_name}_meta (
-                name TEXT PRIMARY KEY,
-                type TEXT
+            CREATE TABLE IF NOT EXISTS [{entity_name}_meta] (
+                [name] TEXT PRIMARY KEY,
+                [type] TEXT
             )
         """
     
     def get_create_history_table_sql(self, entity_name: str, columns: List[Tuple[str, str]]) -> str:
         """Generate SQLite-specific history table SQL."""
-        column_defs = [f"{name} TEXT" for name, _ in columns]
-        column_defs.append("version INTEGER")
-        column_defs.append("history_timestamp TEXT")
-        column_defs.append("history_user_id TEXT")
-        column_defs.append("history_comment TEXT")
+        column_defs = [f"[{name}] TEXT" for name, _ in columns]
+        column_defs.append("[version] INTEGER")
+        column_defs.append("[history_timestamp] TEXT")
+        column_defs.append("[history_user_id] TEXT")
+        column_defs.append("[history_comment] TEXT")
         
         # SQLite's PRIMARY KEY syntax
         return f"""
-            CREATE TABLE IF NOT EXISTS {entity_name}_history (
+            CREATE TABLE IF NOT EXISTS [{entity_name}_history] (
                 {', '.join(column_defs)},
-                PRIMARY KEY (id, version)
+                PRIMARY KEY ([id], [version])
             )
         """
     
@@ -3351,6 +3446,8 @@ class SqliteSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     def get_list_columns_sql(self, table_name: str) -> Tuple[str, tuple]:
         """Get SQL to list all columns in a SQLite table."""
+        # Note: SQLite's PRAGMA statements don't support escaped identifiers in the same way
+        # We need to handle the escaping differently for PRAGMA statements
         return (
             f"PRAGMA table_info({table_name})",
             ()
@@ -3358,12 +3455,12 @@ class SqliteSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     def get_meta_upsert_sql(self, entity_name: str) -> str:
         """Generate SQLite-specific upsert SQL for a metadata table."""
-        return f"INSERT OR REPLACE INTO {entity_name}_meta VALUES (?, ?)"
+        return f"INSERT OR REPLACE INTO [{entity_name}_meta] VALUES (?, ?)"
     
     def get_add_column_sql(self, table_name: str, column_name: str) -> str:
         """Generate SQL to add a column to an existing SQLite table."""
         # SQLite doesn't support ADD COLUMN IF NOT EXISTS, so the caller must check
-        return f"ALTER TABLE {table_name} ADD COLUMN {column_name} TEXT"
+        return f"ALTER TABLE [{table_name}] ADD COLUMN [{column_name}] TEXT"
     
     def get_check_table_exists_sql(self, table_name: str) -> Tuple[str, tuple]:
         """Generate SQL to check if a table exists in SQLite."""
@@ -3383,43 +3480,43 @@ class SqliteSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     def get_entity_by_id_sql(self, entity_name: str, include_deleted: bool = False) -> str:
         """Generate SQL to retrieve an entity by ID in SQLite."""
-        query = f"SELECT * FROM {entity_name} WHERE id = ?"
+        query = f"SELECT * FROM [{entity_name}] WHERE [id] = ?"
         
         if not include_deleted:
-            query += " AND deleted_at IS NULL"
+            query += " AND [deleted_at] IS NULL"
             
         return query
     
     def get_entity_history_sql(self, entity_name: str, id: str) -> Tuple[str, tuple]:
         """Generate SQL to retrieve the history of an entity in SQLite."""
         return (
-            f"SELECT * FROM {entity_name}_history WHERE id = ? ORDER BY version DESC",
+            f"SELECT * FROM [{entity_name}_history] WHERE [id] = ? ORDER BY [version] DESC",
             (id,)
         )
     
     def get_entity_version_sql(self, entity_name: str, id: str, version: int) -> Tuple[str, tuple]:
         """Generate SQL to retrieve a specific version of an entity in SQLite."""
         return (
-            f"SELECT * FROM {entity_name}_history WHERE id = ? AND version = ?",
+            f"SELECT * FROM [{entity_name}_history] WHERE [id] = ? AND [version] = ?",
             (id, version)
         )
     
     def get_soft_delete_sql(self, entity_name: str) -> str:
         """Generate SQL for soft-deleting an entity in SQLite."""
-        return f"UPDATE {entity_name} SET deleted_at = ?, updated_at = ?, updated_by = ? WHERE id = ?"
+        return f"UPDATE [{entity_name}] SET [deleted_at] = ?, [updated_at] = ?, [updated_by] = ? WHERE [id] = ?"
     
     def get_restore_entity_sql(self, entity_name: str) -> str:
         """Generate SQL for restoring a soft-deleted entity in SQLite."""
-        return f"UPDATE {entity_name} SET deleted_at = NULL, updated_at = ?, updated_by = ? WHERE id = ?"
+        return f"UPDATE [{entity_name}] SET [deleted_at] = NULL, [updated_at] = ?, [updated_by] = ? WHERE [id] = ?"
     
     def get_count_entities_sql(self, entity_name: str, where_clause: Optional[str] = None,
                               include_deleted: bool = False) -> str:
         """Generate SQL for counting entities in SQLite."""
-        query = f"SELECT COUNT(*) FROM {entity_name}"
+        query = f"SELECT COUNT(*) FROM [{entity_name}]"
         conditions = []
         
         if not include_deleted:
-            conditions.append("deleted_at IS NULL")
+            conditions.append("[deleted_at] IS NULL")
             
         if where_clause:
             conditions.append(where_clause)
@@ -3433,11 +3530,11 @@ class SqliteSqlGenerator(SqlGenerator, SqlEntityGenerator):
                             order_by: Optional[str] = None, limit: Optional[int] = None,
                             offset: Optional[int] = None, include_deleted: bool = False) -> str:
         """Generate SQL for a flexible query in SQLite."""
-        query = f"SELECT * FROM {entity_name}"
+        query = f"SELECT * FROM [{entity_name}]"
         conditions = []
         
         if not include_deleted:
-            conditions.append("deleted_at IS NULL")
+            conditions.append("[deleted_at] IS NULL")
             
         if where_clause:
             conditions.append(where_clause)
@@ -3458,8 +3555,8 @@ class SqliteSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     def get_update_fields_sql(self, entity_name: str, fields: List[str]) -> str:
         """Generate SQL for updating specific fields of an entity in SQLite."""
-        set_clause = ", ".join([f"{field} = ?" for field in fields])
-        return f"UPDATE {entity_name} SET {set_clause}, updated_at = ?, updated_by = ? WHERE id = ?"
+        set_clause = ", ".join([f"[{field}] = ?" for field in fields])
+        return f"UPDATE [{entity_name}] SET {set_clause}, [updated_at] = ?, [updated_by] = ? WHERE [id] = ?"
     
     def get_pragma_or_settings_sql(self) -> List[str]:
         """Get optimal SQLite settings using PRAGMAs."""
@@ -3477,7 +3574,7 @@ class SqliteSqlGenerator(SqlGenerator, SqlEntityGenerator):
         """
         # For SQLite, we return None as there's no direct sequence support
         return None
-  
+
 class EntityUtils:
     """
     Shared utility methods for entity operations.
@@ -4074,7 +4171,7 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
             versions = {}
             if entity_ids:
                 placeholders = ','.join(['?'] * len(entity_ids))
-                version_sql = f"SELECT id, MAX(version) as max_version FROM {entity_name}_history WHERE id IN ({placeholders}) GROUP BY id"
+                version_sql = f"SELECT [id], MAX([version]) as max_version FROM [{entity_name}_history] WHERE [id] IN ({placeholders}) GROUP BY [id]"
                 version_results = await self.execute(version_sql, tuple(entity_ids))
                 
                 # Create a dictionary of id -> current max version
@@ -4083,7 +4180,7 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
             # Prepare history entries
             now = datetime.datetime.utcnow().isoformat()
             history_fields = list(all_fields) + ['version', 'history_timestamp', 'history_user_id', 'history_comment']
-            history_sql = f"INSERT INTO {entity_name}_history ({', '.join(history_fields)}) VALUES ({', '.join(['?'] * len(history_fields))})"
+            history_sql = f"INSERT INTO [{entity_name}_history] ({', '.join(['['+f+']' for f in history_fields])}) VALUES ({', '.join(['?'] * len(history_fields))})"
             
             history_params = []
             for entity in prepared_entities:
@@ -4140,7 +4237,7 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         
         # For permanent deletion, use a direct DELETE
         if permanent:
-            sql = f"DELETE FROM {entity_name} WHERE id = ?"
+            sql = f"DELETE FROM [{entity_name}] WHERE [id] = ?"
             result = await self.execute(sql, (entity_id,))
             # For DELETE we expect an empty result if successful, but some drivers might
             # return a tuple with count
@@ -4551,7 +4648,7 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
             return {}
             
         # Query metadata
-        result = await self.execute(f"SELECT name, type FROM {entity_name}_meta", ())
+        result = await self.execute(f"SELECT [name], [type] FROM [{entity_name}_meta]", ())
         
         # Process results
         meta = {}
@@ -4581,7 +4678,7 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
             return
             
         # Get the current highest version
-        history_sql = f"SELECT MAX(version) FROM {entity_name}_history WHERE id = ?"
+        history_sql = f"SELECT MAX([version]) FROM [{entity_name}_history] WHERE [id] = ?"
         version_result = await self.execute(history_sql, (entity['id'],))
         
         # Calculate the next version number
@@ -4602,13 +4699,14 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         # Generate insert SQL
         fields = list(history_entry.keys())
         placeholders = ', '.join(['?'] * len(fields))
-        history_sql = f"INSERT INTO {entity_name}_history ({', '.join(fields)}) VALUES ({placeholders})"
+        fields_str = ', '.join([f"[{field}]" for field in fields])
+        history_sql = f"INSERT INTO [{entity_name}_history] ({fields_str}) VALUES ({placeholders})"
         
         # Execute insert
         params = tuple(history_entry[field] for field in fields)
         await self.execute(history_sql, params)
-    
-    
+
+
 class EntitySyncMixin(EntityUtils, ConnectionInterface):    
     """
     Mixin that adds entity operations to sync connections.

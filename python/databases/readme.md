@@ -160,9 +160,25 @@ To serve more users:
 
 ---
 
-## Notes
 
-### MySQL Transaction Caveat
+
+## SQL Conventions
+
+This layer works with multiple database backends. To write portable, safe SQL:
+
+### Table/Column Names
+* Universal: Use `[column_name]` with square brackets
+* Native: Or use database-specific quoting (`"name"` PostgreSQL, `` `name` `` MySQL)
+
+### Parameters 
+* Universal: Use `?` for all value placeholders
+* Native: Or use database-specific placeholders (`$1` PostgreSQL, `%s` MySQL)
+
+The system automatically translates between formats, handling SQL keywords safely and preventing injection attacks.
+
+Need a literal `?` in your SQL? Use double question marks `??`.
+
+## MySQL Transaction Caveat
 
 **Warning:**  
 MySQL auto-commits DDL (`CREATE`, `ALTER`, `DROP`) even inside transactions.  
@@ -206,7 +222,7 @@ async with db.async_connection() as conn:
         uid = entities[0].get('id', None)
         
         result = await conn.execute(
-            "SELECT * FROM users WHERE id = ?", 
+            "SELECT * FROM [users] WHERE id = ?", 
             (uid,),
             timeout=5.0,  # Query timeout in seconds
             tags={"operation": "get_user"}  # Optional query tags for logging/metrics

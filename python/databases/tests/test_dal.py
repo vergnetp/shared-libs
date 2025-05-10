@@ -417,14 +417,14 @@ async def test_sqlite_transaction_rollback(sqlite_db):
     
     async with db.async_connection() as conn:
         # Create a test entity outside the transaction
-        base_entity = await conn.save_entity(entity_name, {"order_name": "Base Order"})
+        base_entity = await conn.save_entity(entity_name, {"order": "Base Order"})
         
         # Start a transaction
         await conn.begin_transaction()
         
         try:
             # Create an entity in the transaction
-            await conn.save_entity(entity_name, {"order_name": "Will be rolled back"})
+            await conn.save_entity(entity_name, {"order": "Will be rolled back"})
             
             # Verify we see both entities during the transaction
             count_during = await conn.count_entities(entity_name)

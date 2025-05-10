@@ -1,0 +1,15 @@
+ideas:
+
+* Learning assistant: saves what you leaned in a table(maybe with some meta data). Randomly quizz you on what is in the db (add stats on what you know very well)
+
+
+
+todos:
+
+* hang laundry
+* british citizenship
+* register twins with axa
+* direct debit life insurance
+* pay tiphaine
+
+

@@ -5858,3 +5858,603 @@ result: []
 2025-05-10 13:55:41.301 [INFO] [INFO] Pool 3ab414262c78c8189538d87ccc89c9e4 marked as shutting down, no new connections allowed
 2025-05-10 13:55:41.302 [INFO] [INFO] Pool for 3ab414262c78c8189538d87ccc89c9e4 closed
 2025-05-10 13:55:41.804 [INFO] [INFO] Tearing down test environment...
+2025-05-10 15:27:09.387 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:27:09.387 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:27:09.396 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:27:09.396 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:27:09.400 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:27:09.400 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:29:42.432 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:29:42.432 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:29:42.442 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:29:42.443 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:29:42.446 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:29:42.446 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:40:51.946 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:40:51.946 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:40:51.958 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:40:51.958 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:40:51.963 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:40:51.963 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:40:58.447 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:40:58.447 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:40:58.459 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:40:58.459 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:40:58.463 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:40:58.463 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:40:58.488 [INFO] [INFO] Setting up test environment...
+2025-05-10 15:40:58.489 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-10 15:40:58.559 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'}
+2025-05-10 15:40:58.560 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml
+2025-05-10 15:40:58.567 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml:
+2025-05-10 15:40:58.567 [INFO] [INFO]   - mysql: localhost:3307 (container port: 3306)
+2025-05-10 15:40:58.567 [INFO] [INFO]   - postgres: localhost:5433 (container port: 5432)
+2025-05-10 15:40:58.567 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d
+2025-05-10 15:40:59.187 [INFO] [INFO] Command error:  Container test-databases-postgres-1  Running
+ Container test-databases-mysql-1  Running
+
+2025-05-10 15:40:59.201 [INFO] [INFO] Thread 18268: Requesting sync connection for test_sqlite_074d950d.db
+2025-05-10 15:40:59.203 [INFO] [INFO] Thread 18268: Sync connection created and cached for test_sqlite_074d950d.db in 0.00s
+2025-05-10 15:40:59.213 [INFO] [INFO] test_sqlite_074d950d.db - 0bc1ebb98ecfe7b90981c2d2cf8e93ba async pool initialized in 0.00s
+2025-05-10 15:40:59.214 [INFO] [INFO] Pool status:
+{"initialized": true, "alias": "test_sqlite_074d950d.db", "hash": "0bc1ebb98ecfe7b90981c2d2cf8e93ba", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 1, "idle": 0, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}}
+2025-05-10 15:40:59.214 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:40:59.214 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:40:59.228 [INFO] [INFO] This sql shoudl be converted to bative backend: SELECT name FROM sqlite_master WHERE type='table' AND name=? vs SELECT name FROM sqlite_master WHERE type='table' AND name=?
+2025-05-10 15:40:59.230 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_818097b3',)
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:40:59.231 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_818097b3_meta',)
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:40:59.232 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_818097b3_history',)
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:40:59.232 [INFO] [INFO] This sql shoudl be converted to bative backend: 
+            CREATE TABLE IF NOT EXISTS "test_orders_818097b3" (
+                "order" TEXT, "id" TEXT PRIMARY KEY, "created_at" TEXT, "updated_at" TEXT, "created_by" TEXT, "updated_by" TEXT, "deleted_at" TEXT
+            )
+         vs 
+            CREATE TABLE IF NOT EXISTS "test_orders_818097b3" (
+                "order" TEXT, "id" TEXT PRIMARY KEY, "created_at" TEXT, "updated_at" TEXT, "created_by" TEXT, "updated_by" TEXT, "deleted_at" TEXT
+            )
+        
+2025-05-10 15:40:59.234 [INFO] [INFO] AsyncConnection.execute:
+SQL: 
+            CREATE TABLE IF NOT EXISTS [test_orders_818097b3] (
+                [order] TEXT, [id] TEXT PRIMARY KEY, [created_at] TEXT, [updated_at] TEXT, [created_by] TEXT, [updated_by] TEXT, [delet
+params: ()
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:40:59.234 [INFO] [INFO] This sql shoudl be converted to bative backend: 
+            CREATE TABLE IF NOT EXISTS "test_orders_818097b3_meta" (
+                "name" TEXT PRIMARY KEY,
+                "type" TEXT
+            )
+         vs 
+            CREATE TABLE IF NOT EXISTS "test_orders_818097b3_meta" (
+                "name" TEXT PRIMARY KEY,
+                "type" TEXT
+            )
+        
+2025-05-10 15:40:59.235 [INFO] [INFO] AsyncConnection.execute:
+SQL: 
+            CREATE TABLE IF NOT EXISTS [test_orders_818097b3_meta] (
+                [name] TEXT PRIMARY KEY,
+                [type] TEXT
+            )
+        
+params: ()
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:40:59.236 [INFO] [INFO] This sql shoudl be converted to bative backend: 
+            CREATE TABLE IF NOT EXISTS "test_orders_818097b3_history" (
+                "order" TEXT, "id" TEXT, "created_at" TEXT, "updated_at" TEXT, "created_by" TEXT, "updated_by" TEXT, "deleted_at" TEXT, "version" INTEGER, "history_timestamp" TEXT, "history_user_id" TEXT, "history_comment" TEXT,
+                PRIMARY KEY ("id", "version")
+            )
+         vs 
+            CREATE TABLE IF NOT EXISTS "test_orders_818097b3_history" (
+                "order" TEXT, "id" TEXT, "created_at" TEXT, "updated_at" TEXT, "created_by" TEXT, "updated_by" TEXT, "deleted_at" TEXT, "version" INTEGER, "history_timestamp" TEXT, "history_user_id" TEXT, "history_comment" TEXT,
+                PRIMARY KEY ("id", "version")
+            )
+        
+2025-05-10 15:40:59.237 [INFO] [INFO] AsyncConnection.execute:
+SQL: 
+            CREATE TABLE IF NOT EXISTS [test_orders_818097b3_history] (
+                [order] TEXT, [id] TEXT, [created_at] TEXT, [updated_at] TEXT, [created_by] TEXT, [updated_by] TEXT, [deleted_a
+params: ()
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:40:59.238 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_818097b3_meta',)
+timeout: None
+tags: None
+result: [('test_orders_818097b3_meta',)]
+----------------------
+2025-05-10 15:40:59.239 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_818097b3_meta',)
+timeout: None
+tags: None
+result: [('test_orders_818097b3_meta',)]
+----------------------
+2025-05-10 15:40:59.239 [INFO] [INFO] This sql shoudl be converted to bative backend: SELECT name, type FROM test_orders_818097b3_meta vs SELECT name, type FROM test_orders_818097b3_meta
+2025-05-10 15:40:59.240 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name, type FROM test_orders_818097b3_meta
+params: ()
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:40:59.240 [INFO] [INFO] We need to add a new field to test_orders_818097b3: order
+2025-05-10 15:40:59.240 [INFO] [INFO] This sql shoudl be converted to bative backend: INSERT OR REPLACE INTO "test_orders_818097b3_meta" VALUES (?, ?) vs INSERT OR REPLACE INTO "test_orders_818097b3_meta" VALUES (?, ?)
+2025-05-10 15:40:59.241 [INFO] [INFO] AsyncConnection.execute:
+SQL: INSERT OR REPLACE INTO [test_orders_818097b3_meta] VALUES (?, ?)
+params: ('order', 'str')
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:40:59.241 [INFO] [INFO] We need to add a new field to test_orders_818097b3: id
+2025-05-10 15:40:59.242 [INFO] [INFO] AsyncConnection.execute:
+SQL: INSERT OR REPLACE INTO [test_orders_818097b3_meta] VALUES (?, ?)
+params: ('id', 'str')
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:40:59.242 [INFO] [INFO] We need to add a new field to test_orders_818097b3: created_at
+2025-05-10 15:40:59.245 [INFO] [INFO] AsyncConnection.execute:
+SQL: INSERT OR REPLACE INTO [test_orders_818097b3_meta] VALUES (?, ?)
+params: ('created_at', 'str')
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:40:59.246 [INFO] [INFO] We need to add a new field to test_orders_818097b3: updated_at
+2025-05-10 15:40:59.247 [INFO] [INFO] AsyncConnection.execute:
+SQL: INSERT OR REPLACE INTO [test_orders_818097b3_meta] VALUES (?, ?)
+params: ('updated_at', 'str')
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:40:59.248 [INFO] [INFO] This sql shoudl be converted to bative backend: PRAGMA table_info(test_orders_818097b3) vs PRAGMA table_info(test_orders_818097b3)
+2025-05-10 15:40:59.249 [INFO] [INFO] AsyncConnection.execute:
+SQL: PRAGMA table_info(test_orders_818097b3)
+params: ()
+timeout: None
+tags: None
+result: [(0, 'order', 'TEXT', 0, None, 0), (1, 'id', 'TEXT', 0, None, 1), (2, 'created_at', 'TEXT', 0, None, 0), (3, 'updated_at', 'TEXT', 0, None, 0), (4, 'created_by', 'TEXT', 0, None, 0), (5, 'updated_by',
+----------------------
+2025-05-10 15:40:59.249 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_818097b3_meta',)
+timeout: None
+tags: None
+result: [('test_orders_818097b3_meta',)]
+----------------------
+2025-05-10 15:40:59.250 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_818097b3_meta',)
+timeout: None
+tags: None
+result: [('test_orders_818097b3_meta',)]
+----------------------
+2025-05-10 15:40:59.251 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name, type FROM test_orders_818097b3_meta
+params: ()
+timeout: None
+tags: None
+result: [('order', 'str'), ('id', 'str'), ('created_at', 'str'), ('updated_at', 'str')]
+----------------------
+2025-05-10 15:40:59.251 [INFO] [INFO] AsyncConnection.execute:
+SQL: PRAGMA table_info(test_orders_818097b3)
+params: ()
+timeout: None
+tags: None
+result: [(0, 'order', 'TEXT', 0, None, 0), (1, 'id', 'TEXT', 0, None, 1), (2, 'created_at', 'TEXT', 0, None, 0), (3, 'updated_at', 'TEXT', 0, None, 0), (4, 'created_by', 'TEXT', 0, None, 0), (5, 'updated_by',
+----------------------
+2025-05-10 15:40:59.251 [INFO] [INFO] This sql shoudl be converted to bative backend: INSERT OR REPLACE INTO "test_orders_818097b3" ("order", "id", "created_at", "updated_at") VALUES (?, ?, ?, ?) vs INSERT OR REPLACE INTO "test_orders_818097b3" ("order", "id", "created_at", "updated_at") VALUES (?, ?, ?, ?)
+2025-05-10 15:40:59.252 [INFO] [INFO] AsyncConnection.execute:
+SQL: INSERT OR REPLACE INTO [test_orders_818097b3] ([order], [id], [created_at], [updated_at]) VALUES (?, ?, ?, ?)
+params: ('Base Order', 'bb719b37-50e0-44b5-b4f3-2b84d8f07c93', '2025-05-10T14:40:59.227172', '2025-05-10T14:40:59.227172')
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:40:59.252 [INFO] [INFO] This sql shoudl be converted to bative backend: SELECT MAX(version) FROM test_orders_818097b3_history WHERE id = ? vs SELECT MAX(version) FROM test_orders_818097b3_history WHERE id = ?
+2025-05-10 15:40:59.253 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT MAX(version) FROM test_orders_818097b3_history WHERE id = ?
+params: ('bb719b37-50e0-44b5-b4f3-2b84d8f07c93',)
+timeout: None
+tags: None
+result: [(None,)]
+----------------------
+2025-05-10 15:40:59.253 [INFO] [INFO] This sql shoudl be converted to bative backend: INSERT INTO test_orders_818097b3_history (order, id, created_at, updated_at, version, history_timestamp, history_user_id, history_comment) VALUES (?, ?, ?, ?, ?, ?, ?, ?) vs INSERT INTO test_orders_818097b3_history (order, id, created_at, updated_at, version, history_timestamp, history_user_id, history_comment) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+2025-05-10 15:40:59.944 [WARN] [WARN] Max retries (3) exceeded for _execute_statement_async: near "order": syntax error
+2025-05-10 15:40:59.946 [INFO] [INFO] Pool status:
+{"initialized": true, "alias": "test_sqlite_074d950d.db", "hash": "0bc1ebb98ecfe7b90981c2d2cf8e93ba", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 0, "idle": 1, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}}
+2025-05-10 15:41:00.749 [INFO] [INFO] Pool 0bc1ebb98ecfe7b90981c2d2cf8e93ba marked as shutting down, no new connections allowed
+2025-05-10 15:41:00.750 [INFO] [INFO] Pool for 0bc1ebb98ecfe7b90981c2d2cf8e93ba closed
+2025-05-10 15:41:01.251 [INFO] [INFO] Tearing down test environment...
+2025-05-10 15:50:17.748 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:50:17.748 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:50:17.757 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:50:17.758 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:50:17.761 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:50:17.761 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:50:28.388 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:50:28.388 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:50:28.397 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:50:28.397 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:50:28.401 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:50:28.401 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:50:28.420 [INFO] [INFO] Setting up test environment...
+2025-05-10 15:50:28.420 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-10 15:50:28.456 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'}
+2025-05-10 15:50:28.456 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml
+2025-05-10 15:50:28.461 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml:
+2025-05-10 15:50:28.461 [INFO] [INFO]   - mysql: localhost:3307 (container port: 3306)
+2025-05-10 15:50:28.461 [INFO] [INFO]   - postgres: localhost:5433 (container port: 5432)
+2025-05-10 15:50:28.461 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d
+2025-05-10 15:50:28.814 [INFO] [INFO] Command error:  Container test-databases-postgres-1  Running
+ Container test-databases-mysql-1  Running
+
+2025-05-10 15:50:28.825 [INFO] [INFO] Thread 13932: Requesting sync connection for test_sqlite_b1ed0657.db
+2025-05-10 15:50:28.828 [INFO] [INFO] Thread 13932: Sync connection created and cached for test_sqlite_b1ed0657.db in 0.00s
+2025-05-10 15:50:28.837 [INFO] [INFO] test_sqlite_b1ed0657.db - 7009da1dc0d875756939858cc5380c6e async pool initialized in 0.00s
+2025-05-10 15:50:28.837 [INFO] [INFO] Pool status:
+{"initialized": true, "alias": "test_sqlite_b1ed0657.db", "hash": "7009da1dc0d875756939858cc5380c6e", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 1, "idle": 0, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}}
+2025-05-10 15:50:28.838 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-10 15:50:28.838 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-10 15:50:28.849 [INFO] [INFO] This sql shoudl be converted to bative backend: SELECT name FROM sqlite_master WHERE type='table' AND name=? vs SELECT name FROM sqlite_master WHERE type='table' AND name=?
+2025-05-10 15:50:28.850 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_de83580d',)
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.851 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_de83580d_meta',)
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.851 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_de83580d_history',)
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.852 [INFO] [INFO] This sql shoudl be converted to bative backend: 
+            CREATE TABLE IF NOT EXISTS "test_orders_de83580d" (
+                "order" TEXT, "id" TEXT PRIMARY KEY, "created_at" TEXT, "updated_at" TEXT, "created_by" TEXT, "updated_by" TEXT, "deleted_at" TEXT
+            )
+         vs 
+            CREATE TABLE IF NOT EXISTS "test_orders_de83580d" (
+                "order" TEXT, "id" TEXT PRIMARY KEY, "created_at" TEXT, "updated_at" TEXT, "created_by" TEXT, "updated_by" TEXT, "deleted_at" TEXT
+            )
+        
+2025-05-10 15:50:28.853 [INFO] [INFO] AsyncConnection.execute:
+SQL: 
+            CREATE TABLE IF NOT EXISTS [test_orders_de83580d] (
+                [order] TEXT, [id] TEXT PRIMARY KEY, [created_at] TEXT, [updated_at] TEXT, [created_by] TEXT, [updated_by] TEXT, [delet
+params: ()
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.853 [INFO] [INFO] This sql shoudl be converted to bative backend: 
+            CREATE TABLE IF NOT EXISTS "test_orders_de83580d_meta" (
+                "name" TEXT PRIMARY KEY,
+                "type" TEXT
+            )
+         vs 
+            CREATE TABLE IF NOT EXISTS "test_orders_de83580d_meta" (
+                "name" TEXT PRIMARY KEY,
+                "type" TEXT
+            )
+        
+2025-05-10 15:50:28.854 [INFO] [INFO] AsyncConnection.execute:
+SQL: 
+            CREATE TABLE IF NOT EXISTS [test_orders_de83580d_meta] (
+                [name] TEXT PRIMARY KEY,
+                [type] TEXT
+            )
+        
+params: ()
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.856 [INFO] [INFO] This sql shoudl be converted to bative backend: 
+            CREATE TABLE IF NOT EXISTS "test_orders_de83580d_history" (
+                "order" TEXT, "id" TEXT, "created_at" TEXT, "updated_at" TEXT, "created_by" TEXT, "updated_by" TEXT, "deleted_at" TEXT, "version" INTEGER, "history_timestamp" TEXT, "history_user_id" TEXT, "history_comment" TEXT,
+                PRIMARY KEY ("id", "version")
+            )
+         vs 
+            CREATE TABLE IF NOT EXISTS "test_orders_de83580d_history" (
+                "order" TEXT, "id" TEXT, "created_at" TEXT, "updated_at" TEXT, "created_by" TEXT, "updated_by" TEXT, "deleted_at" TEXT, "version" INTEGER, "history_timestamp" TEXT, "history_user_id" TEXT, "history_comment" TEXT,
+                PRIMARY KEY ("id", "version")
+            )
+        
+2025-05-10 15:50:28.858 [INFO] [INFO] AsyncConnection.execute:
+SQL: 
+            CREATE TABLE IF NOT EXISTS [test_orders_de83580d_history] (
+                [order] TEXT, [id] TEXT, [created_at] TEXT, [updated_at] TEXT, [created_by] TEXT, [updated_by] TEXT, [deleted_a
+params: ()
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.858 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_de83580d_meta',)
+timeout: None
+tags: None
+result: [('test_orders_de83580d_meta',)]
+----------------------
+2025-05-10 15:50:28.859 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_de83580d_meta',)
+timeout: None
+tags: None
+result: [('test_orders_de83580d_meta',)]
+----------------------
+2025-05-10 15:50:28.859 [INFO] [INFO] This sql shoudl be converted to bative backend: SELECT "name", "type" FROM "test_orders_de83580d_meta" vs SELECT "name", "type" FROM "test_orders_de83580d_meta"
+2025-05-10 15:50:28.860 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT [name], [type] FROM [test_orders_de83580d_meta]
+params: ()
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.860 [INFO] [INFO] We need to add a new field to test_orders_de83580d: order
+2025-05-10 15:50:28.860 [INFO] [INFO] This sql shoudl be converted to bative backend: INSERT OR REPLACE INTO "test_orders_de83580d_meta" VALUES (?, ?) vs INSERT OR REPLACE INTO "test_orders_de83580d_meta" VALUES (?, ?)
+2025-05-10 15:50:28.861 [INFO] [INFO] AsyncConnection.execute:
+SQL: INSERT OR REPLACE INTO [test_orders_de83580d_meta] VALUES (?, ?)
+params: ('order', 'str')
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.861 [INFO] [INFO] We need to add a new field to test_orders_de83580d: id
+2025-05-10 15:50:28.861 [INFO] [INFO] AsyncConnection.execute:
+SQL: INSERT OR REPLACE INTO [test_orders_de83580d_meta] VALUES (?, ?)
+params: ('id', 'str')
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.862 [INFO] [INFO] We need to add a new field to test_orders_de83580d: created_at
+2025-05-10 15:50:28.862 [INFO] [INFO] AsyncConnection.execute:
+SQL: INSERT OR REPLACE INTO [test_orders_de83580d_meta] VALUES (?, ?)
+params: ('created_at', 'str')
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.862 [INFO] [INFO] We need to add a new field to test_orders_de83580d: updated_at
+2025-05-10 15:50:28.864 [INFO] [INFO] AsyncConnection.execute:
+SQL: INSERT OR REPLACE INTO [test_orders_de83580d_meta] VALUES (?, ?)
+params: ('updated_at', 'str')
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.864 [INFO] [INFO] This sql shoudl be converted to bative backend: PRAGMA table_info(test_orders_de83580d) vs PRAGMA table_info(test_orders_de83580d)
+2025-05-10 15:50:28.866 [INFO] [INFO] AsyncConnection.execute:
+SQL: PRAGMA table_info(test_orders_de83580d)
+params: ()
+timeout: None
+tags: None
+result: [(0, 'order', 'TEXT', 0, None, 0), (1, 'id', 'TEXT', 0, None, 1), (2, 'created_at', 'TEXT', 0, None, 0), (3, 'updated_at', 'TEXT', 0, None, 0), (4, 'created_by', 'TEXT', 0, None, 0), (5, 'updated_by',
+----------------------
+2025-05-10 15:50:28.867 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_de83580d_meta',)
+timeout: None
+tags: None
+result: [('test_orders_de83580d_meta',)]
+----------------------
+2025-05-10 15:50:28.868 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_de83580d_meta',)
+timeout: None
+tags: None
+result: [('test_orders_de83580d_meta',)]
+----------------------
+2025-05-10 15:50:28.868 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT [name], [type] FROM [test_orders_de83580d_meta]
+params: ()
+timeout: None
+tags: None
+result: [('order', 'str'), ('id', 'str'), ('created_at', 'str'), ('updated_at', 'str')]
+----------------------
+2025-05-10 15:50:28.869 [INFO] [INFO] AsyncConnection.execute:
+SQL: PRAGMA table_info(test_orders_de83580d)
+params: ()
+timeout: None
+tags: None
+result: [(0, 'order', 'TEXT', 0, None, 0), (1, 'id', 'TEXT', 0, None, 1), (2, 'created_at', 'TEXT', 0, None, 0), (3, 'updated_at', 'TEXT', 0, None, 0), (4, 'created_by', 'TEXT', 0, None, 0), (5, 'updated_by',
+----------------------
+2025-05-10 15:50:28.869 [INFO] [INFO] This sql shoudl be converted to bative backend: INSERT OR REPLACE INTO "test_orders_de83580d" ("order", "id", "created_at", "updated_at") VALUES (?, ?, ?, ?) vs INSERT OR REPLACE INTO "test_orders_de83580d" ("order", "id", "created_at", "updated_at") VALUES (?, ?, ?, ?)
+2025-05-10 15:50:28.870 [INFO] [INFO] AsyncConnection.execute:
+SQL: INSERT OR REPLACE INTO [test_orders_de83580d] ([order], [id], [created_at], [updated_at]) VALUES (?, ?, ?, ?)
+params: ('Base Order', '2ef1b79b-9fb5-4466-a2b7-ab30e0d8cfbf', '2025-05-10T14:50:28.849281', '2025-05-10T14:50:28.849281')
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.870 [INFO] [INFO] This sql shoudl be converted to bative backend: SELECT MAX("version") FROM "test_orders_de83580d_history" WHERE "id" = ? vs SELECT MAX("version") FROM "test_orders_de83580d_history" WHERE "id" = ?
+2025-05-10 15:50:28.871 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT MAX([version]) FROM [test_orders_de83580d_history] WHERE [id] = ?
+params: ('2ef1b79b-9fb5-4466-a2b7-ab30e0d8cfbf',)
+timeout: None
+tags: None
+result: [(None,)]
+----------------------
+2025-05-10 15:50:28.871 [INFO] [INFO] This sql shoudl be converted to bative backend: INSERT INTO "test_orders_de83580d_history" ("order", "id", "created_at", "updated_at", "version", "history_timestamp", "history_user_id", "history_comment") VALUES (?, ?, ?, ?, ?, ?, ?, ?) vs INSERT INTO "test_orders_de83580d_history" ("order", "id", "created_at", "updated_at", "version", "history_timestamp", "history_user_id", "history_comment") VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+2025-05-10 15:50:28.872 [INFO] [INFO] AsyncConnection.execute:
+SQL: INSERT INTO [test_orders_de83580d_history] ([order], [id], [created_at], [updated_at], [version], [history_timestamp], [history_user_id], [history_comment]) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+params: ('Base Order', '2ef1b79b-9fb5-4466-a2b7-ab30e0d8cfbf', '2025-05-10T14:50:28.849281', '2025-05-10T14:50:28.849281', 1, '2025-05-10T14:50:28.871246', None, None)
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.877 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_de83580d',)
+timeout: None
+tags: None
+result: [('test_orders_de83580d',)]
+----------------------
+2025-05-10 15:50:28.878 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_de83580d_meta',)
+timeout: None
+tags: None
+result: [('test_orders_de83580d_meta',)]
+----------------------
+2025-05-10 15:50:28.878 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_de83580d_history',)
+timeout: None
+tags: None
+result: [('test_orders_de83580d_history',)]
+----------------------
+2025-05-10 15:50:28.879 [INFO] [INFO] AsyncConnection.execute:
+SQL: PRAGMA table_info(test_orders_de83580d)
+params: ()
+timeout: None
+tags: None
+result: [(0, 'order', 'TEXT', 0, None, 0), (1, 'id', 'TEXT', 0, None, 1), (2, 'created_at', 'TEXT', 0, None, 0), (3, 'updated_at', 'TEXT', 0, None, 0), (4, 'created_by', 'TEXT', 0, None, 0), (5, 'updated_by',
+----------------------
+2025-05-10 15:50:28.879 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_de83580d_meta',)
+timeout: None
+tags: None
+result: [('test_orders_de83580d_meta',)]
+----------------------
+2025-05-10 15:50:28.880 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_de83580d_meta',)
+timeout: None
+tags: None
+result: [('test_orders_de83580d_meta',)]
+----------------------
+2025-05-10 15:50:28.881 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT [name], [type] FROM [test_orders_de83580d_meta]
+params: ()
+timeout: None
+tags: None
+result: [('order', 'str'), ('id', 'str'), ('created_at', 'str'), ('updated_at', 'str')]
+----------------------
+2025-05-10 15:50:28.882 [INFO] [INFO] AsyncConnection.execute:
+SQL: PRAGMA table_info(test_orders_de83580d)
+params: ()
+timeout: None
+tags: None
+result: [(0, 'order', 'TEXT', 0, None, 0), (1, 'id', 'TEXT', 0, None, 1), (2, 'created_at', 'TEXT', 0, None, 0), (3, 'updated_at', 'TEXT', 0, None, 0), (4, 'created_by', 'TEXT', 0, None, 0), (5, 'updated_by',
+----------------------
+2025-05-10 15:50:28.882 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_de83580d_meta',)
+timeout: None
+tags: None
+result: [('test_orders_de83580d_meta',)]
+----------------------
+2025-05-10 15:50:28.883 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT name FROM sqlite_master WHERE type='table' AND name=?
+params: ('test_orders_de83580d_meta',)
+timeout: None
+tags: None
+result: [('test_orders_de83580d_meta',)]
+----------------------
+2025-05-10 15:50:28.884 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT [name], [type] FROM [test_orders_de83580d_meta]
+params: ()
+timeout: None
+tags: None
+result: [('order', 'str'), ('id', 'str'), ('created_at', 'str'), ('updated_at', 'str')]
+----------------------
+2025-05-10 15:50:28.885 [INFO] [INFO] AsyncConnection.execute:
+SQL: PRAGMA table_info(test_orders_de83580d)
+params: ()
+timeout: None
+tags: None
+result: [(0, 'order', 'TEXT', 0, None, 0), (1, 'id', 'TEXT', 0, None, 1), (2, 'created_at', 'TEXT', 0, None, 0), (3, 'updated_at', 'TEXT', 0, None, 0), (4, 'created_by', 'TEXT', 0, None, 0), (5, 'updated_by',
+----------------------
+2025-05-10 15:50:28.888 [INFO] [INFO] AsyncConnection.execute:
+SQL: INSERT OR REPLACE INTO [test_orders_de83580d] ([order], [id], [created_at], [updated_at]) VALUES (?, ?, ?, ?)
+params: ('Will be rolled back', '9bd2431d-eaa8-4654-995e-f56daf73d138', '2025-05-10T14:50:28.877061', '2025-05-10T14:50:28.877061')
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.889 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT MAX([version]) FROM [test_orders_de83580d_history] WHERE [id] = ?
+params: ('9bd2431d-eaa8-4654-995e-f56daf73d138',)
+timeout: None
+tags: None
+result: [(None,)]
+----------------------
+2025-05-10 15:50:28.889 [INFO] [INFO] AsyncConnection.execute:
+SQL: INSERT INTO [test_orders_de83580d_history] ([order], [id], [created_at], [updated_at], [version], [history_timestamp], [history_user_id], [history_comment]) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+params: ('Will be rolled back', '9bd2431d-eaa8-4654-995e-f56daf73d138', '2025-05-10T14:50:28.877061', '2025-05-10T14:50:28.877061', 1, '2025-05-10T14:50:28.889309', None, None)
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.890 [INFO] [INFO] This sql shoudl be converted to bative backend: SELECT COUNT(*) FROM "test_orders_de83580d" WHERE "deleted_at" IS NULL vs SELECT COUNT(*) FROM "test_orders_de83580d" WHERE "deleted_at" IS NULL
+2025-05-10 15:50:28.890 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT COUNT(*) FROM [test_orders_de83580d] WHERE [deleted_at] IS NULL
+params: ()
+timeout: None
+tags: None
+result: [(2,)]
+----------------------
+2025-05-10 15:50:28.892 [INFO] [INFO] AsyncConnection.execute:
+SQL: SELECT COUNT(*) FROM [test_orders_de83580d] WHERE [deleted_at] IS NULL
+params: ()
+timeout: None
+tags: None
+result: [(1,)]
+----------------------
+2025-05-10 15:50:28.893 [INFO] [INFO] This sql shoudl be converted to bative backend: DELETE FROM "test_orders_de83580d" WHERE "id" = ? vs DELETE FROM "test_orders_de83580d" WHERE "id" = ?
+2025-05-10 15:50:28.894 [INFO] [INFO] AsyncConnection.execute:
+SQL: DELETE FROM [test_orders_de83580d] WHERE [id] = ?
+params: ('2ef1b79b-9fb5-4466-a2b7-ab30e0d8cfbf',)
+timeout: None
+tags: None
+result: []
+----------------------
+2025-05-10 15:50:28.898 [INFO] [INFO] Pool status:
+{"initialized": true, "alias": "test_sqlite_b1ed0657.db", "hash": "7009da1dc0d875756939858cc5380c6e", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 0, "idle": 1, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}}
+2025-05-10 15:50:28.901 [INFO] [INFO] Pool 7009da1dc0d875756939858cc5380c6e marked as shutting down, no new connections allowed
+2025-05-10 15:50:28.902 [INFO] [INFO] Pool for 7009da1dc0d875756939858cc5380c6e closed
+2025-05-10 15:50:29.404 [INFO] [INFO] Tearing down test environment...
