@@ -730,8 +730,7 @@ class SqlGenerator(ABC):
             
         Returns:
             Tuple containing the converted SQL and the converted parameters
-        """
-        logger.info("convert_query_to_native - Base (SqlGenerator) ... not good")
+        """        
         return sql, params
    
 # endregion      ############# SQL ##########################
@@ -922,6 +921,7 @@ class BaseConnection(ConnectionInterface):
         converted_sql, _ = self.sql_generator.convert_query_to_native(final_sql)
         stmt = await self._prepare_statement_async(converted_sql)
         self._statement_cache.put(sql_hash, stmt, final_sql)
+        logger.info(f"This sql shoudl be converted to bative backend: {stmt} vs {converted_sql}")
         return stmt
         
     def _get_statement_sync(self, sql: str, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]] = None) -> Any:
@@ -1010,7 +1010,9 @@ class AsyncConnection(BaseConnection):
         self._mark_active()
         stmt = await self._get_statement_async(sql, timeout, tags)        
         raw_result = await self._execute_statement_async(stmt, params)
-        return self._normalize_result(raw_result)
+        result = self._normalize_result(raw_result)
+        logger.info(f"AsyncConnection.execute:\nSQL: {sql[:200]}\nparams: {str(params)[:200]}\ntimeout: {timeout}\ntags: {tags}\nresult: {str(result)[:200]}\n----------------------")
+        return result
 
     @async_method
     @with_timeout()
@@ -1050,6 +1052,7 @@ class AsyncConnection(BaseConnection):
             normalized = self._normalize_result(raw_result)
             if normalized:
                 results.extend(normalized)
+        logger.info(f"AsyncConnection.executemany:\nSQL: {sql[:200]}\nparams: {str(param_list)[:200]}\ntimeout: {timeout}\ntags: {tags}\nresult: {str(results)[:200]}\n----------------------")
         return results
        
 
@@ -2613,7 +2616,7 @@ class SqlEntityGenerator(ABC):
     @abstractmethod
     def get_list_columns_sql(self, table_name: str) -> Tuple[str, tuple]:
         """
-        Get SQL to list all columns in a table.
+        Get SQL to list all columns in a table (same order as in the table)
         
         Args:
             table_name: Name of the table to list columns for
@@ -2836,13 +2839,11 @@ class PostgresSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     """Converter for PostgreSQL numeric placeholders ($1, $2, etc.) if async or positional '?' if sync"""    
     def convert_query_to_native(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
-        """Convert standard ? placeholders to PostgreSQL $1, $2, etc. format"""
-        logger.info("convert_query_to_native - Postgres override .. Good!")
+        """Convert standard ? placeholders to PostgreSQL $1, $2, etc. format"""        
         if not params:
             params = []
             
-        if self._is_async:
-            logger.info(f"####### async - newsql")
+        if self._is_async:           
             # Use regex to safely replace placeholders with indexed parameters
             placeholder_pattern = r'(?<!\?)\?(?!\?)'  # Match ? but not ?? (escaped ?)
             param_index = 0
@@ -2855,10 +2856,8 @@ class PostgresSqlGenerator(SqlGenerator, SqlEntityGenerator):
             new_sql = re.sub(placeholder_pattern, replace_placeholder, sql)
             
             # Handle escaped ?? placeholders (convert back to single ?)
-            new_sql = new_sql.replace('??', '?')
-            logger.info(f"####### async - newsql: {new_sql}")
-        else:
-            logger.info(f"####### sync - newsql")
+            new_sql = new_sql.replace('??', '?')            
+        else:            
             # For sync connections, replace ? with ? but handle escaped ?? properly
             new_sql = ''
             i = 0
@@ -2871,8 +2870,7 @@ class PostgresSqlGenerator(SqlGenerator, SqlEntityGenerator):
                     i += 1
                 else:
                     new_sql += sql[i]
-                    i += 1
-            logger.info(f"####### sync - newsql: {new_sql}")         
+                    i += 1                  
         return new_sql, params    
     
     def get_upsert_sql(self, entity_name: str, fields: List[str]) -> str:
@@ -2934,7 +2932,8 @@ class PostgresSqlGenerator(SqlGenerator, SqlEntityGenerator):
         """Get SQL to list all columns in a PostgreSQL table."""
         return (
             "SELECT column_name, data_type FROM information_schema.columns "
-            "WHERE table_name = ?",
+            "WHERE table_name = ? "
+            "ORDER BY ordinal_position",  # Order by the column's position
             (table_name,)
         )
     
@@ -3060,23 +3059,25 @@ class MySqlSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     """Converter for MySQL placeholders (?)"""    
     def convert_query_to_native(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
-        if not params:
-            return sql, []
-            
-        # For MySQL, replace ? with ? but handle escaped ?? properly
+        """Convert standard ? placeholders to MySQL %s placeholders."""
+                    
+        # For MySQL, replace ? with %s but handle escaped ?? properly
         new_sql = ''
         i = 0
         while i < len(sql):
             if i+1 < len(sql) and sql[i:i+2] == '??':
-                new_sql += '?'  # Replace ?? with single ?
+                new_sql += '?'  # Replace ?? with single ? (literal question mark, not a parameter)
                 i += 2
             elif sql[i] == '?':
-                new_sql += '?'
+                new_sql += '%s'  # Replace ? with %s for MySQL parameters
                 i += 1
             else:
                 new_sql += sql[i]
                 i += 1
-                
+        
+        if not params:
+            return new_sql, []
+        
         return new_sql, params
     
     def get_upsert_sql(self, entity_name: str, fields: List[str]) -> str:
@@ -3144,7 +3145,8 @@ class MySqlSqlGenerator(SqlGenerator, SqlEntityGenerator):
         """Get SQL to list all columns in a MySQL table."""
         return (
             "SELECT column_name, data_type FROM information_schema.columns "
-            "WHERE table_name = ? AND table_schema = DATABASE()",
+            "WHERE table_name = ? AND table_schema = DATABASE() "
+            "ORDER BY ordinal_position",  # Order by the column's position
             (table_name,)
         )
     
@@ -3277,10 +3279,7 @@ class SqliteSqlGenerator(SqlGenerator, SqlEntityGenerator):
     This class provides SQL generation tailored to SQLite's dialect and features.
     """   
 
-    def convert_query_to_native(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
-        if not params:
-            return sql, []            
-  
+    def convert_query_to_native(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:   
         new_sql = ''
         i = 0
         while i < len(sql):
@@ -3290,7 +3289,10 @@ class SqliteSqlGenerator(SqlGenerator, SqlEntityGenerator):
             else:
                 new_sql += sql[i]
                 i += 1
-                
+
+        if not params:
+            return new_sql, []  
+              
         return new_sql, params
 
     def get_upsert_sql(self, entity_name: str, fields: List[str]) -> str:
@@ -3681,21 +3683,19 @@ class EntityUtils:
         
         return result
     
-    def _deserialize_entity(self, entity_name: str, entity: Dict[str, Optional[str]]) -> Dict[str, Any]:
+    def _deserialize_entity(self, entity_name: str, entity: Dict[str, Optional[str]], meta: Dict[str, str]) -> Dict[str, Any]:
         """
         Deserialize entity values based on metadata.
         
         Args:
             entity_name: Name of the entity for metadata lookup
             entity: Dictionary with string values
+            meta: Dictionary of field name/field type(as string)
             
         Returns:
             Dictionary with values converted to appropriate Python types
         """
-        result = {}
-        
-        # Get type information for this entity
-        meta = self._meta_cache.get(entity_name, {})
+        result = {}   
         
         for key, value in entity.items():
             value_type = meta.get(key, 'str')
@@ -3869,11 +3869,20 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         """
         table_name = f"{entity_name}_history" if is_history else entity_name
         
-        # Try to get from metadata cache first (for non-history tables)
+        # Try to get from schema directly - more reliable way to get columns in order
+        schema_sql, schema_params = self.sql_generator.get_list_columns_sql(table_name)
+        schema_result = await self.execute(schema_sql, schema_params)
+        if schema_result:
+            field_names = [row[0] for row in schema_result]
+            logger.info(f"Got field names for {table_name} from schema: {field_names}")
+            return field_names
+        
+        # Only fall back to metadata if schema query failed
         if not is_history:
             meta = await self._get_entity_metadata(entity_name)
             if meta:
                 field_names = list(meta.keys())
+                logger.info(f"Got field names for {table_name} from metadata: {field_names}")
                 if is_history:
                     # Add history-specific fields
                     history_fields = ["version", "history_timestamp", "history_user_id", "history_comment"]
@@ -3881,12 +3890,6 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
                         if field not in field_names:
                             field_names.append(field)
                 return field_names
-        
-        # Fallback to querying schema
-        schema_sql, schema_params = self.sql_generator.get_list_columns_sql(table_name)
-        schema_result = await self.execute(schema_sql, schema_params)
-        if schema_result:
-            return [row[0] for row in schema_result]
         
         # Last resort for history tables - use base entity + history fields
         if is_history:
@@ -3897,6 +3900,7 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
             for field in history_fields:
                 if field not in field_names:
                     field_names.append(field)
+            logger.info(f"Constructed field names for history table {table_name}: {field_names}")
             return field_names
         
         # If all else fails, return an empty list
@@ -3940,7 +3944,9 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         
         # Deserialize if requested
         if deserialize:
-            return await self._deserialize_entity(entity_name, entity_dict)
+            if deserialize:
+                meta = await self._get_entity_metadata(entity_name)
+                return self._deserialize_entity(entity_name, entity_dict, meta)
         
         return entity_dict
     
@@ -4149,7 +4155,7 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         result = await self.execute(sql, (now, now, user_id, entity_id))
         
         # Add to history if soft-deleted
-        if len(result) > 0 and current_entity:
+        if current_entity:
             # Update the entity with deletion info
             current_entity['deleted_at'] = now
             current_entity['updated_at'] = now
@@ -4161,7 +4167,7 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
             serialized = self._serialize_entity(current_entity, meta)
             await self._add_to_history(entity_name, serialized, user_id, "Soft deleted")
                 
-        return len(result) > 0
+        return True
     
     @async_method
     @with_timeout()
@@ -4192,19 +4198,19 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         result = await self.execute(sql, (now, user_id, entity_id))
         
         # Add to history if restored
-        if result.rowcount > 0:
-            # Update the entity with restoration info
-            current_entity['deleted_at'] = None
-            current_entity['updated_at'] = now
-            if user_id:
-                current_entity['updated_by'] = user_id
+
+        # Update the entity with restoration info
+        current_entity['deleted_at'] = None
+        current_entity['updated_at'] = now
+        if user_id:
+            current_entity['updated_by'] = user_id
+            
+        # Serialize and add to history
+        meta = await self._get_entity_metadata(entity_name)
+        serialized = self._serialize_entity(current_entity, meta)
+        await self._add_to_history(entity_name, serialized, user_id, "Restored")
                 
-            # Serialize and add to history
-            meta = await self._get_entity_metadata(entity_name)
-            serialized = self._serialize_entity(current_entity, meta)
-            await self._add_to_history(entity_name, serialized, user_id, "Restored")
-                
-        return len(result) > 0
+        return True
     
     # Query operations
     
@@ -4246,6 +4252,9 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         # Get field names from result description
         field_names = await self._get_field_names(entity_name)
         
+        if deserialize:
+            meta = await self._get_entity_metadata(entity_name)
+
         # Convert rows to dictionaries
         entities = []
         for row in result:
@@ -4253,7 +4262,7 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
             
             # Deserialize if requested
             if deserialize:
-                entity_dict = await self._deserialize_entity(entity_name, entity_dict)
+                entity_dict = self._deserialize_entity(entity_name, entity_dict, meta)
                 
             entities.append(entity_dict)
             
@@ -4321,6 +4330,9 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         # Get field names from result description
         field_names = await self._get_field_names(entity_name)
         
+        if deserialize:
+            meta = await self._get_entity_metadata(entity_name)
+
         # Convert rows to dictionaries
         history_entries = []
         for row in result:
@@ -4328,7 +4340,7 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
             
             # Deserialize if requested
             if deserialize:
-                entity_dict = await self._deserialize_entity(entity_name, entity_dict)
+                entity_dict = self._deserialize_entity(entity_name, entity_dict, meta)
                 
             history_entries.append(entity_dict)
             
@@ -4365,9 +4377,10 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         field_names = await self._get_field_names(entity_name)
         entity_dict = dict(zip(field_names, result[0]))
         
+        
         # Deserialize if requested
         if deserialize:
-            return await self._deserialize_entity(entity_name, entity_dict)
+            return self._deserialize_entity(entity_name, entity_dict)
             
         return entity_dict
     
@@ -4484,12 +4497,25 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
             if field_name in meta:
                 continue
                 
+
+            logger.info(f"We need to add a new field to {entity_name}: {field_name}") # todo delete or set tu debug
+
             # Determine the type
             value_type = self._infer_type(value)
             
             # Add to metadata
             sql = self.sql_generator.get_meta_upsert_sql(entity_name)
             await self.execute(sql, (field_name, value_type))
+
+        col_exists_sql, col_exists_params = self.sql_generator.get_check_column_exists_sql(entity_name, field_name)
+        col_exists_result = await self.execute(col_exists_sql, col_exists_params)
+        
+        # Only try to add the column if it doesn't exist
+        if not col_exists_result or len(col_exists_result) == 0:
+            sql = self.sql_generator.get_add_column_sql(entity_name, field_name)
+            await self.execute(sql, ())
+            sql = self.sql_generator.get_add_column_sql(entity_name+"_history", field_name)
+            await self.execute(sql, ())
             
             # Update cache
             meta[field_name] = value_type
@@ -4582,39 +4608,6 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         params = tuple(history_entry[field] for field in fields)
         await self.execute(history_sql, params)
     
-    @async_method
-    async def _deserialize_entity(self, entity_name: str, entity: Dict[str, Optional[str]]) -> Dict[str, Any]:
-        """
-        Deserialize entity values based on metadata.
-        
-        Args:
-            entity_name: Name of the entity for metadata lookup
-            entity: Dictionary with string values
-            
-        Returns:
-            Dictionary with values converted to appropriate Python types
-        """
-        # For history tables, use the base entity metadata
-        meta_entity_name = entity_name
-        if entity_name.endswith('_history'):
-            meta_entity_name = entity_name[:-8]  # Remove _history suffix
-            
-        # Get type information for this entity
-        meta = await self._get_entity_metadata(meta_entity_name)
-        
-        # Deserialize each field
-        result = {}
-        for key, value in entity.items():
-            value_type = meta.get(key, 'str')
-            
-            try:
-                result[key] = self._deserialize_value(value, value_type)
-            except Exception as e:
-                logger.error(f"Error deserializing field '{key}' as {value_type}: {e}")
-                # Use the raw value as a fallback
-                result[key] = value
-        
-        return result
     
 class EntitySyncMixin(EntityUtils, ConnectionInterface):    
     """
@@ -4658,8 +4651,7 @@ class EntitySyncMixin(EntityUtils, ConnectionInterface):
             
             # Utility methods
             '_get_entity_metadata',
-            '_add_to_history',
-            '_deserialize_entity'
+            '_add_to_history',        
         ]
         
         # Get the async mixin methods from a temporary EntityAsyncMixin instance
@@ -4729,9 +4721,7 @@ class PostgresSyncConnection(SyncConnection):
     )
     def _execute_statement_sync(self, statement: Any, params=None) -> Any:
         """Execute a prepared statement using psycopg2"""
-        try:
-            logger.debug(f"[DEBUG] postgres *execute*statement")
-            
+        try:           
             # Handle the empty parameters case properly
             if not params or len(params) == 0:
                 self._cursor.execute(f"EXECUTE {statement}")
@@ -5363,10 +5353,13 @@ class MySqlConnectionPool(ConnectionPool):
         if force:
             # aiomysql doesn't have a direct force close option
             # This is a workaround to mark the pool as closing and wake up waiters
-            self._pool._closing = True
-            if hasattr(self._pool, '_cond') and hasattr(self._pool._cond, 'notify_all'):
-                self._pool._cond._loop.call_soon(self._pool._cond.notify_all)
-        await self._pool.close()
+            #self._pool._closing = True
+            #if hasattr(self._pool, '_cond') and hasattr(self._pool._cond, 'notify_all'):
+                #self._pool._cond._loop.call_soon(self._pool._cond.notify_all)
+            pass
+        if self._pool:
+            await self._pool.close()            
+            self._pool = None
     
     async def _test_connection(self, connection):
         await connection.execute("SELECT 1")
@@ -5398,9 +5391,9 @@ class MySqlConnectionPool(ConnectionPool):
         return len(self._pool._free)   
 
 class MySqlPoolManager(PoolManager):
-    async def _create_pool(self, config: Dict) -> ConnectionPool:
+    async def _create_pool(self, config: DatabaseConfig, connection_acquisition_timeout: float) -> ConnectionPool:
         min_size, max_size = self._calculate_pool_size()
-        cfg = config.copy()
+        cfg = config.config().copy()
         cfg["db"] = cfg.pop("database")  # aiomysql expects "db"
         raw_pool = await aiomysql.create_pool(
             minsize=min_size, 
@@ -5801,8 +5794,8 @@ class SqliteConnectionPool(ConnectionPool):
         return 0 if self._in_use else 1
 
 class SqlitePoolManager(PoolManager):
-    async def _create_pool(self, config: Dict) -> ConnectionPool:
-        db_path = config["database"]
+    async def _create_pool(self, config: DatabaseConfig, connection_acquisition_timeout: float) -> ConnectionPool:
+        db_path = config.config()["database"]
         conn = await aiosqlite.connect(db_path)
         return SqliteConnectionPool(
             conn,
@@ -5892,10 +5885,14 @@ class SqliteDatabase(ConnectionManager):
 
 
 from typing import TYPE_CHECKING
-patcher.patch_class(PostgresAsyncConnection, EntityAsyncMixin)
 
+patcher.patch_class(PostgresAsyncConnection, EntityAsyncMixin)
+patcher.patch_class(MysqlAsyncConnection, EntityAsyncMixin)
+patcher.patch_class(SqliteAsyncConnection, EntityAsyncMixin)
 if TYPE_CHECKING:
     class PostgresAsyncConnection(PostgresAsyncConnection, EntityAsyncMixin): pass
+    class MySqlAsyncConnection(PostgresAsyncConnection, EntityAsyncMixin): pass
+    class SqliteAsyncConnection(PostgresAsyncConnection, EntityAsyncMixin): pass
  
 
 
@@ -5917,8 +5914,8 @@ class DatabaseFactory:
 
 # endregion    ################# FACTORY ####################
 
-log_method_calls(logger.debug, PoolManager)
-log_method_calls(logger.debug, ConnectionManager)
+#log_method_calls(logger.debug, PoolManager)
+#log_method_calls(logger.debug, ConnectionManager)
 #log_method_calls(logger.debug, AsyncConnection)
 #log_method_calls(logger.debug, SyncConnection)
 #log_method_calls(logger.debug, PostgresSyncConnection)

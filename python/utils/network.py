@@ -3,9 +3,26 @@ Network utility functions for service readiness checking and connectivity.
 """
 import socket
 import time
-import logging
+from .. import log as logger
 
-logger = logging.getLogger(__name__)
+def is_service_ready(port, service_name="service", host='localhost'):
+    """
+    Check wether a service is ready by checking if it accepts connections on the specified port.   
+   
+    Args:
+        port (int): The port number the service listens on
+        service_name (str): Name of the service (for logging purposes)
+        host (str): Host where the service is running
+        
+    Returns:
+        bool: True if service is ready, False if timeout occurred
+    """       
+    try:
+        with socket.create_connection((host, port), timeout=3):           
+            return True
+    except (socket.timeout, ConnectionRefusedError) as e:
+        pass
+    return False
 
 def wait_for_service_ready(port, service_name="service", host='localhost', timeout=30, check_interval=1):
     """

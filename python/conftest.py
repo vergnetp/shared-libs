@@ -3,6 +3,7 @@ This is some config/commands for pytest (unit tests)
 '''
 
 import os
+import time
 import pytest
 import subprocess
 import shutil
@@ -51,7 +52,7 @@ def setup_test_environment(request):
     2. Cleans up any existing .pytest_cache directories
     3. Automatically detects the appropriate Docker Compose file for the module being tested
     4. Starts Docker containers defined in the module's Docker Compose file
-    5. Waits for all exposed services to be ready before running tests
+    5. Waits for all exposed services to be ready before running tests (plus 30 seconds extra buffer)
     6. Tears down the Docker environment after tests complete
     
     Features:
@@ -126,12 +127,16 @@ def setup_test_environment(request):
             
             active_compose_files.append((compose_file, project_name))
             
+            need_more_time = False
+
             # Wait for all services with exposed ports to be ready
             for service_name, _, host_port, host in service_info:
-                # You can add special handling for specific service types if needed
-                utils.wait_for_service_ready(host_port, service_name, host=host)
-                import time
-                time.sleep(60)
+                if not utils.is_service_ready(host_port, service_name, host):
+                    need_more_time = True
+                    utils.wait_for_service_ready(host_port, service_name, host=host)
+            if need_more_time:
+                logger.info("Waiting a little more to be sure database and other services are really up and running...")
+                time.sleep(30)
     
     if not active_compose_files:
         logger.info("No Docker Compose files found for any test files. Continuing without Docker setup.")
@@ -143,10 +148,10 @@ def setup_test_environment(request):
     
     for compose_file, project_name in active_compose_files:
         cmd = f"docker-compose -f {compose_file} -p {project_name} down -v"
-        return_code, stdout, stderr = run_command(cmd)
+        #return_code, stdout, stderr = run_command(cmd)
         
-        if return_code != 0:
-            logger.info(f"Warning: Error stopping Docker containers: {stderr}")
+        #if return_code != 0:
+            #logger.info(f"Warning: Error stopping Docker containers: {stderr}")
     
     prevent_py_cache()
     delete_pytest_cache()

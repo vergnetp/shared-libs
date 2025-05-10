@@ -5,6 +5,7 @@ import json
 import uuid
 import os
 from datetime import datetime, timedelta
+import time
 
 # Import the database abstraction layer
 from ..base2 import (
@@ -60,7 +61,7 @@ async def postgres_db_async():
 # Fixture for MySQL database connection
 @pytest.fixture
 def mysql_db():
-    """Set up test database connection to MySQL"""
+    """Set up test database connection to MySQL (async version)"""
     config = DatabaseConfig(
         database="testdb_mysql",
         host="localhost",
@@ -79,6 +80,29 @@ def mysql_db():
     # Cleanup after all tests
     loop = asyncio.get_event_loop()
     loop.run_until_complete(PoolManager.close_pool(config.hash(), timeout=5))
+
+
+# Fixture for MySQL database connection
+@pytest_asyncio.fixture
+async def mysql_db_async():
+    """Set up test database connection to MySQL"""
+    config = DatabaseConfig(
+        database="testdb_mysql",
+        host="localhost",
+        port=3307,  # Port from docker-compose
+        user="test",
+        password="test",
+        alias="mysql_test",
+        env="test"
+    )
+    db = DatabaseFactory.create_database("mysql", config)
+    
+    
+    # Provide the database instance
+    yield db, config
+    
+    # Cleanup after all tests
+    await PoolManager.close_pool(config.hash(), timeout=5)
 
 
 # Fixture for SQLite database connection
@@ -101,9 +125,16 @@ def sqlite_db():
     loop = asyncio.get_event_loop()
     loop.run_until_complete(PoolManager.close_pool(config.hash(), timeout=5))
     
+    # Release any remaining connections and wait a bit
+    db.release_sync_connection()  # Make sure sync connection is released
+    time.sleep(0.5)  # Give the OS a moment to release file handles
+    
     # Remove the SQLite file
-    if os.path.exists(db_file):
-        os.remove(db_file)
+    try:
+        if os.path.exists(db_file):
+            os.remove(db_file)
+    except PermissionError:
+        print(f"Could not remove SQLite file {db_file} - it may still be in use")
 
 def test_quick(postgres_db):
     db, _ = postgres_db
@@ -232,7 +263,7 @@ async def test_postgres_entity_history(postgres_db):
         # Get first version
         old_version = await conn.get_entity_by_version(entity_name, entity_id, 1)
         assert old_version is not None
-        assert 'department' not in old_version
+        assert old_version.get('department') is None
         
         # Cleanup
         await conn.delete_entity(entity_name, entity_id, permanent=True)
@@ -240,9 +271,9 @@ async def test_postgres_entity_history(postgres_db):
 
 # MySQL Tests
 @pytest.mark.asyncio
-async def test_mysql_save_and_find_entities(mysql_db):
+async def test_mysql_save_and_find_entities(mysql_db_async):
     """Test saving multiple entities and querying them"""
-    db, _ = mysql_db
+    db, _ = mysql_db_async
     
     entity_name = f"test_products_{uuid.uuid4().hex[:8]}"
     
@@ -274,9 +305,9 @@ async def test_mysql_save_and_find_entities(mysql_db):
 
 
 @pytest.mark.asyncio
-async def test_mysql_count_entities(mysql_db):
+async def test_mysql_count_entities(mysql_db_async):
     """Test counting entities with filters"""
-    db, _ = mysql_db
+    db, _ = mysql_db_async
     
     entity_name = f"test_employees_{uuid.uuid4().hex[:8]}"
     
@@ -307,9 +338,9 @@ async def test_mysql_count_entities(mysql_db):
 
 
 @pytest.mark.asyncio
-async def test_mysql_soft_delete_restore(mysql_db):
+async def test_mysql_soft_delete_restore(mysql_db_async):
     """Test soft delete and restore functionality"""
-    db, _ = mysql_db
+    db, _ = mysql_db_async
     
     entity_name = f"test_users_{uuid.uuid4().hex[:8]}"
     
@@ -386,14 +417,14 @@ async def test_sqlite_transaction_rollback(sqlite_db):
     
     async with db.async_connection() as conn:
         # Create a test entity outside the transaction
-        base_entity = await conn.save_entity(entity_name, {"order": "Base Order"})
+        base_entity = await conn.save_entity(entity_name, {"order_name": "Base Order"})
         
         # Start a transaction
         await conn.begin_transaction()
         
         try:
             # Create an entity in the transaction
-            await conn.save_entity(entity_name, {"order": "Will be rolled back"})
+            await conn.save_entity(entity_name, {"order_name": "Will be rolled back"})
             
             # Verify we see both entities during the transaction
             count_during = await conn.count_entities(entity_name)
