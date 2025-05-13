@@ -1,0 +1,1579 @@
+2025-05-12 07:55:55.723 [INFO] [INFO] Setting up test environment...
+2025-05-12 07:55:55.723 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 07:55:55.856 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 07:55:55.857 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 07:55:55.900 [INFO] [INFO] ############ frame 3: wrapper
+2025-05-12 07:55:55.900 [INFO] [INFO] ############ frame 4: reconnect
+2025-05-12 07:55:55.900 [INFO] [INFO] ############ frame 5: wrapper
+2025-05-12 07:55:55.900 [INFO] [INFO] ############ frame 6: do
+2025-05-12 07:55:55.901 [INFO] [INFO] ############ frame 7: wrapper
+2025-05-12 07:55:55.901 [INFO] [INFO] ############ frame 8: test_try_catch
+2025-05-12 07:55:55.901 [INFO] [INFO] ############ frame 9: pytest_pyfunc_call
+2025-05-12 07:55:55.901 [INFO] [INFO] ############ frame 10: _multicall
+2025-05-12 07:55:55.901 [INFO] [INFO] ############ frame 11: _hookexec
+2025-05-12 07:55:55.901 [INFO] [INFO] ############ frame 12: __call__
+2025-05-12 07:55:55.901 [INFO] [INFO] ############ frame 13: runtest
+2025-05-12 07:55:55.901 [INFO] [INFO] ############ frame 14: pytest_runtest_call
+2025-05-12 07:55:55.902 [INFO] [INFO] ############ frame 15: _multicall
+2025-05-12 07:55:55.902 [INFO] [INFO] ############ frame 16: _hookexec
+2025-05-12 07:55:55.902 [INFO] [INFO] ############ frame 17: __call__
+2025-05-12 07:55:55.902 [INFO] [INFO] ############ frame 18: <lambda>
+2025-05-12 07:55:55.902 [INFO] [INFO] ############ frame 19: from_call
+2025-05-12 07:55:55.903 [INFO] [INFO] ############ frame 20: call_and_report
+2025-05-12 07:55:55.903 [INFO] [INFO] ############ frame 21: runtestprotocol
+2025-05-12 07:55:55.903 [INFO] [INFO] ############ frame 22: pytest_runtest_protocol
+2025-05-12 07:55:55.903 [INFO] [INFO] ############ frame 23: _multicall
+2025-05-12 07:55:55.903 [INFO] [INFO] ############ frame 24: _hookexec
+2025-05-12 07:55:55.903 [INFO] [INFO] ############ frame 25: __call__
+2025-05-12 07:55:55.903 [INFO] [INFO] ############ frame 26: pytest_runtestloop
+2025-05-12 07:55:55.903 [INFO] [INFO] ############ frame 27: _multicall
+2025-05-12 07:55:55.903 [INFO] [INFO] ############ frame 28: _hookexec
+2025-05-12 07:55:55.904 [INFO] [INFO] ############ frame 29: __call__
+2025-05-12 07:55:55.904 [INFO] [INFO] ############ frame 30: _main
+2025-05-12 07:55:55.904 [INFO] [INFO] ############ frame 31: wrap_session
+2025-05-12 07:55:55.904 [INFO] [INFO] ############ frame 32: pytest_cmdline_main
+2025-05-12 07:55:55.904 [INFO] [INFO] ############ frame 33: _multicall
+2025-05-12 07:55:55.905 [INFO] [INFO] ############ frame 34: _hookexec
+2025-05-12 07:55:55.905 [INFO] [INFO] ############ frame 35: __call__
+2025-05-12 07:55:55.905 [INFO] [INFO] ############ frame 36: main
+2025-05-12 07:55:55.905 [INFO] [INFO] ############ frame 37: <module>
+2025-05-12 07:55:55.906 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: <module>
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 07:55:55.909 [INFO] [INFO] Tearing down test environment...
+2025-05-12 07:55:54.099 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 07:55:54.100 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 07:55:54.141 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 07:55:54.141 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 07:55:54.146 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 07:55:54.147 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 07:56:09.772 [INFO] [INFO] Setting up test environment...
+2025-05-12 07:56:09.772 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 07:56:09.841 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 07:56:09.842 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 07:56:09.845 [INFO] [INFO] ############ frame 3: wrapper
+2025-05-12 07:56:09.845 [INFO] [INFO] ############ frame 4: reconnect
+2025-05-12 07:56:09.845 [INFO] [INFO] ############ frame 5: wrapper
+2025-05-12 07:56:09.845 [INFO] [INFO] ############ frame 6: do
+2025-05-12 07:56:09.845 [INFO] [INFO] ############ frame 7: wrapper
+2025-05-12 07:56:09.845 [INFO] [INFO] ############ frame 8: test_try_catch
+2025-05-12 07:56:09.845 [INFO] [INFO] ############ frame 9: pytest_pyfunc_call
+2025-05-12 07:56:09.846 [INFO] [INFO] ############ frame 10: _multicall
+2025-05-12 07:56:09.846 [INFO] [INFO] ############ frame 11: _hookexec
+2025-05-12 07:56:09.846 [INFO] [INFO] ############ frame 12: __call__
+2025-05-12 07:56:09.846 [INFO] [INFO] ############ frame 13: runtest
+2025-05-12 07:56:09.846 [INFO] [INFO] ############ frame 14: pytest_runtest_call
+2025-05-12 07:56:09.846 [INFO] [INFO] ############ frame 15: _multicall
+2025-05-12 07:56:09.846 [INFO] [INFO] ############ frame 16: _hookexec
+2025-05-12 07:56:09.846 [INFO] [INFO] ############ frame 17: __call__
+2025-05-12 07:56:09.847 [INFO] [INFO] ############ frame 18: <lambda>
+2025-05-12 07:56:09.847 [INFO] [INFO] ############ frame 19: from_call
+2025-05-12 07:56:09.847 [INFO] [INFO] ############ frame 20: call_and_report
+2025-05-12 07:56:09.847 [INFO] [INFO] ############ frame 21: runtestprotocol
+2025-05-12 07:56:09.847 [INFO] [INFO] ############ frame 22: pytest_runtest_protocol
+2025-05-12 07:56:09.847 [INFO] [INFO] ############ frame 23: _multicall
+2025-05-12 07:56:09.847 [INFO] [INFO] ############ frame 24: _hookexec
+2025-05-12 07:56:09.848 [INFO] [INFO] ############ frame 25: __call__
+2025-05-12 07:56:09.848 [INFO] [INFO] ############ frame 26: pytest_runtestloop
+2025-05-12 07:56:09.848 [INFO] [INFO] ############ frame 27: _multicall
+2025-05-12 07:56:09.848 [INFO] [INFO] ############ frame 28: _hookexec
+2025-05-12 07:56:09.848 [INFO] [INFO] ############ frame 29: __call__
+2025-05-12 07:56:09.848 [INFO] [INFO] ############ frame 30: _main
+2025-05-12 07:56:09.848 [INFO] [INFO] ############ frame 31: wrap_session
+2025-05-12 07:56:09.848 [INFO] [INFO] ############ frame 32: pytest_cmdline_main
+2025-05-12 07:56:09.848 [INFO] [INFO] ############ frame 33: _multicall
+2025-05-12 07:56:09.849 [INFO] [INFO] ############ frame 34: _hookexec
+2025-05-12 07:56:09.849 [INFO] [INFO] ############ frame 35: __call__
+2025-05-12 07:56:09.849 [INFO] [INFO] ############ frame 36: main
+2025-05-12 07:56:09.849 [INFO] [INFO] ############ frame 37: <module>
+2025-05-12 07:56:09.849 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: <module>
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 07:56:09.851 [INFO] [INFO] Tearing down test environment...
+2025-05-12 07:57:10.332 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 07:57:10.333 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 07:57:10.344 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 07:57:10.344 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 07:57:10.348 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 07:57:10.348 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 07:57:13.652 [INFO] [INFO] Setting up test environment...
+2025-05-12 07:57:13.652 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 07:57:13.684 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 07:57:13.686 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 07:57:13.687 [INFO] [INFO] hello!!!!
+2025-05-12 07:57:13.688 [INFO] [INFO] ############ frame 3: wrapper
+2025-05-12 07:57:13.688 [INFO] [INFO] ############ frame 4: reconnect
+2025-05-12 07:57:13.688 [INFO] [INFO] ############ frame 5: wrapper
+2025-05-12 07:57:13.688 [INFO] [INFO] ############ frame 6: do
+2025-05-12 07:57:13.688 [INFO] [INFO] ############ frame 7: wrapper
+2025-05-12 07:57:13.688 [INFO] [INFO] ############ frame 8: test_try_catch
+2025-05-12 07:57:13.688 [INFO] [INFO] ############ frame 9: pytest_pyfunc_call
+2025-05-12 07:57:13.688 [INFO] [INFO] ############ frame 10: _multicall
+2025-05-12 07:57:13.688 [INFO] [INFO] ############ frame 11: _hookexec
+2025-05-12 07:57:13.689 [INFO] [INFO] ############ frame 12: __call__
+2025-05-12 07:57:13.689 [INFO] [INFO] ############ frame 13: runtest
+2025-05-12 07:57:13.689 [INFO] [INFO] ############ frame 14: pytest_runtest_call
+2025-05-12 07:57:13.689 [INFO] [INFO] ############ frame 15: _multicall
+2025-05-12 07:57:13.689 [INFO] [INFO] ############ frame 16: _hookexec
+2025-05-12 07:57:13.691 [INFO] [INFO] ############ frame 17: __call__
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 18: <lambda>
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 19: from_call
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 20: call_and_report
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 21: runtestprotocol
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 22: pytest_runtest_protocol
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 23: _multicall
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 24: _hookexec
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 25: __call__
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 26: pytest_runtestloop
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 27: _multicall
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 28: _hookexec
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 29: __call__
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 30: _main
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 31: wrap_session
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 32: pytest_cmdline_main
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 33: _multicall
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 34: _hookexec
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 35: __call__
+2025-05-12 07:57:13.692 [INFO] [INFO] ############ frame 36: main
+2025-05-12 07:57:13.693 [INFO] [INFO] ############ frame 37: <module>
+2025-05-12 07:57:13.693 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: <module>
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 07:57:13.695 [INFO] [INFO] Tearing down test environment...
+2025-05-12 07:57:44.432 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 07:57:44.432 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 07:57:44.440 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 07:57:44.440 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 07:57:44.445 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 07:57:44.445 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 07:57:46.503 [INFO] [INFO] Setting up test environment...
+2025-05-12 07:57:46.504 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 07:57:46.534 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 07:57:46.534 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 07:57:46.535 [INFO] [INFO] hello!!!!
+2025-05-12 07:57:46.536 [INFO] [INFO] ############ frame 0: _get_caller_context
+2025-05-12 07:57:46.536 [INFO] [INFO] ############ frame 1: __init__
+2025-05-12 07:57:46.536 [INFO] [INFO] ############ frame 2: __init__
+2025-05-12 07:57:46.536 [INFO] [INFO] ############ frame 3: wrapper
+2025-05-12 07:57:46.536 [INFO] [INFO] ############ frame 4: reconnect
+2025-05-12 07:57:46.537 [INFO] [INFO] ############ frame 5: wrapper
+2025-05-12 07:57:46.537 [INFO] [INFO] ############ frame 6: do
+2025-05-12 07:57:46.537 [INFO] [INFO] ############ frame 7: wrapper
+2025-05-12 07:57:46.537 [INFO] [INFO] ############ frame 8: test_try_catch
+2025-05-12 07:57:46.537 [INFO] [INFO] ############ frame 9: pytest_pyfunc_call
+2025-05-12 07:57:46.537 [INFO] [INFO] ############ frame 10: _multicall
+2025-05-12 07:57:46.537 [INFO] [INFO] ############ frame 11: _hookexec
+2025-05-12 07:57:46.537 [INFO] [INFO] ############ frame 12: __call__
+2025-05-12 07:57:46.537 [INFO] [INFO] ############ frame 13: runtest
+2025-05-12 07:57:46.540 [INFO] [INFO] ############ frame 14: pytest_runtest_call
+2025-05-12 07:57:46.540 [INFO] [INFO] ############ frame 15: _multicall
+2025-05-12 07:57:46.540 [INFO] [INFO] ############ frame 16: _hookexec
+2025-05-12 07:57:46.540 [INFO] [INFO] ############ frame 17: __call__
+2025-05-12 07:57:46.540 [INFO] [INFO] ############ frame 18: <lambda>
+2025-05-12 07:57:46.540 [INFO] [INFO] ############ frame 19: from_call
+2025-05-12 07:57:46.540 [INFO] [INFO] ############ frame 20: call_and_report
+2025-05-12 07:57:46.540 [INFO] [INFO] ############ frame 21: runtestprotocol
+2025-05-12 07:57:46.540 [INFO] [INFO] ############ frame 22: pytest_runtest_protocol
+2025-05-12 07:57:46.540 [INFO] [INFO] ############ frame 23: _multicall
+2025-05-12 07:57:46.541 [INFO] [INFO] ############ frame 24: _hookexec
+2025-05-12 07:57:46.541 [INFO] [INFO] ############ frame 25: __call__
+2025-05-12 07:57:46.541 [INFO] [INFO] ############ frame 26: pytest_runtestloop
+2025-05-12 07:57:46.541 [INFO] [INFO] ############ frame 27: _multicall
+2025-05-12 07:57:46.541 [INFO] [INFO] ############ frame 28: _hookexec
+2025-05-12 07:57:46.541 [INFO] [INFO] ############ frame 29: __call__
+2025-05-12 07:57:46.541 [INFO] [INFO] ############ frame 30: _main
+2025-05-12 07:57:46.541 [INFO] [INFO] ############ frame 31: wrap_session
+2025-05-12 07:57:46.541 [INFO] [INFO] ############ frame 32: pytest_cmdline_main
+2025-05-12 07:57:46.541 [INFO] [INFO] ############ frame 33: _multicall
+2025-05-12 07:57:46.541 [INFO] [INFO] ############ frame 34: _hookexec
+2025-05-12 07:57:46.541 [INFO] [INFO] ############ frame 35: __call__
+2025-05-12 07:57:46.541 [INFO] [INFO] ############ frame 36: main
+2025-05-12 07:57:46.541 [INFO] [INFO] ############ frame 37: <module>
+2025-05-12 07:57:46.542 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: <module>
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 07:57:46.544 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:04:09.059 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:04:09.059 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:04:09.067 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:04:09.067 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:04:09.071 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:04:09.071 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:04:11.918 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:04:11.918 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:04:11.948 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:04:11.948 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:04:11.950 [INFO] [INFO] hello!!!!
+2025-05-12 08:04:11.951 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: unknown exception location
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:04:11.952 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:05:26.831 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:05:26.831 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:05:26.840 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:05:26.840 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:05:26.844 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:05:26.844 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:05:28.795 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:05:28.795 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:05:28.830 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:05:28.831 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:05:28.832 [INFO] [INFO] hello!!!!
+2025-05-12 08:05:28.833 [INFO] [INFO] $$$$ connect 62
+2025-05-12 08:05:28.833 [INFO] [INFO] $$$$ wrapper 65
+2025-05-12 08:05:28.833 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: unknown exception location
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:05:28.834 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:06:08.989 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:06:08.989 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:06:08.999 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:06:08.999 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:06:09.003 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:06:09.003 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:06:11.136 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:06:11.136 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:06:11.175 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:06:11.176 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:06:11.177 [INFO] [INFO] hello!!!!
+2025-05-12 08:06:11.178 [INFO] [INFO] $$$$ connect 62
+2025-05-12 08:06:11.178 [INFO] [INFO] $$$$ wrapper 65
+2025-05-12 08:06:11.178 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: unknown exception location
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:06:11.180 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:06:38.006 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:06:38.006 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:06:38.015 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:06:38.015 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:06:38.023 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:06:38.023 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:06:40.061 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:06:40.062 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:06:40.098 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:06:40.099 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:06:40.100 [INFO] [INFO] hello!!!!
+2025-05-12 08:06:40.103 [INFO] [INFO] $$$$ c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect 62
+2025-05-12 08:06:40.103 [INFO] [INFO] $$$$ c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper 65
+2025-05-12 08:06:40.104 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: unknown exception location
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:06:40.105 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:07:33.968 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:07:33.969 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:07:33.979 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:07:33.979 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:07:33.985 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:07:33.985 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:07:35.218 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:07:35.218 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:07:35.259 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:07:35.260 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:07:35.261 [INFO] [INFO] hello!!!!
+2025-05-12 08:07:35.264 [INFO] [INFO] $$$$ c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect 62
+2025-05-12 08:07:35.264 [INFO] [INFO] $$$$ connect 62 - will return!
+2025-05-12 08:07:35.264 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: unknown exception location
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:07:35.266 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:09:33.318 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:09:33.318 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:09:33.328 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:09:33.328 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:09:33.334 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:09:33.334 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:09:34.928 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:09:34.929 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:09:34.967 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:09:34.968 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:09:34.970 [INFO] [INFO] hello!!!!
+2025-05-12 08:09:34.972 [INFO] [INFO] $$$$ c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect 62
+2025-05-12 08:09:34.972 [INFO] [INFO] $$$$ connect 62 - will return!
+2025-05-12 08:09:34.973 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: unknown exception location
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:09:34.974 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:11:07.979 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:11:07.980 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:11:08.016 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:11:08.017 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:11:08.019 [INFO] [INFO] hello!!!!
+2025-05-12 08:11:08.021 [INFO] [INFO] $$$$ c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect 62
+2025-05-12 08:11:08.021 [INFO] [INFO] $$$$ connect 62 - will return!
+2025-05-12 08:11:08.021 [INFO] [INFO] ^^^^ connect
+2025-05-12 08:11:08.021 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: unknown exception location
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:11:08.022 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:11:08.391 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:11:08.391 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:11:08.400 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:11:08.400 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:11:08.403 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:11:08.403 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:11:46.113 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:11:46.113 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:11:46.152 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:11:46.153 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:11:46.155 [INFO] [INFO] hello!!!!
+2025-05-12 08:11:46.156 [INFO] [INFO] $$$$ c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect 62
+2025-05-12 08:11:46.156 [INFO] [INFO] $$$$ connect 62 - will return!
+2025-05-12 08:11:46.156 [INFO] [INFO] ^^^^ connect
+2025-05-12 08:11:46.157 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: unknown exception location
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:11:46.158 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:11:45.243 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:11:45.243 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:11:45.254 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:11:45.254 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:11:45.258 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:11:45.258 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:14:39.690 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:14:39.690 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:14:39.701 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:14:39.701 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:14:39.705 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:14:39.705 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:14:41.070 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:14:41.071 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:14:41.108 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:14:41.109 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:14:41.110 [INFO] [INFO] hello!!!!
+2025-05-12 08:14:41.111 [INFO] [INFO] $$$$ c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect 62
+2025-05-12 08:14:41.111 [INFO] [INFO] $$$$ connect 62 - will return!
+2025-05-12 08:14:41.111 [INFO] [INFO] ^^^^ Processing frame: connect
+2025-05-12 08:14:41.111 [INFO] [INFO] ^^^^ connect - couldn't find matching frame, returning as function
+2025-05-12 08:14:41.112 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: connect
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:14:41.113 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:17:09.012 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:17:09.012 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:17:09.021 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:17:09.021 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:17:09.025 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:17:09.025 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:17:15.094 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:17:15.094 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:17:15.127 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:17:15.128 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:17:15.131 [INFO] [INFO] hello!!!!
+2025-05-12 08:17:15.133 [INFO] [INFO] $$$$ Processing traceback frame: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 65
+2025-05-12 08:17:15.133 [INFO] [INFO] $$$$ Processing traceback frame: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:17:15.134 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: unknown context
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:17:15.135 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:18:40.691 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:18:40.691 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:18:40.699 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:18:40.699 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:18:40.703 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:18:40.703 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:18:45.313 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:18:45.314 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:18:45.360 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:18:45.361 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:18:45.362 [INFO] [INFO] hello!!!!
+2025-05-12 08:18:45.364 [INFO] [INFO] $$$$ Processing traceback frame: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 65
+2025-05-12 08:18:45.364 [INFO] [INFO] $$$$ Processing traceback frame: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:18:45.365 [INFO] [INFO] ^^^^ Processing frame: connect
+2025-05-12 08:18:45.365 [INFO] [INFO] ^^^^ connect - couldn't find matching frame, returning as function
+2025-05-12 08:18:45.365 [INFO] [INFO] $$$$ Added to context: connect
+2025-05-12 08:18:45.370 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: connect
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:18:45.371 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:19:44.547 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:19:44.547 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:19:44.554 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:19:44.554 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:19:44.558 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:19:44.558 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:19:47.718 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:19:47.718 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:19:47.750 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:19:47.750 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:19:47.751 [INFO] [INFO] hello!!!!
+2025-05-12 08:19:47.752 [INFO] [INFO] $$$$ Processing traceback frame: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 65
+2025-05-12 08:19:47.752 [INFO] [INFO] $$$$ Processing traceback frame: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:19:47.752 [INFO] [INFO] ^^^^ Processing frame: connect
+2025-05-12 08:19:47.753 [INFO] [INFO] ^^^^ connect - couldn't find matching frame, returning as function
+2025-05-12 08:19:47.753 [INFO] [INFO] $$$$ Added to context: connect
+2025-05-12 08:19:47.757 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: connect
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:19:47.759 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:21:21.630 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:21:21.631 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:21:21.643 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:21:21.643 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:21:21.647 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:21:21.647 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:21:23.457 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:21:23.458 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:21:23.497 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:21:23.498 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:21:23.499 [INFO] [INFO] hello!!!!
+2025-05-12 08:21:23.500 [INFO] [INFO] $$$$ Processing traceback frame: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 65
+2025-05-12 08:21:23.500 [INFO] [INFO] $$$$ Processing traceback frame: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:21:23.500 [INFO] [INFO] ^^^^ Processing frame: connect
+2025-05-12 08:21:23.500 [INFO] [INFO] ^^^^ connect vs _get_function_in_frame in c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\error.py
+2025-05-12 08:21:23.500 [INFO] [INFO] ^^^^ connect vs _phil in c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\error.py
+2025-05-12 08:21:23.503 [INFO] [INFO] ^^^^ connect vs __init__ in c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\error.py
+2025-05-12 08:21:23.503 [INFO] [INFO] ^^^^ connect vs __init__ in c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\error.py
+2025-05-12 08:21:23.503 [INFO] [INFO] ^^^^ connect vs wrapper in c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py
+2025-05-12 08:21:23.503 [INFO] [INFO] ^^^^ connect vs reconnect in c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py
+2025-05-12 08:21:23.503 [INFO] [INFO] ^^^^ connect vs wrapper in c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py
+2025-05-12 08:21:23.503 [INFO] [INFO] ^^^^ connect vs do in c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py
+2025-05-12 08:21:23.503 [INFO] [INFO] ^^^^ connect vs wrapper in c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py
+2025-05-12 08:21:23.503 [INFO] [INFO] ^^^^ connect vs test_try_catch in c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py
+2025-05-12 08:21:23.503 [INFO] [INFO] ^^^^ connect vs pytest_pyfunc_call in C:\Program Files\Python313\Lib\site-packages\_pytest\python.py
+2025-05-12 08:21:23.503 [INFO] [INFO] ^^^^ connect vs _multicall in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_callers.py
+2025-05-12 08:21:23.503 [INFO] [INFO] ^^^^ connect vs _hookexec in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_manager.py
+2025-05-12 08:21:23.503 [INFO] [INFO] ^^^^ connect vs __call__ in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_hooks.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs runtest in C:\Program Files\Python313\Lib\site-packages\_pytest\python.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs pytest_runtest_call in C:\Program Files\Python313\Lib\site-packages\_pytest\runner.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs _multicall in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_callers.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs _hookexec in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_manager.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs __call__ in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_hooks.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs <lambda> in C:\Program Files\Python313\Lib\site-packages\_pytest\runner.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs from_call in C:\Program Files\Python313\Lib\site-packages\_pytest\runner.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs call_and_report in C:\Program Files\Python313\Lib\site-packages\_pytest\runner.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs runtestprotocol in C:\Program Files\Python313\Lib\site-packages\_pytest\runner.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs pytest_runtest_protocol in C:\Program Files\Python313\Lib\site-packages\_pytest\runner.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs _multicall in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_callers.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs _hookexec in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_manager.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs __call__ in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_hooks.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs pytest_runtestloop in C:\Program Files\Python313\Lib\site-packages\_pytest\main.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs _multicall in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_callers.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs _hookexec in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_manager.py
+2025-05-12 08:21:23.504 [INFO] [INFO] ^^^^ connect vs __call__ in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_hooks.py
+2025-05-12 08:21:23.505 [INFO] [INFO] ^^^^ connect vs _main in C:\Program Files\Python313\Lib\site-packages\_pytest\main.py
+2025-05-12 08:21:23.505 [INFO] [INFO] ^^^^ connect vs wrap_session in C:\Program Files\Python313\Lib\site-packages\_pytest\main.py
+2025-05-12 08:21:23.505 [INFO] [INFO] ^^^^ connect vs pytest_cmdline_main in C:\Program Files\Python313\Lib\site-packages\_pytest\main.py
+2025-05-12 08:21:23.505 [INFO] [INFO] ^^^^ connect vs _multicall in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_callers.py
+2025-05-12 08:21:23.505 [INFO] [INFO] ^^^^ connect vs _hookexec in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_manager.py
+2025-05-12 08:21:23.505 [INFO] [INFO] ^^^^ connect vs __call__ in C:\Users\Phil\AppData\Roaming\Python\Python313\site-packages\pluggy\_hooks.py
+2025-05-12 08:21:23.505 [INFO] [INFO] ^^^^ connect vs main in C:\Program Files\Python313\Lib\site-packages\_pytest\config\__init__.py
+2025-05-12 08:21:23.505 [INFO] [INFO] ^^^^ connect vs <module> in c:\Users\Phil\.vscode\extensions\ms-python.python-2025.6.0-win32-x64\python_files\vscode_pytest\run_pytest_script.py
+2025-05-12 08:21:23.505 [INFO] [INFO] ^^^^ connect - couldn't find matching frame, returning as function
+2025-05-12 08:21:23.505 [INFO] [INFO] $$$$ Added to context: connect
+2025-05-12 08:21:23.506 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: connect
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:21:23.507 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:25:11.217 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:25:11.217 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:25:11.227 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:25:11.227 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:25:11.230 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:25:11.230 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:25:16.317 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:25:16.317 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:25:16.352 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:25:16.353 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:25:16.354 [INFO] [INFO] hello!!!!
+2025-05-12 08:25:16.514 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: unknown context
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 85
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:25:16.515 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:29:21.862 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:29:21.862 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:29:21.871 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:29:21.871 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:29:21.875 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:29:21.875 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:29:23.639 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:29:23.640 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:29:23.686 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:29:23.688 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:29:23.690 [INFO] [INFO] hello!!!!
+2025-05-12 08:29:23.696 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: unknown context
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 85
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:29:23.697 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:29:38.773 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:29:38.773 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:29:38.785 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:29:38.785 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:29:38.789 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:29:38.789 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:29:40.220 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:29:40.221 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:29:40.257 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:29:40.258 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:29:40.261 [INFO] [INFO] hello!!!!
+2025-05-12 08:29:40.268 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: unknown context
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 85
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:29:40.269 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:29:57.160 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:29:57.161 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:29:57.172 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:29:57.172 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:29:57.176 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:29:57.176 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:29:58.721 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:29:58.722 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:29:58.765 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:29:58.766 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:29:58.767 [INFO] [INFO] hello!!!!
+2025-05-12 08:29:58.776 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: unknown context -> connect
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 85
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:29:58.778 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:30:24.329 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:30:24.330 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:30:24.343 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:30:24.343 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:30:24.347 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:30:24.347 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:30:25.433 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:30:25.434 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:30:25.479 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:30:25.480 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:30:25.481 [INFO] [INFO] hello!!!!
+2025-05-12 08:30:25.487 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: unknown context -> wrapper -> connect
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 85
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:30:25.489 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:31:16.502 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:31:16.502 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:31:16.512 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:31:16.512 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:31:16.518 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:31:16.518 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:31:29.802 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:31:29.802 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:31:29.812 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:31:29.812 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:31:29.815 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:31:29.815 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:31:32.356 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:31:32.357 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:31:32.388 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:31:32.389 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:31:32.391 [INFO] [INFO] hello!!!!
+2025-05-12 08:31:32.392 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:31:32.393 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:40:39.625 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:40:39.625 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:40:39.634 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:40:39.634 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:40:39.638 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:40:39.638 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:40:43.384 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:40:43.385 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:40:43.426 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:40:43.427 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:40:43.430 [INFO] [INFO] hello!!!!
+2025-05-12 08:40:43.431 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:40:43.433 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:41:06.479 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:41:06.480 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:41:06.516 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:41:06.516 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:41:06.518 [INFO] [INFO] hello!!!!
+2025-05-12 08:41:06.519 [ERROR] [ERROR] App caught error:
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:41:06.520 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:45:22.890 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:45:22.891 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:45:22.902 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:45:22.902 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:45:22.906 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:45:22.907 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:45:24.273 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:45:24.273 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:45:24.313 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:45:24.316 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:45:24.322 [ERROR] [ERROR] Error in pay: An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 08:45:24.323 [ERROR] [ERROR] Error in main: Could not pay
+Call chain: pay
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 121
+2025-05-12 08:45:24.323 [ERROR] [ERROR] Error in server_process_request: App failed
+Call chain: main
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 106
+2025-05-12 08:45:24.328 [ERROR] [ERROR] App caught error:
+An error happened in server_process_request: App failed
+Call chain: main
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 106
+Call chain: server_process_request
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 106
+2025-05-12 08:45:24.331 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:46:35.475 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:46:35.475 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:46:35.483 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:46:35.483 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:46:35.487 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:46:35.487 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:46:43.512 [INFO] [INFO] Setting up test environment...
+2025-05-12 08:46:43.513 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 08:46:43.549 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 08:46:43.549 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 08:46:43.552 [ERROR] [ERROR] App caught error:
+An error happened in server_process_request: App failed
+Call chain: main
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 106
+Call chain: server_process_request
+Trace:
+c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 106
+2025-05-12 08:46:43.553 [INFO] [INFO] Tearing down test environment...
+2025-05-12 08:58:30.651 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:58:30.651 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:58:30.659 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:58:30.659 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 08:58:30.662 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 08:58:30.662 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:01:40.663 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:01:40.663 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:01:40.672 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:01:40.672 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:01:40.677 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:01:40.677 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:01:55.741 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:01:55.741 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:01:55.752 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:01:55.752 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:01:55.755 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:01:55.755 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:02:58.502 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:02:58.502 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:02:58.510 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:02:58.510 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:02:58.513 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:02:58.513 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:03:31.742 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:03:31.742 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:03:31.753 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:03:31.753 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:03:31.758 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:03:31.758 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:03:44.178 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:03:44.178 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:03:44.183 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:03:44.183 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:03:44.187 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:03:44.188 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:04:32.118 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:04:32.118 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:04:32.128 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:04:32.129 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:04:32.132 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:04:32.133 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:04:46.120 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:04:46.121 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:04:46.128 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:04:46.128 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:04:46.133 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:04:46.133 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:04:50.478 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:04:50.479 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:04:50.487 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:04:50.487 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:04:50.490 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:04:50.490 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:04:59.959 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:04:59.959 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:05:00.017 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:05:00.018 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:05:00.020 [ERROR] [ERROR] Error in pay: An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do
+Consequences: An error happened in Database.connect: Connection refused
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 09:05:00.025 [ERROR] [ERROR] Error in main: Could not pay
+Call chain: pay
+Consequences: Could not pay -> An error happened in Database.connect: Connection refused
+Action: Refund the client
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 128
+2025-05-12 09:05:00.027 [ERROR] [ERROR] Error in server_process_request: App failed
+Call chain: main
+Consequences: App failed -> Could not pay -> An error happened in Database.connect: Connection refused
+Action: Investigate -> Refund the client
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 113
+2025-05-12 09:05:00.028 [ERROR] [ERROR] Error:
+An error happened in server_process_request: App failed
+Call chain: main
+Consequences: App failed -> Could not pay -> An error happened in Database.connect: Connection refused
+Action: Investigate -> Refund the client
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 113
+Call chain: server_process_request
+Consequences: An error happened in server_process_request: App failed
+Call chain: main
+Consequences: App failed -> Could not pay -> An error happened in Database.connect: Connection refused
+Action: Investigate -> Refund the client
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 113 -> App failed -> Could not pay -> An error happened in Database.connect: Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 113
+2025-05-12 09:05:00.029 [INFO] [INFO] Tearing down test environment...
+2025-05-12 09:05:23.622 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:05:23.623 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:05:23.630 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:05:23.630 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:05:23.640 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:05:23.640 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:05:26.285 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:05:26.285 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:05:26.344 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:05:26.346 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:05:26.349 [ERROR] [ERROR] Error:
+An error happened in server_process_request: App failed
+Call chain: main
+Consequences: App failed -> Could not pay -> An error happened in Database.connect: Connection refused
+Action: Investigate -> Refund the client
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 113
+Call chain: server_process_request
+Consequences: An error happened in server_process_request: App failed
+Call chain: main
+Consequences: App failed -> Could not pay -> An error happened in Database.connect: Connection refused
+Action: Investigate -> Refund the client
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 113 -> App failed -> Could not pay -> An error happened in Database.connect: Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 113
+2025-05-12 09:05:26.351 [INFO] [INFO] Tearing down test environment...
+2025-05-12 09:07:51.443 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:07:51.444 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:07:51.487 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:07:51.488 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:07:51.494 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:07:51.494 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:08:13.672 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:08:13.672 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:08:13.684 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:08:13.684 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:08:13.689 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:08:13.689 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:08:16.876 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:08:16.876 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:08:16.934 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:08:16.935 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:08:16.938 [ERROR] [ERROR] Error:
+An error happened in server_process_request: App failed
+Call chain: do -> Postgres.reconnect -> Database.connect -> do -> Postgres.reconnect -> Database.connect -> pay -> do -> Postgres.reconnect -> Database.connect -> do -> Postgres.reconnect -> Database.connect -> pay -> main
+Consequences: Could not pay -> An error happened in Database.connect: Connection refused
+Action: Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 121
+Call chain: do -> Postgres.reconnect -> Database.connect -> do -> Postgres.reconnect -> Database.connect -> pay -> do -> Postgres.reconnect -> Database.connect -> do -> Postgres.reconnect -> Database.connect -> pay -> main -> do -> Postgres.reconnect -> Database.connect -> do -> Postgres.reconnect -> Database.connect -> pay -> do -> Postgres.reconnect -> Database.connect -> do -> Postgres.reconnect -> Database.connect -> pay -> main -> server_process_request
+Consequences: App failed -> Could not pay -> An error happened in Database.connect: Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 121
+2025-05-12 09:08:16.940 [INFO] [INFO] Tearing down test environment...
+2025-05-12 09:11:25.989 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:11:25.990 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:11:26.002 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:11:26.002 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:11:26.007 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:11:26.007 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:11:40.527 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:11:40.527 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:11:40.534 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:11:40.534 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:11:40.540 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:11:40.540 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:11:43.026 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:11:43.026 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:11:43.069 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:11:43.070 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:11:43.074 [ERROR] [ERROR] Error:
+An error happened in server_process_request: App failed
+Call chain: main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: App failed -> Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+2025-05-12 09:11:43.076 [INFO] [INFO] Tearing down test environment...
+2025-05-12 09:16:05.296 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:16:05.296 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:16:05.305 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:16:05.306 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:16:05.310 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:16:05.310 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:16:54.394 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:16:54.395 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:16:54.425 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:16:54.425 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:16:54.428 [ERROR] [ERROR] Error:
+An error happened in server_process_request: App failed
+Call chain: main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: App failed -> Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+2025-05-12 09:16:54.431 [INFO] [INFO] Tearing down test environment...
+2025-05-12 09:20:44.390 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:20:44.390 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:20:44.399 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:20:44.399 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:20:44.402 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:20:44.402 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:20:54.251 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:20:54.251 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:20:54.256 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:20:54.256 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:20:54.259 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:20:54.259 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:20:56.651 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:20:56.651 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:20:56.681 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:20:56.682 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:20:56.683 [INFO] [INFO] ############# An error happened in Database.connect: Connection refused
+Call chain: do -> Postgres.reconnect -> Database.connect
+Consequences: Connection refused
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+
+2025-05-12 09:20:56.684 [INFO] [INFO] ############# Could not pay
+Call chain: pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Connection refused
+Action: Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 113
+
+2025-05-12 09:20:56.689 [INFO] [INFO] ############# App failed
+Call chain: main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+
+2025-05-12 09:20:56.689 [INFO] [INFO] ############# App failed
+Call chain: main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+
+2025-05-12 09:20:56.690 [INFO] [INFO] ############# An error happened in server_process_request: App failed
+Call chain: main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: App failed -> Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+
+2025-05-12 09:20:56.690 [ERROR] [ERROR] Error:
+An error happened in server_process_request: App failed
+Call chain: main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: App failed -> Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+2025-05-12 09:20:56.692 [INFO] [INFO] Tearing down test environment...
+2025-05-12 09:24:45.330 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:24:45.331 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:24:45.372 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:24:45.373 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:24:45.409 [INFO] [INFO] #############
+TrackError
+ An error happened in Database.connect: Connection refused
+Call chain: do -> Postgres.reconnect -> Database.connect
+Consequences: Connection refused
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+
+2025-05-12 09:24:45.410 [INFO] [INFO] #############
+Error
+ Could not pay
+Call chain: pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Connection refused
+Action: Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 113
+
+2025-05-12 09:24:45.413 [INFO] [INFO] #############
+Error
+ App failed
+Call chain: main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+
+2025-05-12 09:24:45.413 [INFO] [INFO] #############
+Error
+ App failed
+Call chain: main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+
+2025-05-12 09:24:45.414 [INFO] [INFO] #############
+UserError
+ An error happened in server_process_request: App failed
+Call chain: main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: App failed -> Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+
+2025-05-12 09:24:45.414 [ERROR] [ERROR] Error:
+An error happened in server_process_request: App failed
+Call chain: main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: App failed -> Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+2025-05-12 09:24:45.417 [INFO] [INFO] Tearing down test environment...
+2025-05-12 09:24:45.887 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:24:45.887 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:24:45.938 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:24:45.938 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:24:45.942 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:24:45.942 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:24:57.699 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:24:57.700 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:24:57.711 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:24:57.711 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:24:57.715 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:24:57.715 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:24:59.356 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:24:59.356 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:24:59.395 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:24:59.396 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:24:59.398 [INFO] [INFO] #############
+TrackError
+An error happened in Database.connect: Connection refused
+Call chain: do -> Postgres.reconnect -> Database.connect
+Consequences: Connection refused
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+
+2025-05-12 09:24:59.399 [INFO] [INFO] #############
+Error
+Could not pay
+Call chain: pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Connection refused
+Action: Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 113
+
+2025-05-12 09:24:59.400 [INFO] [INFO] #############
+Error
+App failed
+Call chain: main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+
+2025-05-12 09:24:59.400 [INFO] [INFO] #############
+Error
+App failed
+Call chain: main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+
+2025-05-12 09:24:59.401 [INFO] [INFO] #############
+UserError
+An error happened in server_process_request: App failed
+Call chain: main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: App failed -> Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+
+2025-05-12 09:24:59.401 [ERROR] [ERROR] Error:
+An error happened in server_process_request: App failed
+Call chain: main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: App failed -> Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+2025-05-12 09:24:59.402 [INFO] [INFO] Tearing down test environment...
+2025-05-12 09:29:07.672 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:29:07.672 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:29:07.681 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:29:07.681 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:29:07.684 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:29:07.684 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:29:14.558 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:29:14.558 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:29:14.581 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:29:14.581 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:29:14.586 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:29:14.586 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:29:17.662 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:29:17.662 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:29:17.701 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:29:17.702 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:29:17.705 [INFO] [INFO] #############
+UserError
+An error happened in server_process_request: 
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: App failed -> Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+
+2025-05-12 09:29:17.709 [ERROR] [ERROR] Error:
+An error happened in server_process_request: 
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: App failed -> Could not pay -> Connection refused
+Action: Investigate -> Refund the client
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+2025-05-12 09:29:17.710 [INFO] [INFO] Tearing down test environment...
+2025-05-12 09:35:23.392 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:35:23.392 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:35:23.401 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:35:23.401 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:35:23.404 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:35:23.404 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:35:36.049 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:35:36.049 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:35:36.080 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:35:36.081 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:36:23.139 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:36:23.140 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:36:23.151 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:36:23.152 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:36:23.156 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:36:23.156 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:36:25.968 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:36:25.968 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:36:26.002 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:36:26.002 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:36:26.005 [INFO] [INFO] #############
+UserError
+
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Connection refused -> Could not pay -> App failed
+Action: Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+
+2025-05-12 09:36:26.007 [ERROR] [ERROR] Error:
+
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Connection refused -> Could not pay -> App failed
+Action: Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+2025-05-12 09:36:26.008 [INFO] [INFO] Tearing down test environment...
+2025-05-12 09:36:44.631 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:36:44.631 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:36:44.640 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:36:44.640 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:36:44.644 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:36:44.644 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:36:48.415 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:36:48.415 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:36:48.448 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:36:48.449 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:36:48.454 [INFO] [INFO] #############
+UserError
+An error happened in Database.connect: Connection refused
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Connection refused -> Could not pay -> App failed
+Action: Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+
+2025-05-12 09:36:48.454 [ERROR] [ERROR] Error:
+An error happened in Database.connect: Connection refused
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Connection refused -> Could not pay -> App failed
+Action: Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\try_catch.py wrapper line 98
+2025-05-12 09:36:48.456 [INFO] [INFO] Tearing down test environment...
+2025-05-12 09:38:53.730 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:38:53.730 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:38:53.744 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:38:53.744 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:38:53.748 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:38:53.748 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:38:55.832 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:38:55.832 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:38:55.869 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:38:55.870 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:38:56.057 [INFO] [INFO] Tearing down test environment...
+2025-05-12 09:40:24.484 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:40:24.484 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:40:24.493 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:40:24.494 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:40:24.498 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:40:24.498 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:40:26.997 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:40:26.997 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:40:27.030 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:40:27.031 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:40:27.035 [INFO] [INFO] #############
+UserError
+An error happened in Database.connect: Connection refused
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Connection refused -> Could not pay -> App failed
+Action: Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+
+2025-05-12 09:40:27.040 [ERROR] [ERROR] Error:
+An error happened in Database.connect: Connection refused
+Call chain: server_process_request -> main -> pay -> do -> Postgres.reconnect -> Database.connect
+Consequences: Connection refused -> Could not pay -> App failed
+Action: Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 09:40:27.041 [INFO] [INFO] Tearing down test environment...
+2025-05-12 09:41:13.436 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:41:13.436 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:41:13.443 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:41:13.443 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:41:13.447 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:41:13.447 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:41:17.100 [INFO] [INFO] Setting up test environment...
+2025-05-12 09:41:17.101 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 09:41:17.145 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 09:41:17.147 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 09:41:17.153 [INFO] [INFO] #############
+UserError
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do -> pay -> main -> server_process_request
+Consequences: Connection refused -> Could not pay -> App failed
+Action: Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+
+2025-05-12 09:41:17.156 [ERROR] [ERROR] Error:
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do -> pay -> main -> server_process_request
+Consequences: Connection refused -> Could not pay -> App failed
+Action: Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 09:41:17.158 [INFO] [INFO] Tearing down test environment...
+2025-05-12 09:41:47.664 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:41:47.664 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:41:47.672 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:41:47.672 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 09:41:47.676 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 09:41:47.676 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:05:28.411 [INFO] [INFO] Setting up test environment...
+2025-05-12 10:05:28.411 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 10:05:28.452 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 10:05:28.453 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 10:05:28.456 [ERROR] [ERROR] Error:
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do -> pay -> main -> server_process_request
+Consequences: Connection refused -> Could not pay -> App failed
+Action: Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 10:05:28.457 [INFO] [INFO] Tearing down test environment...
+2025-05-12 10:09:59.687 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:09:59.687 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:09:59.697 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:09:59.697 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:09:59.702 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:09:59.702 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:10:02.032 [INFO] [INFO] Setting up test environment...
+2025-05-12 10:10:02.032 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 10:10:02.065 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 10:10:02.066 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 10:10:02.068 [ERROR] [ERROR] Error:
+Could not process payment with Stripe
+Call chain: pay -> main -> server_process_request
+Consequences: Could not process payment with Stripe -> Could not pay -> App failed
+Action: Investigate stripe error -> Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py pay line 87
+2025-05-12 10:10:02.069 [INFO] [INFO] Tearing down test environment...
+2025-05-12 10:10:59.487 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:10:59.487 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:10:59.496 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:10:59.496 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:10:59.500 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:10:59.500 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:11:00.713 [INFO] [INFO] Setting up test environment...
+2025-05-12 10:11:00.714 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 10:11:00.757 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 10:11:00.758 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 10:11:00.761 [ERROR] [ERROR] Error:
+Could not process payment with Stripe
+Call chain: pay -> main -> server_process_request
+Consequences: Could not process payment with Stripe -> Could not pay -> App failed
+Action: Investigate stripe error -> Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py pay line 87
+2025-05-12 10:11:00.763 [INFO] [INFO] Tearing down test environment...
+2025-05-12 10:11:53.438 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:11:53.438 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:11:53.449 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:11:53.449 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:11:53.453 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:11:53.453 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:11:57.464 [INFO] [INFO] Setting up test environment...
+2025-05-12 10:11:57.465 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 10:11:57.498 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 10:11:57.499 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 10:11:57.501 [ERROR] [ERROR] Error:
+Could not process payment with Stripe
+Call chain: pay -> main -> server_process_request
+Action: Investigate stripe error
+Official message: Your payment could not be processed. You have not been charged
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py pay line 87
+2025-05-12 10:11:57.502 [INFO] [INFO] Tearing down test environment...
+2025-05-12 10:12:23.046 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:12:23.046 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:12:23.058 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:12:23.058 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:12:23.062 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:12:23.062 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:16:01.617 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:16:01.617 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:16:01.627 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:16:01.627 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:16:01.631 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:16:01.631 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:16:04.516 [INFO] [INFO] Setting up test environment...
+2025-05-12 10:16:04.517 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 10:16:04.551 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 10:16:04.552 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 10:16:04.554 [ERROR] [ERROR] Error:
+Could not process payment with Stripe
+Call chain: pay -> pay_stripe_error -> main_stripe_error -> server_process_request_stripe_error
+Action: Investigate stripe error
+Official message: Your payment could not be processed. You have not been charged
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py pay_stripe_error line 86
+2025-05-12 10:16:04.557 [ERROR] [ERROR] Error:
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do -> pay_processing_error -> main_processing_error -> server_process_request_processing_error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 10:16:04.558 [INFO] [INFO] Tearing down test environment...
+2025-05-12 10:20:00.865 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:20:00.866 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:20:00.874 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:20:00.875 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:20:00.878 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:20:00.878 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:20:02.499 [INFO] [INFO] Setting up test environment...
+2025-05-12 10:20:02.499 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 10:20:02.535 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 10:20:02.536 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 10:20:02.538 [ERROR] [ERROR] Error:
+Could not process payment with Stripe
+Call chain: pay -> pay_stripe_error -> main_stripe_error -> server_process_request_stripe_error
+Action: Investigate stripe error
+Official message: Your payment could not be processed. You have not been charged
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py pay_stripe_error line 86
+2025-05-12 10:20:02.543 [ERROR] [ERROR] Error:
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do -> pay_processing_error -> main_processing_error -> server_process_request_processing_error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 10:20:02.545 [INFO] [INFO] Tearing down test environment...
+2025-05-12 10:20:52.234 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:20:52.234 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:20:52.246 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:20:52.246 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:20:52.251 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:20:52.251 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:20:54.573 [INFO] [INFO] Setting up test environment...
+2025-05-12 10:20:54.573 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 10:20:54.609 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 10:20:54.610 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 10:20:54.612 [ERROR] [ERROR] Error:
+Could not process payment with Stripe
+Call chain: pay -> pay_stripe_error -> main_stripe_error -> server_process_request_stripe_error
+Action: Investigate stripe error
+Official message: Your payment could not be processed. You have not been charged
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py pay_stripe_error line 86
+2025-05-12 10:20:54.615 [ERROR] [ERROR] Error:
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do -> pay_processing_error -> main_processing_error -> server_process_request_processing_error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 10:20:54.616 [INFO] [INFO] Tearing down test environment...
+2025-05-12 10:21:29.467 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:21:29.468 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:21:29.475 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:21:29.475 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:21:29.479 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:21:29.479 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:21:30.875 [INFO] [INFO] Setting up test environment...
+2025-05-12 10:21:30.876 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 10:21:30.916 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 10:21:30.917 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 10:21:30.919 [ERROR] [ERROR] Error:
+Could not process payment with Stripe
+Call chain: pay_stripe_error -> main_stripe_error -> server_process_request_stripe_error
+Action: Investigate stripe error
+Official message: Your payment could not be processed. You have not been charged
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py pay_stripe_error line 86
+2025-05-12 10:21:30.924 [ERROR] [ERROR] Error:
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do -> pay_processing_error -> main_processing_error -> server_process_request_processing_error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 10:21:30.926 [INFO] [INFO] Tearing down test environment...
+2025-05-12 10:23:39.229 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:23:39.229 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:23:39.239 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:23:39.239 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:23:39.246 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:23:39.246 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:23:40.347 [INFO] [INFO] Setting up test environment...
+2025-05-12 10:23:40.348 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 10:23:40.395 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 10:23:40.396 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 10:23:40.399 [ERROR] [ERROR] Error:
+Could not process payment with Stripe
+Call chain: pay_stripe_error -> main_stripe_error -> server_process_request_stripe_error
+Consequences: Could not process payment with Stripe -> Could not pay -> App failed
+Action: Investigate stripe error -> Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py pay_stripe_error line 86
+2025-05-12 10:23:40.405 [ERROR] [ERROR] Error:
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do -> pay_processing_error -> main_processing_error -> server_process_request_processing_error
+Consequences: Connection refused -> Could not pay -> App failed
+Action: Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 10:23:40.408 [INFO] [INFO] Tearing down test environment...
+2025-05-12 10:23:40.408 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 10:28:09.771 [INFO] [INFO] Setting up test environment...
+2025-05-12 10:28:09.771 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 10:28:09.818 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 10:28:09.819 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 10:28:09.823 [ERROR] [ERROR] Error:
+Could not process payment with Stripe
+Call chain: pay_stripe_error -> main_stripe_error -> server_process_request_stripe_error
+Consequences: Could not process payment with Stripe -> Could not pay -> App failed
+Action: Investigate stripe error -> Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py pay_stripe_error line 86
+2025-05-12 10:28:09.827 [ERROR] [ERROR] Error:
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do -> pay_processing_error -> main_processing_error -> server_process_request_processing_error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 10:28:09.828 [INFO] [INFO] Tearing down test environment...
+2025-05-12 10:28:08.809 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:28:08.809 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:28:08.825 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:28:08.825 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 10:28:08.829 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 10:28:08.829 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 11:27:10.892 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 11:27:10.892 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 11:27:10.904 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 11:27:10.904 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 11:27:10.909 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 11:27:10.909 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 11:27:13.728 [INFO] [INFO] Setting up test environment...
+2025-05-12 11:27:13.728 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 11:27:13.770 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 11:27:13.771 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 11:27:13.774 [ERROR] [ERROR] Error:
+App failed
+Call chain: pay_stripe_error -> main_stripe_error -> server_process_request_stripe_error
+Consequences: Could not process payment with Stripe -> App failed
+Action: Investigate stripe error -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py pay_stripe_error line 88
+2025-05-12 11:27:13.778 [ERROR] [ERROR] Error:
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do -> pay_processing_error -> main_processing_error -> server_process_request_processing_error
+Consequences: Connection refused -> Could not pay -> App failed
+Action: Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 11:27:13.780 [INFO] [INFO] Tearing down test environment...
+2025-05-12 11:30:38.044 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 11:30:38.044 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 11:30:38.053 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 11:30:38.053 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 11:30:38.057 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 11:30:38.057 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 11:30:39.726 [INFO] [INFO] Setting up test environment...
+2025-05-12 11:30:39.726 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 11:30:39.771 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 11:30:39.772 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 11:30:39.774 [INFO] [INFO] ^^^^ (Exception('Stripe Failure'), 'Could not process payment with Stripe', 'Investigate stripe error')
+2025-05-12 11:30:39.775 [ERROR] [ERROR] Error:
+App failed
+Call chain: pay_stripe_error -> main_stripe_error -> server_process_request_stripe_error
+Consequences: Could not process payment with Stripe -> App failed
+Action: Investigate stripe error -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py pay_stripe_error line 88
+2025-05-12 11:30:39.781 [ERROR] [ERROR] Error:
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do -> pay_processing_error -> main_processing_error -> server_process_request_processing_error
+Consequences: Connection refused -> Could not pay -> App failed
+Action: Refund the client -> Investigate
+Official message: Internal Error. Please try again later
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 11:30:39.783 [INFO] [INFO] Tearing down test environment...
+2025-05-12 11:34:32.224 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 11:34:32.224 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 11:34:32.304 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 11:34:32.304 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 11:34:32.309 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 11:34:32.309 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 11:34:34.804 [INFO] [INFO] Setting up test environment...
+2025-05-12 11:34:34.805 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-12 11:34:34.843 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\errors\\tests\\test_error.py'}
+2025-05-12 11:34:34.844 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-12 11:34:34.846 [INFO] [INFO] ^^^^ (Exception('Stripe Failure'), 'Could not process payment with Stripe', 'Investigate stripe error')
+2025-05-12 11:34:34.847 [ERROR] [ERROR] Error:
+App failed
+Call chain: pay_stripe_error -> main_stripe_error -> server_process_request_stripe_error
+Consequences: Could not process payment with Stripe -> App failed
+Action: Investigate stripe error -> Investigate
+Official message: Your payment could not be processed. You have not been charged
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py pay_stripe_error line 88
+2025-05-12 11:34:34.926 [ERROR] [ERROR] Error:
+An error happened in Database.connect: Connection refused
+Call chain: Database.connect -> Postgres.reconnect -> do -> pay_processing_error -> main_processing_error -> server_process_request_processing_error
+Consequences: Connection refused -> Could not pay -> App failed
+Action: Refund the client -> Investigate
+Official message: Internal Error
+Location: c:\Users\Phil\Desktop\Projects\shared-libs\python\errors\tests\test_error.py connect line 62
+2025-05-12 11:34:34.927 [INFO] [INFO] Tearing down test environment...
+2025-05-12 15:54:48.314 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 15:54:48.315 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 15:54:48.332 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 15:54:48.332 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 15:54:48.337 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 15:54:48.346 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:04:38.546 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:04:38.549 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:04:38.563 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:04:38.563 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:04:38.568 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:04:38.568 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:06:57.342 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:06:57.342 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:06:57.355 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:06:57.355 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:06:57.359 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:06:57.359 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:10:46.364 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:10:46.364 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:10:46.375 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:10:46.375 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:10:46.378 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:10:46.378 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:13:30.440 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:13:30.440 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:13:30.452 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:13:30.452 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:13:30.457 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:13:30.457 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:14:50.778 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:14:50.779 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:14:50.788 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:14:50.788 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-12 16:14:50.792 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-12 16:14:50.792 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}

@@ -1,172 +1,278 @@
-import json
 import asyncio
-import os
 from datetime import datetime
-from opensearchpy import AsyncOpenSearch, RequestsHttpConnection
-from requests_aws4auth import AWS4Auth
-import boto3
+from typing import Dict, Any, Optional, List, Union, Type
 
-# Configure OpenSearch connection - values from environment or defaults
-OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'localhost')
-OPENSEARCH_PORT = int(os.environ.get('OPENSEARCH_PORT', 9200))
-OPENSEARCH_USE_SSL = os.environ.get('OPENSEARCH_USE_SSL', 'false').lower() == 'true'
-OPENSEARCH_INDEX_PREFIX = os.environ.get('OPENSEARCH_INDEX_PREFIX', 'logs')
-OPENSEARCH_AUTH_TYPE = os.environ.get('OPENSEARCH_AUTH_TYPE', 'none')  # none, basic, aws
+from ..queue import QueueConfig, QueueManager, QueueWorker, QueueRetryConfig
+from .log_storage import LogStorageInterface
+from .opensearch_storage import OpenSearchLogStorage
 
-# Get AWS region for authentication if needed
-AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
+# Simple logger for our queue system
+class SimpleLogger:
+    @staticmethod
+    def error(msg): print(f"ERROR: {msg}")
+    @staticmethod
+    def warning(msg): print(f"WARNING: {msg}")
+    @staticmethod
+    def debug(msg): print(f"DEBUG: {msg}")
+    @staticmethod
+    def info(msg): print(f"INFO: {msg}")
+    @staticmethod
+    def critical(msg): print(f"CRITICAL: {msg}")
 
-# Buffer for batch processing
-log_buffer = []
-buffer_size = int(os.environ.get('LOG_BUFFER_SIZE', 50))
-buffer_lock = asyncio.Lock()
-flush_interval = int(os.environ.get('LOG_FLUSH_INTERVAL', 10))  # seconds
-last_flush_time = datetime.now()
-
-# OpenSearch client instance
-opensearch_client = None
-
-async def get_opensearch_client():
-    """Get or create an OpenSearch client."""
-    global opensearch_client
-    
-    if opensearch_client is not None:
-        return opensearch_client
-    
-    # Configure authentication
-    auth = None
-    if OPENSEARCH_AUTH_TYPE == 'aws':
-        session = boto3.Session()
-        credentials = session.get_credentials()
-        auth = AWS4Auth(
-            credentials.access_key,
-            credentials.secret_key,
-            AWS_REGION,
-            'es',
-            session_token=credentials.token
-        )
-    elif OPENSEARCH_AUTH_TYPE == 'basic':
-        # Basic auth with username/password
-        username = os.environ.get('OPENSEARCH_USERNAME')
-        password = os.environ.get('OPENSEARCH_PASSWORD')
-        if username and password:
-            auth = (username, password)
-    
-    # Create client
-    opensearch_client = AsyncOpenSearch(
-        hosts=[{'host': OPENSEARCH_HOST, 'port': OPENSEARCH_PORT}],
-        http_auth=auth,
-        use_ssl=OPENSEARCH_USE_SSL,
-        verify_certs=False,  # Set to True in production with proper certs
-        connection_class=RequestsHttpConnection,
-        timeout=30
-    )
-    
-    return opensearch_client
-
-async def flush_logs():
-    """Flush buffered logs to OpenSearch."""
-    global log_buffer, last_flush_time
-    
-    async with buffer_lock:
-        if not log_buffer:
-            last_flush_time = datetime.now()
-            return
-            
-        # Make a copy of the buffer and clear it
-        logs_to_send = log_buffer.copy()
-        log_buffer = []
-    
-    try:
-        client = await get_opensearch_client()
-        
-        # Prepare bulk request
-        bulk_actions = []
-        for log in logs_to_send:
-            # Determine index name based on date
-            timestamp = log.get('timestamp')
-            if timestamp:
-                try:
-                    # Parse timestamp and format index date
-                    date_part = timestamp.split()[0]  # Get date part of timestamp
-                    index_name = f"{OPENSEARCH_INDEX_PREFIX}-{date_part.replace('-', '.')}"
-                except Exception:
-                    # Default to today's date if parsing fails
-                    index_name = f"{OPENSEARCH_INDEX_PREFIX}-{datetime.now().strftime('%Y.%m.%d')}"
-            else:
-                # Use today's date if no timestamp in log
-                index_name = f"{OPENSEARCH_INDEX_PREFIX}-{datetime.now().strftime('%Y.%m.%d')}"
-            
-            # Add index action
-            bulk_actions.append({"index": {"_index": index_name}})
-            bulk_actions.append(log)
-        
-        if bulk_actions:
-            # Convert to newline-delimited JSON
-            bulk_body = "\n".join(json.dumps(action) for action in bulk_actions) + "\n"
-            
-            # Send to OpenSearch
-            response = await client.bulk(body=bulk_body)
-            
-            # Handle errors if any
-            if response.get("errors", False):
-                errors = [item["index"]["error"] for item in response["items"] if "error" in item.get("index", {})]
-                print(f"Error sending logs to OpenSearch: {errors}")
-    
-    except Exception as e:
-        print(f"Failed to send logs to OpenSearch: {e}")
-    
-    last_flush_time = datetime.now()
-
-async def periodic_flush():
-    """Periodically flush logs to ensure timely delivery even with low volume."""
-    while True:
-        now = datetime.now()
-        if (now - last_flush_time).total_seconds() >= flush_interval:
-            await flush_logs()
-        await asyncio.sleep(1)  # Check every second
-
-async def startup(ctx):
-    """Start the periodic flush task when the worker starts."""
-    ctx['flush_task'] = asyncio.create_task(periodic_flush())
-    print("Log worker started with OpenSearch integration")
-
-async def shutdown(ctx):
-    """Flush remaining logs and cancel the periodic task."""
-    if 'flush_task' in ctx:
-        ctx['flush_task'].cancel()
-        try:
-            await ctx['flush_task']
-        except asyncio.CancelledError:
-            pass
-    
-    # Final flush
-    await flush_logs()
-    print("Log worker shutdown complete")
-
-async def log_message(ctx, *, log_record):
+# This processor handles a single log record
+async def process_log_record(log_record: Dict[str, Any]) -> Dict[str, Any]:
     """
-    ARQ worker function to process logs sent via Redis.
-    
-    This writes logs to OpenSearch with buffering for efficiency.
+    Process a single log record.
     
     Args:
-        ctx: ARQ context
-        log_record: The log record dictionary
+        log_record: The log record to process
+        
+    Returns:
+        Dict with processing status
     """
-    global log_buffer
+    # Get the storage backend instance
+    storage = get_storage_instance()
     
-    # Add timestamp if not present
-    if 'timestamp' not in log_record:
-        log_record['timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    # Store the log
+    result = await storage.store_log(log_record)
+    return result
+
+# This processor handles a batch of log records
+async def process_log_batch(log_batch: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Process a batch of log records.
     
-    # Add to buffer
-    async with buffer_lock:
-        log_buffer.append(log_record)
-        buffer_full = len(log_buffer) >= buffer_size
+    Args:
+        log_batch: Dictionary containing a 'log_records' key with a list of log records
+        
+    Returns:
+        Dict with processing status
+    """
+    log_records = log_batch.get('log_records', [])
+    if not log_records:
+        return {"status": "empty", "count": 0}
     
-    # Flush if buffer is full
-    if buffer_full:
-        await flush_logs()
+    # Get the storage backend instance
+    storage = get_storage_instance()
     
-    return True  # Return success
+    # Store the batch
+    result = await storage.store_batch(log_records)
+    return result
+
+# Singleton storage instance
+_storage_instance = None
+
+def initialize_storage(storage_class: Type[LogStorageInterface] = OpenSearchLogStorage, **storage_config) -> LogStorageInterface:
+    """
+    Initialize and set the log storage backend.
+    
+    Args:
+        storage_class: LogStorageInterface implementation class
+        **storage_config: Configuration parameters for the storage class
+        
+    Returns:
+        The configured storage instance
+    """
+    global _storage_instance
+    _storage_instance = storage_class(**storage_config)
+    return _storage_instance
+
+def get_storage_instance() -> LogStorageInterface:
+    """
+    Get the current log storage instance.
+    
+    Returns:
+        The configured storage instance, or OpenSearchLogStorage with defaults if not initialized
+    """
+    global _storage_instance
+    if _storage_instance is None:
+        # Create a default OpenSearch instance if none exists
+        _storage_instance = OpenSearchLogStorage()
+    return _storage_instance
+
+# For tracking our queue components
+_queue_config = None
+_queue_manager = None
+_queue_worker = None
+
+def initialize_log_processing(redis_url: Optional[str] = None, 
+                              storage_class: Type[LogStorageInterface] = OpenSearchLogStorage,
+                              storage_config: Optional[Dict[str, Any]] = None,
+                              worker_count: int = 3,
+                              work_timeout: float = 30.0) -> Dict[str, Any]:
+    """
+    Initialize the log processing system with specified configuration.
+    
+    Args:
+        redis_url: Redis connection URL
+        storage_class: Class for log storage
+        storage_config: Configuration for storage backend
+        worker_count: Number of worker tasks to use
+        work_timeout: Timeout for each worker task in seconds
+        
+    Returns:
+        Dictionary with initialized components
+    """
+    global _queue_config, _queue_manager, _queue_worker, _storage_instance
+    
+    # Initialize storage backend
+    if storage_config is None:
+        storage_config = {}
+    _storage_instance = storage_class(**storage_config)
+    
+    # Initialize QueueConfig
+    _queue_config = QueueConfig(
+        redis_url=redis_url,
+        queue_prefix="log:",
+        logger=SimpleLogger()
+    )
+    
+    # Create QueueManager for job submission
+    _queue_manager = QueueManager(config=_queue_config)
+    
+    # Register processor functions
+    _queue_config.operations_registry["log_message"] = process_log_record
+    _queue_config.operations_registry["log_batch"] = process_log_batch
+    
+    # Create QueueWorker for processing
+    _queue_worker = QueueWorker(
+        config=_queue_config,
+        max_workers=worker_count,
+        work_timeout=work_timeout
+    )
+    
+    print(f"Log processing system initialized with {storage_class.__name__}")
+    
+    return {
+        "config": _queue_config,
+        "manager": _queue_manager,
+        "worker": _queue_worker,
+        "storage": _storage_instance
+    }
+
+def get_queue_manager() -> QueueManager:
+    """
+    Get the initialized queue manager or initialize with defaults if needed.
+    
+    Returns:
+        QueueManager instance
+    """
+    global _queue_manager
+    if _queue_manager is None:
+        initialize_log_processing()
+    return _queue_manager
+
+def get_queue_worker() -> QueueWorker:
+    """
+    Get the initialized queue worker or initialize with defaults if needed.
+    
+    Returns:
+        QueueWorker instance
+    """
+    global _queue_worker
+    if _queue_worker is None:
+        initialize_log_processing()
+    return _queue_worker
+
+# Functions to submit logs to the system - can be used by external code
+async def submit_log(log_record: Dict[str, Any], priority: str = "normal") -> Dict[str, Any]:
+    """
+    Submit a single log record to the processing system.
+    
+    Args:
+        log_record: Log record to process
+        priority: Queue priority ("high", "normal", "low")
+    
+    Returns:
+        Result from the enqueue operation
+    """
+    manager = get_queue_manager()
+    
+    # Configure retry settings
+    retry_config = QueueRetryConfig(max_attempts=3, delays=[1, 5, 10])
+    
+    # Submit to queue
+    result = await manager.enqueue(
+        entity=log_record,
+        processor="log_message",
+        priority=priority,
+        retry_config=retry_config
+    )
+    
+    return result
+
+async def submit_log_batch(log_records: List[Dict[str, Any]], priority: str = "normal") -> Dict[str, Any]:
+    """
+    Submit a batch of log records to the processing system.
+    
+    Args:
+        log_records: List of log records to process
+        priority: Queue priority ("high", "normal", "low")
+    
+    Returns:
+        Result from the enqueue operation
+    """
+    manager = get_queue_manager()
+    
+    # Configure retry settings
+    retry_config = QueueRetryConfig(max_attempts=3, delays=[1, 5, 10])
+    
+    # Submit to queue
+    result = await manager.enqueue(
+        entity={"log_records": log_records},
+        processor="log_batch",
+        priority=priority,
+        retry_config=retry_config
+    )
+    
+    return result
+
+async def start_worker() -> QueueWorker:
+    """
+    Start the log processing worker.
+    
+    Returns:
+        The running QueueWorker instance
+    """
+    worker = get_queue_worker()
+    await worker.start()
+    print("Log processing worker started")
+    return worker
+
+async def stop_worker():
+    """
+    Stop the log processing worker if running.
+    """
+    global _queue_worker
+    if _queue_worker:
+        await _queue_worker.stop()
+        print("Log processing worker stopped")
+
+# Main function to run the worker independently 
+async def run_worker():
+    """
+    Run a standalone log processing worker.
+    
+    This creates and runs a QueueWorker that will process
+    queued log messages from Redis.
+    """
+    # Start the worker
+    worker = await start_worker()
+    
+    try:
+        # Keep the worker running
+        while True:
+            await asyncio.sleep(1)
+    except KeyboardInterrupt:
+        print("Shutting down worker...")
+    finally:
+        # Shut down worker gracefully
+        await stop_worker()
+        print("Worker shutdown complete")
+
+# Entry point for standalone execution
+if __name__ == "__main__":
+    try:
+        asyncio.run(run_worker())
+    except KeyboardInterrupt:
+        print("\nWorker stopped by user")

@@ -35,6 +35,28 @@ import json
 MAX_LENGTH = 200
 
 
+def try_catch(success_func, exception_func):
+    """
+    Decorator that calls success_func if the decorated function completes successfully,
+    or exception_func if it raises an exception.
+    
+    Args:
+        success_func: Function to call on success (receives the original return value)
+        exception_func: Function to call on exception (receives the exception)
+                       Can return a value or raise a new exception
+    """
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            try:
+                result = func(*args, **kwargs)
+                return success_func(result)
+            except Exception as e:
+                # Call exception_func and let it decide what to do
+                return exception_func(e)
+        return wrapper
+    return decorator
+
+
 def serialize(value):
     """Serialize any value to a JSON string, trimmed to MAX_LENGTH."""
     try:

@@ -1,0 +1,409 @@
+import json
+import time
+import random
+import asyncio
+from typing import Any, Dict, List, Optional, Union, Callable
+
+from .queue_config import QueueConfig
+
+class QueueWorker:
+    """Worker for processing queued operations - started at app startup."""
+    def __init__(self, config: QueueConfig, max_workers=5, work_timeout=30.0):
+        """Initialize the queue worker."""
+        self.config = config
+        self.max_workers = max_workers
+        self.work_timeout = work_timeout
+        self.running = False
+        self.tasks = []
+        
+    async def start(self):
+        """Start processing the queue with worker tasks."""
+        if self.running:
+            return
+            
+        self.running = True
+        
+        # Start worker tasks
+        for i in range(self.max_workers):
+            task = asyncio.create_task(self._worker_loop(i))
+            self.tasks.append(task)
+        
+        self.config.logger.info(f"Started {self.max_workers} queue worker tasks")
+            
+    async def stop(self):
+        """Stop queue processing gracefully."""
+        self.running = False
+        
+        # Wait for tasks to complete
+        if self.tasks:
+            await asyncio.gather(*self.tasks, return_exceptions=True)
+            self.tasks = []
+            
+        self.config.logger.info("Queue worker stopped")
+            
+    async def _worker_loop(self, worker_id: int):
+        """Main worker loop for processing queue items."""
+        self.config.logger.info(f"Worker {worker_id} started")
+        
+        try:
+            while self.running:
+                # Process one item
+                processed = await self._process_queue_item(worker_id)
+                
+                # Sleep briefly if no item was processed
+                if not processed:
+                    await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            self.config.logger.info(f"Worker {worker_id} cancelled")
+        except Exception as e:
+            self.config.logger.error(f"Error in worker {worker_id}: {str(e)}")
+        finally:
+            self.config.logger.info(f"Worker {worker_id} stopped")
+    
+    async def _process_queue_item(self, worker_id: int) -> bool:
+        """Process a single item from the queue."""
+        # *** Use synchronous Redis client - KEY CHANGE ***
+        redis = self.config._ensure_redis_sync()
+        
+        # Get all registered queues
+        registered_queues = redis.smembers(self.config.registry_key)
+        
+        # Group by priority
+        high_prefix_bytes = self.config.queue_prefixes['high'].encode()
+        normal_prefix_bytes = self.config.queue_prefixes['normal'].encode()
+        low_prefix_bytes = self.config.queue_prefixes['low'].encode()
+        
+        # Group queues by their prefix - handle both string and bytes queue names
+        high_queues = []
+        normal_queues = []
+        low_queues = []
+        
+        for q in registered_queues:
+            q_str = q.decode() if isinstance(q, bytes) else q
+            q_bytes = q if isinstance(q, bytes) else q.encode()
+            
+            if q_str.startswith(self.config.queue_prefixes['high']):
+                high_queues.append(q_bytes)
+            elif q_str.startswith(self.config.queue_prefixes['normal']):
+                normal_queues.append(q_bytes)
+            elif q_str.startswith(self.config.queue_prefixes['low']):
+                low_queues.append(q_bytes)
+        
+        # Check queues in priority order
+        for queue in [*high_queues, *normal_queues, *low_queues]:
+            # Try to peek at the next item without removing it
+            next_item_data = redis.lindex(queue, -1)
+            
+            if not next_item_data:
+                continue
+                
+            try:
+                # Parse the item to check next_retry_time
+                next_item = json.loads(next_item_data)
+                
+                # Skip if it's not time to retry yet
+                if "next_retry_time" in next_item and next_item["next_retry_time"] > time.time():
+                    continue
+                    
+                # It's time to process this item, get it from the queue
+                # Using sync method with timeout (brpop still works in synchronous Redis)
+                result = redis.brpop([queue], timeout=0.5)
+                
+                if not result:
+                    # Something else grabbed it or it disappeared
+                    continue
+                    
+                _, item_data = result
+                
+                # Process the item
+                await self._handle_queue_item(worker_id, queue, item_data)
+                
+                return True
+                    
+            except json.JSONDecodeError:
+                # Get the item to remove it from the queue
+                result = redis.brpop([queue], timeout=0.5)
+                if result:
+                    _, item_data = result
+                    self.config.logger.error(f"Invalid JSON in queue {queue}")
+                    # Ensure the system_errors_queue is in bytes
+                    system_errors_queue = self.config.queue_keys['system_errors']
+                    if not isinstance(system_errors_queue, bytes):
+                        system_errors_queue = system_errors_queue.encode()
+                    redis.lpush(system_errors_queue, item_data)
+                return True
+                
+        # No item processed
+        return False
+    
+    async def _handle_queue_item(self, worker_id: int, queue: bytes, item_data: bytes) -> bool:
+        """
+        Handle processing of a queue item.
+        
+        Args:
+            worker_id: ID of the worker
+            queue: Queue name (as bytes)
+            item_data: Raw item data
+            
+        Returns:
+            True if processing completed, False otherwise
+        """
+        # *** Use synchronous Redis client - KEY CHANGE ***
+        redis = self.config._ensure_redis_sync()
+        
+        try:
+            # Parse the item
+            item = json.loads(item_data)
+            entity = item["entity"]
+            
+            # Add debug logging
+            operation_id = item.get('operation_id', 'unknown')
+            self.config.logger.debug(f"Processing item {operation_id} with timeout {item.get('timeout')}")
+            
+            # Check if it's a legacy queue item or callback-based
+            if "metadata" in item:
+                # Legacy queue item
+                metadata = item["metadata"]
+                processor_name = item["processor"]
+                processor_module = item["processor_module"]
+                
+                # Find the processor function
+                processor = self.config.operations_registry.get(
+                    metadata.get("queue_name")
+                )
+            else:
+                # Callback-based item
+                processor_name = item["processor"]
+                processor_module = item["processor_module"]
+                
+                # Find the processor function
+                processor = self.config.operations_registry.get(
+                    f"{processor_module}.{processor_name}" if processor_module else processor_name
+                )
+            
+            if not processor and processor_module:
+                # Try to import the processor
+                try:
+                    module = __import__(processor_module, fromlist=[processor_name])
+                    processor = getattr(module, processor_name)
+                    # Register for future use
+                    if processor:
+                        self.config.operations_registry[
+                            f"{processor_module}.{processor_name}"
+                        ] = processor
+                except (ImportError, AttributeError) as e:
+                    self.config.logger.error(
+                        f"Error importing processor {processor_module}.{processor_name}: {str(e)}"
+                    )
+            
+            if not processor:
+                # Cannot find processor - move to system errors
+                self.config.logger.error(f"No processor found for item: {item.get('operation_id')}")
+                # Ensure system_errors_queue is in bytes
+                system_errors_queue = self.config.queue_keys['system_errors']
+                if not isinstance(system_errors_queue, bytes):
+                    system_errors_queue = system_errors_queue.encode()
+                redis.lpush(system_errors_queue, item_data)
+                return True
+            
+            # Check if the item has a timeout and this isn't the first attempt
+            if "timeout" in item and item["timeout"] is not None:
+                # If this is the first attempt, record the start time
+                if "first_attempt_time" not in item:
+                    item["first_attempt_time"] = time.time()
+                    self.config.logger.debug(f"Setting first_attempt_time for {operation_id}")
+                
+                # Debug logging for timeout check
+                current_time = time.time()
+                elapsed_time = current_time - item["first_attempt_time"]
+                timeout_value = item["timeout"]
+                self.config.logger.debug(
+                    f"Item {operation_id}: elapsed_time={elapsed_time}, timeout={timeout_value}"
+                )
+                
+                # Check if total timeout has been reached
+                if elapsed_time > item["timeout"]:
+                    # Add failure reason
+                    item["failure_reason"] = f"Total timeout reached: {elapsed_time}s > {timeout_value}s"
+                    
+                    self.config.logger.info(
+                        f"Item {operation_id} reached timeout after {elapsed_time}s (limit: {timeout_value}s)"
+                    )
+                    
+                    # Handle callbacks for failure if present
+                    if "on_failure" in item and item["on_failure"]:
+                        await self._execute_callback(
+                            item["on_failure"],
+                            item.get("on_failure_module"),
+                            {
+                                "entity": entity,
+                                "error": "Operation timed out after total retry period",
+                                "operation_id": item.get("operation_id")
+                            }
+                        )
+                    
+                    # Move to failures queue - ensure failures_queue is in bytes
+                    failures_queue = self.config.queue_keys['failures']
+                    if not isinstance(failures_queue, bytes):
+                        failures_queue = failures_queue.encode()
+                    
+                    # Serialize item for storage
+                    item_json = json.dumps(item, default=str)
+                    redis.lpush(failures_queue, item_json.encode())
+                    
+                    self.config.logger.debug(
+                        f"Moved item {operation_id} to failures queue: {failures_queue!r}"
+                    )
+                    
+                    return True
+            
+            # Process the item with timeout
+            try:
+                result = await asyncio.wait_for(processor(entity), timeout=self.work_timeout)
+                
+                # Check if it's a callback-based item
+                if "on_success" in item and item["on_success"]:
+                    # Execute success callback
+                    await self._execute_callback(
+                        item["on_success"],
+                        item.get("on_success_module"),
+                        {
+                            "entity": entity,
+                            "result": result,
+                            "operation_id": item.get("operation_id")
+                        }
+                    )
+                
+                self.config.logger.info(f"Worker {worker_id} processed item {item.get('operation_id')}")
+                return True
+                
+            except Exception as e:
+                # Increment attempt count
+                item["attempts"] = item.get("attempts", 0) + 1
+                
+                # If this is the first attempt with a timeout, record the start time
+                if "timeout" in item and item["timeout"] is not None and "first_attempt_time" not in item:
+                    item["first_attempt_time"] = time.time()
+                
+                # Check if max attempts reached
+                if item["attempts"] >= item.get("max_attempts", 5):
+                    # Add failure reason
+                    item["failure_reason"] = str(e)
+                    
+                    # Handle callbacks for failure if present
+                    if "on_failure" in item and item["on_failure"]:
+                        await self._execute_callback(
+                            item["on_failure"],
+                            item.get("on_failure_module"),
+                            {
+                                "entity": entity,
+                                "error": str(e),
+                                "operation_id": item.get("operation_id")
+                            }
+                        )
+                    
+                    # Move to failures queue - ensure failures_queue is in bytes
+                    failures_queue = self.config.queue_keys['failures']
+                    if not isinstance(failures_queue, bytes):
+                        failures_queue = failures_queue.encode()
+                    
+                    redis.lpush(failures_queue, json.dumps(item, default=str).encode())
+                    self.config.logger.error(
+                        f"Item {item.get('operation_id')} moved to failures queue: {str(e)}"
+                    )
+                else:
+                    # Calculate next retry time using delays array
+                    if "delays" in item:
+                        # Use the stored delays array with bounds checking
+                        index = min(item["attempts"] - 1, len(item["delays"]) - 1)
+                        delay = item["delays"][index]
+                        
+                        # Add jitter (±10%)
+                        jitter = random.uniform(0.9, 1.1)
+                        retry_delay = delay * jitter
+                    else:
+                        # Legacy exponential backoff
+                        retry_delay = min(30, 2 ** item["attempts"])
+                    
+                    # Set next retry time
+                    item["next_retry_time"] = time.time() + retry_delay
+                    
+                    # Check if total timeout would be exceeded
+                    if ("timeout" in item and item["timeout"] is not None and 
+                        "first_attempt_time" in item and 
+                        item["next_retry_time"] - item["first_attempt_time"] > item["timeout"]):
+                        
+                        # Add failure reason
+                        item["failure_reason"] = "Total timeout would be exceeded by next retry"
+                        
+                        # Handle callbacks for failure if present
+                        if "on_failure" in item and item["on_failure"]:
+                            await self._execute_callback(
+                                item["on_failure"],
+                                item.get("on_failure_module"),
+                                {
+                                    "entity": entity,
+                                    "error": "Operation timed out after total retry period",
+                                    "operation_id": item.get("operation_id")
+                                }
+                            )
+                        
+                        # Move to failures queue
+                        failures_queue = self.config.queue_keys['failures']
+                        if not isinstance(failures_queue, bytes):
+                            failures_queue = failures_queue.encode()
+                        
+                        redis.lpush(failures_queue, json.dumps(item, default=str).encode())
+                        self.config.logger.error(
+                            f"Item {item.get('operation_id')} would exceed timeout, moved to failures queue"
+                        )
+                    else:
+                        # Requeue with the updated next retry time
+                        self.config.logger.warning(
+                            f"Item {item.get('operation_id')} requeued after error "
+                            f"(attempt {item['attempts']}): {str(e)}"
+                        )
+                        
+                        # Add back to queue
+                        redis.lpush(queue, json.dumps(item, default=str).encode())
+                
+                return True
+                
+        except Exception as e:
+            self.config.logger.error(f"Error processing item from {queue}: {str(e)}")
+            return True
+
+    async def _execute_callback(self, callback_name, callback_module, data):
+        """Execute a callback function."""
+        try:
+            # Check if callback is already registered
+            callback_key = self.config.get_callback_key(callback_name, callback_module)
+            callback = self.config.callbacks_registry.get(callback_key)
+            
+            if not callback and callback_module:
+                # Try to import the callback
+                try:
+                    module = __import__(callback_module, fromlist=[callback_name])
+                    callback = getattr(module, callback_name)
+                    
+                    # Register for future use
+                    if callback:
+                        self.config.callbacks_registry[callback_key] = callback
+                except (ImportError, AttributeError) as e:
+                    self.config.logger.error(
+                        f"Error importing callback {callback_module}.{callback_name}: {str(e)}"
+                    )
+            
+            if not callback:
+                self.config.logger.error(f"Callback {callback_name} not found")
+                return None
+                
+            # Execute the callback
+            if asyncio.iscoroutinefunction(callback):
+                return await callback(data)
+            else:
+                return callback(data)
+                
+        except Exception as e:
+            self.config.logger.error(f"Error executing callback {callback_name}: {str(e)}")
+            return None

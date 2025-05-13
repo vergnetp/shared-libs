@@ -1,0 +1,861 @@
+2025-05-13 12:59:35.719 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 12:59:35.720 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 12:59:35.726 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 12:59:35.726 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 12:59:35.730 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 12:59:35.731 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 12:59:45.216 [INFO] [INFO] Setting up test environment...
+2025-05-13 12:59:45.217 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 12:59:45.338 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 12:59:45.342 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-13 13:00:33.103 [INFO] [INFO] Tearing down test environment...
+2025-05-13 13:00:43.305 [INFO] [INFO] Setting up test environment...
+2025-05-13 13:00:43.306 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 13:00:43.345 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 13:00:43.346 [INFO] [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-13 13:00:47.856 [INFO] [INFO] Tearing down test environment...
+2025-05-13 13:26:46.752 [INFO] [INFO] Setting up test environment...
+2025-05-13 13:26:46.752 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 13:26:46.786 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 13:26:46.786 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 13:26:46.790 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 13:26:46.791 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 13:26:46.791 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 13:26:49.774 [INFO] [INFO] Command error: time="2025-05-13T13:26:47+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ redis Pulling 
+ redis Pulled 
+ Network test-queue_default  Creating
+ Network test-queue_default  Created
+ Volume "test-queue_redis-data"  Creating
+ Volume "test-queue_redis-data"  Created
+ Container test-queue-redis-1  Creating
+ Container test-queue-redis-1  Created
+ Container test-queue-redis-1  Starting
+ Container test-queue-redis-1  Started
+
+2025-05-13 13:26:56.237 [INFO] [INFO] Tearing down test environment...
+2025-05-13 13:27:37.152 [INFO] [INFO] Setting up test environment...
+2025-05-13 13:27:37.152 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 13:27:37.194 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 13:27:37.197 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 13:27:37.202 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 13:27:37.202 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 13:27:37.202 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 13:27:37.705 [INFO] [INFO] Command error: time="2025-05-13T13:27:37+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 13:27:43.890 [INFO] [INFO] Tearing down test environment...
+2025-05-13 13:33:12.255 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:33:12.255 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:33:12.297 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:33:12.298 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:33:12.302 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:33:12.302 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:33:26.520 [INFO] [INFO] Setting up test environment...
+2025-05-13 13:33:26.521 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 13:33:26.556 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 13:33:26.556 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 13:33:26.560 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 13:33:26.560 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 13:33:26.563 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 13:33:26.906 [INFO] [INFO] Command error: time="2025-05-13T13:33:26+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 13:33:27.958 [INFO] [INFO] Tearing down test environment...
+2025-05-13 13:33:51.813 [INFO] [INFO] Setting up test environment...
+2025-05-13 13:33:51.813 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 13:33:51.847 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 13:33:51.848 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 13:33:51.854 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 13:33:51.854 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 13:33:51.859 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 13:33:52.196 [INFO] [INFO] Command error: time="2025-05-13T13:33:51+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 13:33:58.858 [INFO] [INFO] Tearing down test environment...
+2025-05-13 13:34:57.438 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:34:57.439 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:34:57.445 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:34:57.446 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:34:57.450 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:34:57.450 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:35:01.002 [INFO] [INFO] Setting up test environment...
+2025-05-13 13:35:01.003 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 13:35:01.043 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 13:35:01.044 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 13:35:01.048 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 13:35:01.048 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 13:35:01.050 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 13:35:01.409 [INFO] [INFO] Command error: time="2025-05-13T13:35:01+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 13:35:03.593 [INFO] [INFO] Tearing down test environment...
+2025-05-13 13:36:25.341 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:36:25.341 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:36:25.348 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:36:25.348 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:36:25.352 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:36:25.353 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:37:19.521 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:37:19.521 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:37:19.530 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:37:19.530 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:37:19.534 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:37:19.534 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:37:26.985 [INFO] [INFO] Setting up test environment...
+2025-05-13 13:37:26.986 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 13:37:27.020 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 13:37:27.020 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 13:37:27.024 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 13:37:27.024 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 13:37:27.029 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 13:37:27.339 [INFO] [INFO] Command error: time="2025-05-13T13:37:27+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 13:37:36.007 [INFO] [INFO] Tearing down test environment...
+2025-05-13 13:39:05.849 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:39:05.850 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:39:05.862 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:39:05.862 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:39:05.866 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 13:39:05.866 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 13:39:10.965 [INFO] [INFO] Setting up test environment...
+2025-05-13 13:39:10.966 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 13:39:10.997 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 13:39:10.997 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 13:39:11.000 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 13:39:11.001 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 13:39:11.003 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 13:39:11.292 [INFO] [INFO] Command error: time="2025-05-13T13:39:11+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 13:39:13.453 [INFO] [INFO] Tearing down test environment...
+2025-05-13 14:07:27.001 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:07:27.001 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:07:27.008 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:07:27.008 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:07:27.012 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:07:27.012 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:08:03.315 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:08:03.316 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:08:03.325 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:08:03.325 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:08:03.328 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:08:03.329 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:08:06.778 [INFO] [INFO] Setting up test environment...
+2025-05-13 14:08:06.778 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 14:08:06.816 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 14:08:06.816 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 14:08:06.820 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 14:08:06.820 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 14:08:06.824 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 14:08:07.352 [INFO] [INFO] Command error: time="2025-05-13T14:08:06+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 14:08:09.510 [INFO] [INFO] Tearing down test environment...
+2025-05-13 14:10:01.565 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:10:01.565 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:10:01.573 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:10:01.573 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:10:01.576 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:10:01.576 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:10:04.304 [INFO] [INFO] Setting up test environment...
+2025-05-13 14:10:04.304 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 14:10:04.335 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 14:10:04.335 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 14:10:04.338 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 14:10:04.338 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 14:10:04.343 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 14:10:04.632 [INFO] [INFO] Command error: time="2025-05-13T14:10:04+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 14:10:06.829 [INFO] [INFO] Tearing down test environment...
+2025-05-13 14:12:15.649 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:12:15.649 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:12:15.656 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:12:15.656 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:12:15.660 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:12:15.660 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:12:17.255 [INFO] [INFO] Setting up test environment...
+2025-05-13 14:12:17.256 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 14:12:17.296 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 14:12:17.296 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 14:12:17.299 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 14:12:17.299 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 14:12:17.303 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 14:12:17.666 [INFO] [INFO] Command error: time="2025-05-13T14:12:17+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 14:12:19.758 [INFO] [INFO] ##### []
+2025-05-13 14:12:19.880 [INFO] [INFO] Tearing down test environment...
+2025-05-13 14:14:15.583 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:14:15.583 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:14:15.596 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:14:15.596 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:14:15.602 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:14:15.602 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:14:17.635 [INFO] [INFO] Setting up test environment...
+2025-05-13 14:14:17.636 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 14:14:17.674 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 14:14:17.675 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 14:14:17.680 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 14:14:17.680 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 14:14:17.686 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 14:14:17.969 [INFO] [INFO] Command error: time="2025-05-13T14:14:17+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 14:14:20.017 [INFO] [INFO] ##### []
+2025-05-13 14:14:20.136 [INFO] [INFO] Tearing down test environment...
+2025-05-13 14:17:37.920 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:17:37.920 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:17:37.935 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:17:37.935 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:17:37.941 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:17:37.941 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:17:40.336 [INFO] [INFO] Setting up test environment...
+2025-05-13 14:17:40.336 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 14:17:40.366 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 14:17:40.367 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 14:17:40.371 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 14:17:40.371 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 14:17:40.372 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 14:17:40.680 [INFO] [INFO] Command error: time="2025-05-13T14:17:40+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 14:17:43.862 [INFO] [INFO] Tearing down test environment...
+2025-05-13 14:18:24.652 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:18:24.652 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:18:24.664 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:18:24.665 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:18:24.668 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:18:24.669 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:18:26.515 [INFO] [INFO] Setting up test environment...
+2025-05-13 14:18:26.515 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 14:18:26.596 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 14:18:26.596 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 14:18:26.644 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 14:18:26.645 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 14:18:26.651 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 14:18:27.039 [INFO] [INFO] Command error: time="2025-05-13T14:18:26+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 14:18:29.197 [INFO] [INFO] Tearing down test environment...
+2025-05-13 14:21:25.481 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:21:25.481 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:21:25.492 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:21:25.492 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:21:25.496 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:21:25.496 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:21:37.857 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:21:37.857 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:21:37.872 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:21:37.872 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:21:37.877 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:21:37.877 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:21:57.693 [INFO] [INFO] Setting up test environment...
+2025-05-13 14:21:57.693 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 14:21:57.725 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 14:21:57.726 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 14:21:57.729 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 14:21:57.729 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 14:21:57.731 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 14:21:58.043 [INFO] [INFO] Command error: time="2025-05-13T14:21:57+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 14:22:00.222 [INFO] [INFO] Tearing down test environment...
+2025-05-13 14:26:55.199 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:26:55.199 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:26:55.206 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:26:55.207 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:26:55.211 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:26:55.212 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:27:11.271 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:27:11.271 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:27:11.279 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:27:11.279 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:27:11.283 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:27:11.283 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:27:43.432 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:27:43.433 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:27:43.443 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:27:43.443 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:27:43.447 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:27:43.447 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:29:26.257 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:29:26.257 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:29:26.265 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:29:26.265 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:29:26.269 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:29:26.269 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:29:31.624 [INFO] [INFO] Setting up test environment...
+2025-05-13 14:29:31.625 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 14:29:31.667 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 14:29:31.667 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 14:29:31.673 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 14:29:31.673 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 14:29:31.678 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 14:29:32.066 [INFO] [INFO] Command error: time="2025-05-13T14:29:31+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 14:29:40.867 [INFO] [INFO] Tearing down test environment...
+2025-05-13 14:36:35.487 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:36:35.487 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:36:35.497 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:36:35.497 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:36:35.500 [INFO] [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 14:36:35.500 [INFO] [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 14:36:40.535 [INFO] [INFO] Setting up test environment...
+2025-05-13 14:36:40.535 [INFO] [INFO] Removing .\.pytest_cache
+2025-05-13 14:36:40.572 [INFO] [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 14:36:40.572 [INFO] [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 14:36:40.576 [INFO] [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 14:36:40.576 [INFO] [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 14:36:40.581 [INFO] [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 14:36:40.911 [INFO] [INFO] Command error: time="2025-05-13T14:36:40+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 14:36:51.018 [INFO] [INFO] Tearing down test environment...
+2025-05-13 19:19:12.884 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:19:12.888 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:19:12.894 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:19:12.895 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:19:12.900 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:19:12.900 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:48:43.373 [INFO] Setting up test environment...
+2025-05-13 19:48:43.380 [INFO] Removing .\.pytest_cache
+2025-05-13 19:48:43.515 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_arq_worker.py', 'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log.py', 'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_reddis_log.py'}
+2025-05-13 19:48:43.520 [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-13 19:48:45.932 [CRITICAL] CRITICAL_TEST_1747162125.931841
+2025-05-13 19:48:48.792 [INFO] TEST_REDIS_MESSAGE_1747162128.791638
+2025-05-13 19:48:51.377 [INFO] INFO_TEST_1747162131.377283
+2025-05-13 19:48:51.382 [WARN] WARN_TEST_1747162131.377287
+2025-05-13 19:48:51.384 [ERROR] ERROR_TEST_1747162131.37729
+2025-05-13 19:48:51.385 [CRITICAL] CRITICAL_TEST_1747162131.377292
+2025-05-13 19:49:58.912 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:49:58.915 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:49:58.928 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:49:58.930 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:49:58.936 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:49:58.937 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:50:41.650 [INFO] Setting up test environment...
+2025-05-13 19:50:41.652 [INFO] Removing .\.pytest_cache
+2025-05-13 19:50:41.685 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 19:50:41.692 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 19:50:41.695 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 19:50:41.695 [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 19:50:41.696 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 19:50:42.185 [INFO] Command error: time="2025-05-13T19:50:41+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 19:50:50.627 [INFO] Tearing down test environment...
+2025-05-13 19:53:19.795 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:53:19.799 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:53:19.811 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:53:19.812 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:53:19.818 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:53:19.819 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:53:24.266 [INFO] Setting up test environment...
+2025-05-13 19:53:24.268 [INFO] Removing .\.pytest_cache
+2025-05-13 19:53:24.300 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\test_queue_system.py'}
+2025-05-13 19:53:24.305 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\test_queue_system.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml
+2025-05-13 19:53:24.308 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml:
+2025-05-13 19:53:24.309 [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 19:53:24.310 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\queue\tests\docker-compose.yml -p test-queue up -d
+2025-05-13 19:53:24.617 [INFO] Command error: time="2025-05-13T19:53:24+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\queue\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-queue-redis-1  Running
+
+2025-05-13 19:53:34.463 [INFO] Tearing down test environment...
+2025-05-13 19:54:00.168 [INFO] Setting up test environment...
+2025-05-13 19:54:00.171 [INFO] Removing .\.pytest_cache
+2025-05-13 19:54:00.206 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log.py'}
+2025-05-13 19:54:00.209 [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-13 19:54:02.364 [INFO] Tearing down test environment...
+2025-05-13 19:54:10.904 [INFO] Setting up test environment...
+2025-05-13 19:54:10.907 [INFO] Removing .\.pytest_cache
+2025-05-13 19:54:10.946 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_reddis_log.py'}
+2025-05-13 19:54:10.947 [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-13 19:54:10.955 [CRITICAL] CRITICAL_TEST_1747162450.953627
+2025-05-13 19:54:13.231 [INFO] TEST_REDIS_MESSAGE_1747162453.231161
+2025-05-13 19:54:15.810 [INFO] INFO_TEST_1747162455.810409
+2025-05-13 19:54:15.812 [WARN] WARN_TEST_1747162455.810411
+2025-05-13 19:54:15.813 [ERROR] ERROR_TEST_1747162455.810414
+2025-05-13 19:54:15.813 [CRITICAL] CRITICAL_TEST_1747162455.810416
+2025-05-13 19:56:18.426 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:56:18.430 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:56:18.440 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:56:18.441 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:56:18.444 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:56:18.445 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:56:22.885 [INFO] Setting up test environment...
+2025-05-13 19:56:22.888 [INFO] Removing .\.pytest_cache
+2025-05-13 19:56:22.924 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log.py'}
+2025-05-13 19:56:22.925 [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-13 19:56:23.202 [INFO] Tearing down test environment...
+2025-05-13 19:58:03.081 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:58:03.083 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:58:03.093 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:58:03.094 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:58:03.098 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:58:03.099 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:58:36.607 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:58:36.609 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:58:36.618 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:58:36.619 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:58:36.624 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:58:36.625 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:58:41.294 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:58:41.300 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:58:41.310 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:58:41.311 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:58:41.319 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 19:58:41.326 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 19:58:51.052 [INFO] Setting up test environment...
+2025-05-13 19:58:51.055 [INFO] Removing .\.pytest_cache
+2025-05-13 19:58:51.089 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 19:58:51.091 [INFO] No Docker Compose files found for any test files. Continuing without Docker setup.
+2025-05-13 20:00:44.320 [INFO] Setting up test environment...
+2025-05-13 20:00:44.322 [INFO] Removing .\.pytest_cache
+2025-05-13 20:00:44.357 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 20:00:44.363 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 20:00:44.368 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 20:00:44.369 [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 20:00:44.370 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 20:00:45.733 [INFO] Command error: time="2025-05-13T20:00:44+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Network test-log_default  Creating
+ Network test-log_default  Created
+ Volume "test-log_redis-data"  Creating
+ Volume "test-log_redis-data"  Created
+ Container test-log-redis-1  Creating
+ Container test-log-redis-1  Created
+ Container test-log-redis-1  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint test-log-redis-1 (25d21f6f217f84c7d6c916a2169d49166cc34da2cb2940f217d201b726db4dbb): Bind for 0.0.0.0:6379 failed: port is already allocated
+
+2025-05-13 20:00:45.734 [INFO] Error starting Docker containers: time="2025-05-13T20:00:44+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Network test-log_default  Creating
+ Network test-log_default  Created
+ Volume "test-log_redis-data"  Creating
+ Volume "test-log_redis-data"  Created
+ Container test-log-redis-1  Creating
+ Container test-log-redis-1  Created
+ Container test-log-redis-1  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint test-log-redis-1 (25d21f6f217f84c7d6c916a2169d49166cc34da2cb2940f217d201b726db4dbb): Bind for 0.0.0.0:6379 failed: port is already allocated
+
+2025-05-13 20:02:19.534 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:02:19.537 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:02:19.546 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:02:19.547 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:02:19.551 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:02:19.552 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:02:28.684 [INFO] Setting up test environment...
+2025-05-13 20:02:28.687 [INFO] Removing .\.pytest_cache
+2025-05-13 20:02:28.724 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 20:02:28.730 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 20:02:28.733 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 20:02:28.733 [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 20:02:28.734 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 20:02:29.420 [INFO] Command error: time="2025-05-13T20:02:28+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint test-log-redis-1 (f302e2d32d6c83295a747f7e08bd180283b66d5cc8a78cec33c0e137cbfe4275): Bind for 0.0.0.0:6379 failed: port is already allocated
+
+2025-05-13 20:02:29.422 [INFO] Error starting Docker containers: time="2025-05-13T20:02:28+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint test-log-redis-1 (f302e2d32d6c83295a747f7e08bd180283b66d5cc8a78cec33c0e137cbfe4275): Bind for 0.0.0.0:6379 failed: port is already allocated
+
+2025-05-13 20:27:42.400 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:27:42.402 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:27:42.413 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:27:42.415 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:27:42.420 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:27:42.421 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:27:46.592 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:27:46.594 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:27:46.606 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:27:46.607 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:27:46.612 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:27:46.613 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:28:30.088 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:28:30.090 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:28:30.099 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:28:30.100 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:28:30.104 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:28:30.105 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:28:35.263 [INFO] Setting up test environment...
+2025-05-13 20:28:35.266 [INFO] Removing .\.pytest_cache
+2025-05-13 20:28:35.298 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 20:28:35.304 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 20:28:35.307 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 20:28:35.307 [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 20:28:35.308 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 20:28:35.998 [INFO] Command error: time="2025-05-13T20:28:35+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint test-log-redis-1 (4dbc2b5f539785ec91c306457e170a38a5cec35bd1044ae3bf5ecfff020a5c8d): Bind for 0.0.0.0:6379 failed: port is already allocated
+
+2025-05-13 20:28:36.001 [INFO] Error starting Docker containers: time="2025-05-13T20:28:35+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint test-log-redis-1 (4dbc2b5f539785ec91c306457e170a38a5cec35bd1044ae3bf5ecfff020a5c8d): Bind for 0.0.0.0:6379 failed: port is already allocated
+
+2025-05-13 20:32:16.916 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:32:16.918 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:32:16.930 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:32:16.931 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:32:16.935 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:32:16.936 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:32:42.095 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:32:42.098 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:32:42.109 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:32:42.111 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:32:42.115 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:32:42.116 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:32:46.587 [INFO] Setting up test environment...
+2025-05-13 20:32:46.589 [INFO] Removing .\.pytest_cache
+2025-05-13 20:32:46.621 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 20:32:46.630 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 20:32:46.634 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 20:32:46.635 [INFO]   - redis: localhost:6379 (container port: 6379)
+2025-05-13 20:32:46.636 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 20:32:47.298 [INFO] Command error: time="2025-05-13T20:32:46+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint test-log-redis-1 (a0c6df25e097f96580b4eb3742e956f92d77a2bd993afadcb9ca914a1d95fb42): Bind for 0.0.0.0:6379 failed: port is already allocated
+
+2025-05-13 20:32:47.299 [INFO] Error starting Docker containers: time="2025-05-13T20:32:46+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint test-log-redis-1 (a0c6df25e097f96580b4eb3742e956f92d77a2bd993afadcb9ca914a1d95fb42): Bind for 0.0.0.0:6379 failed: port is already allocated
+
+2025-05-13 20:33:25.218 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:33:25.219 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:33:25.228 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:33:25.229 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:33:25.232 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:33:25.233 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:36:37.115 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:36:37.117 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:36:37.130 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:36:37.130 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:36:37.134 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:36:37.135 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:36:55.377 [INFO] Setting up test environment...
+2025-05-13 20:36:55.380 [INFO] Removing .\.pytest_cache
+2025-05-13 20:36:55.416 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 20:36:55.421 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 20:36:55.423 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 20:36:55.424 [INFO]   - redis: localhost:6380 (container port: 6380)
+2025-05-13 20:36:55.425 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 20:36:56.879 [INFO] Command error: time="2025-05-13T20:36:55+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Recreate
+ Container test-log-redis-1  Recreated
+ Container test-log-redis-1  Starting
+ Container test-log-redis-1  Started
+
+2025-05-13 20:37:00.043 [INFO] Test message before shutdown
+2025-05-13 20:37:00.053 [INFO] Test message after shutdown
+2025-05-13 20:37:00.060 [INFO] Tearing down test environment...
+2025-05-13 20:39:49.626 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:39:49.629 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:39:49.639 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:39:49.640 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:39:49.644 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:39:49.645 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:39:56.731 [INFO] Setting up test environment...
+2025-05-13 20:39:56.733 [INFO] Removing .\.pytest_cache
+2025-05-13 20:39:56.771 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 20:39:56.775 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 20:39:56.778 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 20:39:56.780 [INFO]   - redis: localhost:6380 (container port: 6380)
+2025-05-13 20:39:56.782 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 20:39:57.116 [INFO] Command error: time="2025-05-13T20:39:56+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Running
+
+2025-05-13 20:39:59.567 [INFO] Test message before shutdown
+2025-05-13 20:39:59.574 [INFO] Test message after shutdown
+2025-05-13 20:39:59.584 [INFO] Tearing down test environment...
+2025-05-13 20:47:32.548 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:47:32.551 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:47:32.561 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:47:32.562 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:47:32.566 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:47:32.567 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:47:47.474 [INFO] Setting up test environment...
+2025-05-13 20:47:47.476 [INFO] Removing .\.pytest_cache
+2025-05-13 20:47:47.510 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 20:47:47.514 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 20:47:47.517 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 20:47:47.518 [INFO]   - redis: localhost:6380 (container port: 6380)
+2025-05-13 20:47:47.518 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 20:47:47.852 [INFO] Command error: time="2025-05-13T20:47:47+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Running
+
+2025-05-13 20:47:50.309 [INFO] Test message before shutdown
+2025-05-13 20:47:50.317 [INFO] Test message after shutdown
+2025-05-13 20:47:50.337 [INFO] Tearing down test environment...
+2025-05-13 20:49:30.140 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:49:30.144 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:49:30.153 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:49:30.154 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:49:30.159 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:49:30.160 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:49:35.884 [INFO] Setting up test environment...
+2025-05-13 20:49:35.890 [INFO] Removing .\.pytest_cache
+2025-05-13 20:49:35.932 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 20:49:35.937 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 20:49:35.939 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 20:49:35.940 [INFO]   - redis: localhost:6380 (container port: 6380)
+2025-05-13 20:49:35.941 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 20:49:36.247 [INFO] Command error: time="2025-05-13T20:49:36+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Running
+
+2025-05-13 20:49:36.259 [INFO] ££££  av:  True
+2025-05-13 20:49:38.700 [INFO] Test message before shutdown
+2025-05-13 20:49:38.708 [INFO] Test message after shutdown
+2025-05-13 20:49:38.717 [INFO] Tearing down test environment...
+2025-05-13 20:50:12.231 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:50:12.234 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:50:12.266 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:50:12.267 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:50:12.271 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:50:12.271 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:50:12.761 [INFO] ££££  av:  True
+2025-05-13 20:50:18.293 [INFO] ££££  av:  True
+2025-05-13 20:50:18.311 [INFO] Setting up test environment...
+2025-05-13 20:50:18.312 [INFO] Removing .\.pytest_cache
+2025-05-13 20:50:18.351 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 20:50:18.352 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 20:50:18.355 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 20:50:18.355 [INFO]   - redis: localhost:6380 (container port: 6380)
+2025-05-13 20:50:18.356 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 20:50:18.663 [INFO] Command error: time="2025-05-13T20:50:18+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Running
+
+2025-05-13 20:50:21.105 [INFO] Test message before shutdown
+2025-05-13 20:50:21.111 [INFO] Test message after shutdown
+2025-05-13 20:50:21.123 [INFO] Tearing down test environment...
+2025-05-13 20:50:59.097 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:50:59.099 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:50:59.111 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:50:59.112 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:50:59.116 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 20:50:59.116 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 20:51:02.644 [INFO] Setting up test environment...
+2025-05-13 20:51:02.646 [INFO] Removing .\.pytest_cache
+2025-05-13 20:51:02.685 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 20:51:02.690 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 20:51:02.695 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 20:51:02.696 [INFO]   - redis: localhost:6380 (container port: 6380)
+2025-05-13 20:51:02.696 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 20:51:03.005 [INFO] Command error: time="2025-05-13T20:51:02+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Running
+
+2025-05-13 20:51:05.443 [INFO] Test message before shutdown
+2025-05-13 20:51:05.449 [INFO] Test message after shutdown
+2025-05-13 20:51:05.458 [INFO] Tearing down test environment...
+2025-05-13 21:12:39.230 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:12:39.233 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:12:39.243 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:12:39.244 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:12:39.249 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:12:39.250 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:12:39.410 [INFO] ££££  av:  True
+2025-05-13 21:12:52.622 [INFO] ££££  av:  True
+2025-05-13 21:12:52.638 [INFO] Setting up test environment...
+2025-05-13 21:12:52.640 [INFO] Removing .\.pytest_cache
+2025-05-13 21:12:52.685 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 21:12:52.693 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 21:12:52.698 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 21:12:52.700 [INFO]   - redis: localhost:6380 (container port: 6380)
+2025-05-13 21:12:52.702 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 21:12:53.105 [INFO] Command error: time="2025-05-13T21:12:52+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Running
+
+2025-05-13 21:12:55.545 [INFO] Test message before shutdown
+2025-05-13 21:12:55.552 [INFO] Test message after shutdown
+2025-05-13 21:12:55.562 [INFO] Tearing down test environment...
+2025-05-13 21:13:58.986 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:13:58.989 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:13:58.998 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:13:58.999 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:13:59.003 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:13:59.004 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:14:14.712 [INFO] Setting up test environment...
+2025-05-13 21:14:14.714 [INFO] Removing .\.pytest_cache
+2025-05-13 21:14:14.751 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 21:14:14.757 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 21:14:14.762 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 21:14:14.763 [INFO]   - redis: localhost:6380 (container port: 6380)
+2025-05-13 21:14:14.764 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 21:14:15.084 [INFO] Command error: time="2025-05-13T21:14:14+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Running
+
+2025-05-13 21:14:15.106 [INFO] Simple test message
+2025-05-13 21:14:15.451 [INFO] Tearing down test environment...
+2025-05-13 21:15:47.179 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:15:47.181 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:15:47.191 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:15:47.192 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:15:47.196 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:15:47.197 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:15:56.858 [INFO] Setting up test environment...
+2025-05-13 21:15:56.860 [INFO] Removing .\.pytest_cache
+2025-05-13 21:15:56.896 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 21:15:56.900 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 21:15:56.902 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 21:15:56.903 [INFO]   - redis: localhost:6380 (container port: 6380)
+2025-05-13 21:15:56.904 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 21:15:57.235 [INFO] Command error: time="2025-05-13T21:15:57+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Running
+
+2025-05-13 21:15:57.257 [INFO] Simple test message
+2025-05-13 21:15:57.274 [INFO] Tearing down test environment...
+2025-05-13 21:18:54.818 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:18:54.821 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:18:54.835 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:18:54.836 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:18:54.841 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:18:54.844 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:19:00.093 [INFO] Setting up test environment...
+2025-05-13 21:19:00.095 [INFO] Removing .\.pytest_cache
+2025-05-13 21:19:00.132 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 21:19:00.133 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 21:19:00.136 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 21:19:00.136 [INFO]   - redis: localhost:6381 (container port: 6381)
+2025-05-13 21:19:00.137 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 21:19:02.007 [INFO] Command error: time="2025-05-13T21:19:00+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Recreate
+ Container test-log-redis-1  Recreated
+ Container test-log-redis-1  Starting
+ Container test-log-redis-1  Started
+
+2025-05-13 21:19:06.129 [INFO] Simple test message
+2025-05-13 21:19:10.223 [INFO] Tearing down test environment...
+2025-05-13 21:21:41.705 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:21:41.712 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:21:41.724 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:21:41.727 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:21:41.733 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:21:41.734 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:21:55.885 [INFO] Setting up test environment...
+2025-05-13 21:21:55.888 [INFO] Removing .\.pytest_cache
+2025-05-13 21:21:55.927 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 21:21:55.929 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 21:21:55.932 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 21:21:55.933 [INFO]   - redis: localhost:6382 (container port: 6382)
+2025-05-13 21:21:55.934 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 21:21:57.946 [INFO] Command error: time="2025-05-13T21:21:56+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Recreate
+ Container test-log-redis-1  Recreated
+ Container test-log-redis-1  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint test-log-redis-1 (ccc27d68e8ba1f5d2a1a707fd4bc7ea597d99c2149305a12cb1928496351dbf2): Bind for 0.0.0.0:6382 failed: port is already allocated
+
+2025-05-13 21:21:57.947 [INFO] Error starting Docker containers: time="2025-05-13T21:21:56+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Recreate
+ Container test-log-redis-1  Recreated
+ Container test-log-redis-1  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint test-log-redis-1 (ccc27d68e8ba1f5d2a1a707fd4bc7ea597d99c2149305a12cb1928496351dbf2): Bind for 0.0.0.0:6382 failed: port is already allocated
+
+2025-05-13 21:23:37.319 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:23:37.321 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:23:37.333 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:23:37.335 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:23:37.340 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:23:37.341 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:23:39.185 [INFO] Setting up test environment...
+2025-05-13 21:23:39.187 [INFO] Removing .\.pytest_cache
+2025-05-13 21:23:39.223 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 21:23:39.232 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 21:23:39.235 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 21:23:39.237 [INFO]   - redis: localhost:6382 (container port: 6382)
+2025-05-13 21:23:39.237 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 21:23:39.858 [INFO] Command error: time="2025-05-13T21:23:39+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint test-log-redis-1 (55afa2a77656bf31108903e20e6aee02083f20fcd12713360e44308cd405cd1c): Bind for 0.0.0.0:6382 failed: port is already allocated
+
+2025-05-13 21:23:39.859 [INFO] Error starting Docker containers: time="2025-05-13T21:23:39+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint test-log-redis-1 (55afa2a77656bf31108903e20e6aee02083f20fcd12713360e44308cd405cd1c): Bind for 0.0.0.0:6382 failed: port is already allocated
+
+2025-05-13 21:23:56.383 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:23:56.387 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:23:56.395 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:23:56.395 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:23:56.400 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:23:56.401 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:24:00.483 [INFO] Setting up test environment...
+2025-05-13 21:24:00.486 [INFO] Removing .\.pytest_cache
+2025-05-13 21:24:00.534 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 21:24:00.535 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 21:24:00.538 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 21:24:00.539 [INFO]   - redis: localhost:6382 (container port: 6382)
+2025-05-13 21:24:00.540 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 21:24:01.238 [INFO] Command error: time="2025-05-13T21:24:00+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint test-log-redis-1 (95659095f9c21808bd2c64826defbc0383807b8b320d55561e4ab74c6ca96296): Bind for 0.0.0.0:6382 failed: port is already allocated
+
+2025-05-13 21:24:01.239 [INFO] Error starting Docker containers: time="2025-05-13T21:24:00+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Starting
+Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint test-log-redis-1 (95659095f9c21808bd2c64826defbc0383807b8b320d55561e4ab74c6ca96296): Bind for 0.0.0.0:6382 failed: port is already allocated
+
+2025-05-13 21:25:39.199 [INFO] Setting up test environment...
+2025-05-13 21:25:39.204 [INFO] Removing .\.pytest_cache
+2025-05-13 21:25:39.238 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 21:25:39.244 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 21:25:39.247 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 21:25:39.248 [INFO]   - redis: localhost:6382 (container port: 6382)
+2025-05-13 21:25:39.248 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 21:25:39.917 [INFO] Command error: time="2025-05-13T21:25:39+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Starting
+ Container test-log-redis-1  Started
+
+2025-05-13 21:25:39.936 [INFO] Tearing down test environment...
+2025-05-13 21:26:10.647 [INFO] Setting up test environment...
+2025-05-13 21:26:10.649 [INFO] Removing .\.pytest_cache
+2025-05-13 21:26:10.684 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 21:26:10.690 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 21:26:10.692 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 21:26:10.693 [INFO]   - redis: localhost:6382 (container port: 6382)
+2025-05-13 21:26:10.694 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 21:26:11.143 [INFO] Command error: time="2025-05-13T21:26:10+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Running
+
+2025-05-13 21:26:11.162 [INFO] Tearing down test environment...
+2025-05-13 21:28:46.274 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:28:46.276 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:28:46.289 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:28:46.290 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:28:46.295 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:28:46.296 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:29:31.764 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:29:31.767 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:29:31.779 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:29:31.779 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:29:31.784 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:29:31.785 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:29:37.088 [INFO] Setting up test environment...
+2025-05-13 21:29:37.091 [INFO] Removing .\.pytest_cache
+2025-05-13 21:29:37.127 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 21:29:37.132 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 21:29:37.135 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 21:29:37.136 [INFO]   - redis: localhost:6382 (container port: 6382)
+2025-05-13 21:29:37.137 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 21:29:37.464 [INFO] Command error: time="2025-05-13T21:29:37+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Running
+
+2025-05-13 21:29:37.486 [INFO] Tearing down test environment...
+2025-05-13 21:31:06.673 [INFO] Setting up test environment...
+2025-05-13 21:31:06.676 [INFO] Removing .\.pytest_cache
+2025-05-13 21:31:06.728 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-13 21:31:06.732 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-13 21:31:06.736 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-13 21:31:06.737 [INFO]   - redis: localhost:6382 (container port: 6379)
+2025-05-13 21:31:06.738 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-13 21:31:07.473 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:31:07.476 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:31:07.489 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:31:07.491 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:31:07.510 [INFO] ++++++++++ Creating EntityUtils
+2025-05-13 21:31:07.511 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-13 21:31:09.291 [INFO] Command error: time="2025-05-13T21:31:06+01:00" level=warning msg="c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container test-log-redis-1  Recreate
+ Container test-log-redis-1  Recreated
+ Container test-log-redis-1  Starting
+ Container test-log-redis-1  Started
+
+2025-05-13 21:31:09.322 [INFO] Tearing down test environment...
+2025-05-13 21:31:09.324 [INFO] Removing .\.pytest_cache

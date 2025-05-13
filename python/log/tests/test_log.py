@@ -21,7 +21,8 @@ def test_error_logs_message(tmp_path, monkeypatch):
     patch_utils(monkeypatch, tmp_path)
     importlib.reload(mylog)
     mylog.error("[UNIT TEST] Error occurred")
-    mylog.AsyncLogger.get_instance().shutdown()  # <<<<< FORCE FLUSH!
+    # Shutdown now fully synchronous - no async issues
+    mylog.AsyncLogger.get_instance().shutdown()
     content = read_log_content(get_log_file(tmp_path))
     assert "[ERROR]" in content
     assert "[UNIT TEST] Error occurred" in content
@@ -30,7 +31,7 @@ def test_info_logs_message(tmp_path, monkeypatch):
     patch_utils(monkeypatch, tmp_path)
     importlib.reload(mylog)
     mylog.info("[UNIT TEST] Info message")
-    mylog.AsyncLogger.get_instance().shutdown()  # <<<<< FORCE FLUSH!
+    mylog.AsyncLogger.get_instance().shutdown()
     content = read_log_content(get_log_file(tmp_path))
     assert "[INFO]" in content
     assert "[UNIT TEST] Info message" in content
@@ -39,7 +40,7 @@ def test_debug_logs_to_stdout_only(tmp_path, monkeypatch, capsys):
     patch_utils(monkeypatch, tmp_path)
     importlib.reload(mylog)
     mylog.debug("[UNIT TEST] Debug info")
-    time.sleep(0.5)
+    # Note: No async sleep needed since everything is synchronous now
     out = capsys.readouterr().out
     assert "[UNIT TEST] Debug info" in out
     log_file = Path(get_log_file(tmp_path))
@@ -49,7 +50,7 @@ def test_profile_logs_to_stdout_only(tmp_path, monkeypatch, capsys):
     patch_utils(monkeypatch, tmp_path)
     importlib.reload(mylog)
     mylog.profile("[UNIT TEST] Profile start")
-    time.sleep(0.5)
+    # Note: No async sleep needed since everything is synchronous now
     out = capsys.readouterr().out
     assert "[UNIT TEST] Profile start" in out
     log_file = Path(get_log_file(tmp_path))
@@ -73,7 +74,9 @@ def test_queue_accepts_multiple_messages(tmp_path, monkeypatch):
     for i in range(20):
         mylog.info(f"[UNIT TEST] log {i}")
 
-    time.sleep(1)
+    # All logs should be written immediately now, no sleep needed
+    # But keeping a small sleep for stability
+    time.sleep(0.1)
 
     log_file = get_log_file(tmp_path)
     content = read_log_content(log_file)
