@@ -1,21 +1,26 @@
 import yaml
 import os
 from pathlib import Path
+from .. import log as logger
 
 def parse_docker_compose(compose_file):
     """
-    Parse a Docker Compose file and extract service name, ports, and host mappings.
+    Parse a Docker Compose file and extract service information needed for readiness checks.
     
     Returns:
-        List of tuples: [(service_name, container_port, host_port, host)]
+        List of tuples: [(service, container_port, host_port, host, credentials, service_name)]
+        where:
+        - service: Type of service (redis, postgres, mysql, etc.) - used for connection logic
+        - host_port: The exposed port on the host
+        - host: The host address (usually localhost)
+        - credentials: Dict with connection parameters
     """
     try:
         with open(compose_file, 'r') as f:
             compose_data = yaml.safe_load(f)
         
         service_info = []
-        if not compose_data or 'services' not in compose_data:
-            print(f"Warning: No services defined in {compose_file}")
+        if not compose_data or 'services' not in compose_data:            
             return service_info
         
         for service_name, service_config in compose_data['services'].items():
@@ -23,8 +28,53 @@ def parse_docker_compose(compose_file):
             if 'ports' not in service_config:
                 continue
             
+            # Determine service type based on image
+            service = 'generic'
+            if 'image' in service_config:
+                image = service_config['image'].lower()
+                if 'redis' in image:
+                    service = 'redis'
+                elif 'postgres' in image or 'postgresql' in image:
+                    service = 'postgres'
+                elif 'mysql' in image or 'mariadb' in image:
+                    service = 'mysql'
+                elif 'mongo' in image:
+                    service = 'mongodb'
+                # Add more as needed
+            
+            # Get environment variables for credentials
+            env_vars = {}
+            if 'environment' in service_config:
+                env_config = service_config['environment']
+                if isinstance(env_config, list):
+                    for env_var in env_config:
+                        if '=' in env_var:
+                            key, value = env_var.split('=', 1)
+                            env_vars[key] = value
+                elif isinstance(env_config, dict):
+                    env_vars = env_config
+            
+            # Set up credentials based on service type
+            credentials = {}
+            if service == 'postgres':
+                credentials = {
+                    'user': env_vars.get('POSTGRES_USER', 'postgres'),
+                    'password': env_vars.get('POSTGRES_PASSWORD', 'postgres'),
+                    'dbname': env_vars.get('POSTGRES_DB', 'postgres')
+                }
+            elif service == 'mysql':
+                root_password = env_vars.get('MYSQL_ROOT_PASSWORD', 'root')
+                credentials = {
+                    'user': env_vars.get('MYSQL_USER', 'root'),
+                    'password': env_vars.get('MYSQL_PASSWORD', root_password),
+                    'dbname': env_vars.get('MYSQL_DATABASE', 'mysql')
+                }
+            
+            # Parse port mappings
             for port_mapping in service_config['ports']:
-                # Port mapping can be a string like "8080:80" or a dict with "published" and "target"
+                # Default host
+                host = 'localhost'
+                
                 if isinstance(port_mapping, str):
                     # Handle different formats: "8080:80", "127.0.0.1:8080:80", "8080"
                     parts = port_mapping.split(':')
@@ -32,15 +82,13 @@ def parse_docker_compose(compose_file):
                         host, host_port, container_port = parts
                     elif len(parts) == 2:  # "8080:80"
                         host_port, container_port = parts
-                        host = 'localhost'
                     else:  # "8080"
                         host_port = container_port = parts[0]
-                        host = 'localhost'
                 elif isinstance(port_mapping, dict):
                     # Docker Compose v3 format
                     host_port = port_mapping.get('published', '')
                     container_port = port_mapping.get('target', '')
-                    host = port_mapping.get('host', 'localhost')
+                    host = port_mapping.get('host', host)
                 else:
                     # Skip invalid port mappings
                     continue
@@ -49,7 +97,7 @@ def parse_docker_compose(compose_file):
                 try:
                     host_port = int(host_port)
                     container_port = int(container_port)
-                    service_info.append((service_name, container_port, host_port, host))
+                    service_info.append((service,  host_port, host, credentials))
                 except (ValueError, TypeError):
                     # Skip invalid port values
                     continue
@@ -57,7 +105,7 @@ def parse_docker_compose(compose_file):
         return service_info
     
     except Exception as e:
-        print(f"Error parsing Docker Compose file {compose_file}: {e}")
+        logger.info(f"Error parsing Docker Compose file {compose_file}: {e}")
         return []
     
 def find_module_docker_compose(root_path: str=None):

@@ -71,6 +71,9 @@ class Error(Exception):
         # Flag to prevent recursive string representation
         self._in_str_call = False
 
+    #def __str__(self):        
+       # return self.to_string()
+    
     def to_dict(self):
         try:
             return json.loads(self._encode())
@@ -160,9 +163,17 @@ class Error(Exception):
             # Build a single comprehensive error message
             parts = []
             inner = self._get_inner_error()
-            
-            # 1. Description
-            parts.append(inner.description)
+           
+            # 1. Description 
+            if inner:
+                if inner.description:
+                    parts.append(f"{inner.description}"+("" if not inner.error else f": {str(inner.error)}"))
+                elif inner.error:
+                    parts.append(f"An error happened in {inner.context}: {str(inner.error)}")
+                else:
+                    parts.append(f"{str(inner)}")
+            else:
+                parts.append(self.description+"" if not self.error else f": {str(self.error)}")
             
             # 2. Call chain
             call_chain = self._get_call_chain()
@@ -222,8 +233,8 @@ class Error(Exception):
         """Get the consequences as a string."""
         consequences = []
         
-        # Process nested errors only (not this one)
-        current = self.error
+
+        current = self
         while current and hasattr(current, 'description'):
             if current.description:
                 desc = _clean_description(current.description)
@@ -243,7 +254,7 @@ class Error(Exception):
         while current and hasattr(current, 'error') and current.error:
             if isinstance(current.error, Error):
                 inner = current.error
-            current = getattr(current.error, 'error', None)
+            current = current.error
         
         return inner
 

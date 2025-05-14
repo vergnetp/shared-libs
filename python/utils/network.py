@@ -5,7 +5,7 @@ import socket
 import time
 from .. import log as logger
 
-def is_service_ready(port, service_name="service", host='localhost'):
+def is_port_ready(port, service_name="service", host='localhost'):
     """
     Check wether a service is ready by checking if it accepts connections on the specified port.   
    
@@ -24,7 +24,7 @@ def is_service_ready(port, service_name="service", host='localhost'):
         pass
     return False
 
-def wait_for_service_ready(port, service_name="service", host='localhost', timeout=30, check_interval=1):
+def wait_for_port(port, service_name="service", host='localhost', timeout=30, check_interval=1):
     """
     Wait for a service to be ready by checking if it accepts connections on the specified port.
     

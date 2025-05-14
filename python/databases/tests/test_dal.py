@@ -6,6 +6,7 @@ import uuid
 import os
 from datetime import datetime, timedelta
 import time
+from ... import log as logger
 
 # Import the database abstraction layer
 from ..base2 import (
@@ -143,22 +144,11 @@ def test_quick(postgres_db):
 
 def test_sync(postgres_db):
     db, _ = postgres_db
-
-
-    # Direct connection test...
-    print("direct OK")
     
-    results = []
-   
-
-    conn = db.get_sync_connection()
-    
-    result = conn.execute("SELECT 1")
-    
-    
-    results.append(result)
-    
-    
+    results = []  
+    conn = db.get_sync_connection()    
+    result = conn.execute("SELECT 1") 
+    results.append(result)   
     conn.close()
            
 @pytest.mark.asyncio
@@ -444,6 +434,32 @@ async def test_sqlite_transaction_rollback(sqlite_db):
             await conn.rollback_transaction()
             raise
 
+@pytest.mark.asyncio
+async def test_sqlite_save_and_get_entity(sqlite_db):
+    """Test creating an entity and retrieving it"""
+    db, _ = sqlite_db
+    
+    # Create a unique entity name for this test
+    entity_name = f"test_users_{uuid.uuid4().hex[:8]}"
+    test_name = "Alice"
+    
+    async with db.async_connection() as conn:
+        # Save entity
+        saved_entity = await conn.save_entity(entity_name, {"name": test_name})
+        
+        # Verify ID was generated
+        assert saved_entity.get('id') is not None
+        entity_id = saved_entity['id']
+        
+        # Get entity and verify data
+        retrieved_entity = await conn.get_entity(entity_name, entity_id)
+
+        logger.info(f"============= {json.dumps(retrieved_entity, indent=4)}")
+        assert retrieved_entity['name'] == test_name
+        
+        # Cleanup - delete the entity
+        success = await conn.delete_entity(entity_name, entity_id, permanent=True)
+        assert success
 
 @pytest.mark.asyncio
 async def test_sqlite_custom_serialization(sqlite_db):
@@ -465,7 +481,7 @@ async def test_sqlite_custom_serialization(sqlite_db):
     
     async with db.async_connection() as conn:
         # Register custom serializers
-        conn.register_serializer("event_date", serialize_date, deserialize_date)
+        conn.register_serializer("datetime", serialize_date, deserialize_date)
         
         # Event date for testing
         now = datetime.now()
@@ -479,6 +495,9 @@ async def test_sqlite_custom_serialization(sqlite_db):
         
         # Get entity with deserialization
         retrieved = await conn.get_entity(entity_name, event['id'], deserialize=True)
+
+        assert retrieved['title'] == 'Test Event'
+       
         
         # Verify the date was properly serialized and deserialized
         assert isinstance(retrieved['event_date'], datetime)

@@ -2950,8 +2950,6 @@ class PostgresSqlGenerator(SqlGenerator, SqlEntityGenerator):
     
     def _convert_parameters(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
         """Convert standard ? placeholders to PostgreSQL $1, $2, etc. format"""        
-        if not params:
-            return sql, []
             
         if self._is_async:           
             # Use regex to safely replace placeholders with indexed parameters
@@ -2981,10 +2979,10 @@ class PostgresSqlGenerator(SqlGenerator, SqlEntityGenerator):
                 else:
                     new_sql += sql[i]
                     i += 1                  
-        return new_sql, params    
+        return new_sql, params or []    
     
     def get_upsert_sql(self, entity_name: str, fields: List[str]) -> str:
-        """Generate PostgreSQL-specific upsert SQL for an entity."""
+        """Generate PostgreSQL-specific upsert SQL for an entity.""" 
         fields_str = ', '.join([f"[{field}]" for field in fields])
         placeholders = ', '.join(['?'] * len(fields))
         update_clause = ', '.join([f"[{field}]=EXCLUDED.[{field}]" for field in fields if field != 'id'])
@@ -3190,7 +3188,7 @@ class MySqlSqlGenerator(SqlGenerator, SqlEntityGenerator):
         if not params:
             return new_sql, []
         
-        return new_sql, params
+        return new_sql, params or []
     
     def get_upsert_sql(self, entity_name: str, fields: List[str]) -> str:
         """Generate MySQL-specific upsert SQL for an entity."""
@@ -3992,7 +3990,14 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         schema_sql, schema_params = self.sql_generator.get_list_columns_sql(table_name)
         schema_result = await self.execute(schema_sql, schema_params)
         if schema_result:
-            field_names = [row[0] for row in schema_result]
+            # Check if this is SQLite's PRAGMA table_info() result
+            # SQLite PRAGMA returns rows in format (cid, name, type, notnull, dflt_value, pk)
+            if isinstance(schema_result[0][0], int) and len(schema_result[0]) >= 3 and isinstance(schema_result[0][1], str):
+                # For SQLite, column name is at index 1
+                field_names = [row[1] for row in schema_result]
+            else:
+                # For other databases, column name is at index 0
+                field_names = [row[0] for row in schema_result]
             logger.info(f"Got field names for {table_name} from schema: {field_names}")
             return field_names
         
@@ -4063,9 +4068,8 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         
         # Deserialize if requested
         if deserialize:
-            if deserialize:
-                meta = await self._get_entity_metadata(entity_name)
-                return self._deserialize_entity(entity_name, entity_dict, meta)
+            meta = await self._get_entity_metadata(entity_name)
+            return self._deserialize_entity(entity_name, entity_dict, meta)
         
         return entity_dict
     
@@ -4464,12 +4468,12 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
             history_entries.append(entity_dict)
             
         return history_entries
-    
+
     @async_method
     @with_timeout()
     @auto_transaction
     async def get_entity_by_version(self, entity_name: str, entity_id: str, 
-                               version: int, deserialize: bool = False) -> Optional[Dict[str, Any]]:
+                            version: int, deserialize: bool = False) -> Optional[Dict[str, Any]]:
         """
         Get a specific version of an entity.
         
@@ -4482,6 +4486,10 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         Returns:
             Entity version or None if not found
         """
+        # Get all field names for complete entity comparison
+        all_fields = set(await self._get_field_names(entity_name))
+        all_history_fields = set(await self._get_field_names(entity_name, is_history=True))
+        
         # Generate SQL
         sql, params = self.sql_generator.get_entity_version_sql(entity_name, entity_id, version)
         
@@ -4492,17 +4500,36 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         if not result or len(result) == 0:
             return None
             
-        # Convert the first row to a dictionary
-        field_names = await self._get_field_names(entity_name)
-        entity_dict = dict(zip(field_names, result[0]))
+        # Convert the first row to a dictionary using history field names
+        field_names = await self._get_field_names(entity_name, is_history=True)
+        history_entity = {}
         
+        # Map values by name and handle column length discrepancies
+        for i, column_name in enumerate(field_names):
+            if i < len(result[0]):
+                history_entity[column_name] = result[0][i]
+        
+        # Find fields that exist in current entity but not in this version
+        missing_fields = all_fields - set(history_entity.keys())
+        
+        # If this version doesn't have certain fields that exist in the current version,
+        # they should be explicitly set to None
+        for field in missing_fields:
+            history_entity[field] = None
+        
+        # Remove history-specific fields
+        for field in list(history_entity.keys()):
+            if field in ['version', 'history_timestamp', 'history_user_id', 'history_comment'] and field not in all_fields:
+                history_entity.pop(field)
         
         # Deserialize if requested
         if deserialize:
-            return self._deserialize_entity(entity_name, entity_dict)
+            meta = await self._get_entity_metadata(entity_name)
+            return self._deserialize_entity(entity_name, history_entity, meta)
             
-        return entity_dict
-    
+        return history_entity
+
+
     # Schema operations
     
     @async_method
@@ -4593,56 +4620,120 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
     @auto_transaction
     async def _update_entity_metadata(self, entity_name: str, entity: Dict[str, Any]) -> None:
         """
-        Update metadata table based on entity fields.
+        Update metadata table based on entity fields and add missing columns to the table.
         
         Args:
             entity_name: Name of the entity type
             entity: Entity dictionary with fields to register
         """
-        # Ensure tables exist
-        main_exists_sql, main_params = self.sql_generator.get_check_table_exists_sql(f"{entity_name}_meta")
-        meta_exists = bool(await self.execute(main_exists_sql, main_params))
-        
-        if not meta_exists:
-            meta_sql = self.sql_generator.get_create_meta_table_sql(entity_name)
-            await self.execute(meta_sql, ())
+        # Ensure meta table exists
+        try:
+            main_exists_sql, main_params = self.sql_generator.get_check_table_exists_sql(f"{entity_name}_meta")
+            meta_exists = bool(await self.execute(main_exists_sql, main_params))
+            
+            if not meta_exists:
+                meta_sql = self.sql_generator.get_create_meta_table_sql(entity_name)
+                await self.execute(meta_sql, ())
+        except Exception as e:
+            logger.error(f"Error checking/creating meta table for {entity_name}: {e}")
+            raise
         
         # Get existing metadata
-        meta = await self._get_entity_metadata(entity_name, use_cache=False)
+        try:
+            meta = await self._get_entity_metadata(entity_name, use_cache=False)
+        except Exception as e:
+            logger.error(f"Error getting metadata for {entity_name}: {e}")
+            meta = {}  # Use empty dict as fallback
+        
+        # Track new fields to add
+        new_fields = []
         
         # Check each field in the entity
         for field_name, value in entity.items():
-            # Skip if already in metadata with same type
-            if field_name in meta:
+            # Skip system fields that should already exist
+            if field_name in ['id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at']:
                 continue
                 
-
-            logger.info(f"We need to add a new field to {entity_name}: {field_name}") # todo delete or set tu debug
-
-            # Determine the type
-            value_type = self._infer_type(value)
-            
-            # Add to metadata
-            sql = self.sql_generator.get_meta_upsert_sql(entity_name)
-            await self.execute(sql, (field_name, value_type))
-
-        col_exists_sql, col_exists_params = self.sql_generator.get_check_column_exists_sql(entity_name, field_name)
-        col_exists_result = await self.execute(col_exists_sql, col_exists_params)
+            # Check if field is in metadata
+            if field_name not in meta:
+                # Determine the type
+                value_type = self._infer_type(value)
+                logger.info(f"Found new field {field_name} in {entity_name} with type {value_type}")
+                
+                # Add to metadata
+                meta_sql = self.sql_generator.get_meta_upsert_sql(entity_name)
+                try:
+                    await self.execute(meta_sql, (field_name, value_type))
+                    meta[field_name] = value_type  # Update local meta dict
+                    new_fields.append(field_name)  # Track for column addition
+                except Exception as e:
+                    logger.error(f"Error updating metadata for field {field_name}: {e}")
         
-        # Only try to add the column if it doesn't exist
-        if not col_exists_result or len(col_exists_result) == 0:
-            sql = self.sql_generator.get_add_column_sql(entity_name, field_name)
-            await self.execute(sql, ())
-            sql = self.sql_generator.get_add_column_sql(entity_name+"_history", field_name)
-            await self.execute(sql, ())
-            
-            # Update cache
-            meta[field_name] = value_type
-            
+        # Now add any new columns to the tables
+        for field_name in new_fields:
+            # Check if column exists in table
+            try:
+                exists = await self._check_column_exists(entity_name, field_name)
+                if not exists:
+                    logger.info(f"Adding column {field_name} to table {entity_name}")
+                    sql = self.sql_generator.get_add_column_sql(entity_name, field_name)
+                    await self.execute(sql, ())
+            except Exception as e:
+                logger.error(f"Error adding column {field_name} to {entity_name}: {e}")
+                raise
+                
+            # Add to history table as well
+            try:
+                history_exists = await self._check_column_exists(f"{entity_name}_history", field_name)
+                if not history_exists:
+                    logger.info(f"Adding column {field_name} to history table {entity_name}_history")
+                    sql = self.sql_generator.get_add_column_sql(f"{entity_name}_history", field_name)
+                    await self.execute(sql, ())
+            except Exception as e:
+                logger.warning(f"Error adding column {field_name} to history table: {e}")
+                # Continue even if history update fails
+        
         # Update cache
         self._meta_cache[entity_name] = meta
     
     # Utility methods
+    
+    @async_method
+    async def _check_column_exists(self, table_name: str, column_name: str) -> bool:
+        """
+        Check if a column exists in a table.
+        
+        This method handles different database formats properly.
+        
+        Args:
+            table_name: Name of the table to check
+            column_name: Name of the column to check
+            
+        Returns:
+            bool: True if column exists, False otherwise
+        """
+        try:
+            # Get SQL for checking column existence
+            sql, params = self.sql_generator.get_check_column_exists_sql(table_name, column_name)
+            result = await self.execute(sql, params)
+            
+            # Handle empty result
+            if not result or len(result) == 0:
+                return False
+                
+            # Handle SQLite PRAGMA result format
+            if isinstance(result[0][0], int) and len(result[0]) > 1:
+                # SQLite returns rows with format (cid, name, type, notnull, dflt_value, pk)
+                # Check if any row has matching column name at index 1
+                return any(row[1] == column_name for row in result)
+                
+            # Handle PostgreSQL/MySQL format - they return the column name directly
+            # or sometimes a row count
+            return bool(result[0][0])
+                
+        except Exception as e:
+            logger.warning(f"Error checking if column {column_name} exists in {table_name}: {e}")
+            return False  # Assume it doesn't exist if check fails
     
     @async_method
     async def _get_entity_metadata(self, entity_name: str, use_cache: bool = True) -> Dict[str, str]:
@@ -4681,11 +4772,12 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         self._meta_cache[entity_name] = meta
         return meta
     
+
     @async_method
     @auto_transaction
     async def _add_to_history(self, entity_name: str, entity: Dict[str, Any], 
-                             user_id: Optional[str] = None, 
-                             comment: Optional[str] = None) -> None:
+                            user_id: Optional[str] = None, 
+                            comment: Optional[str] = None) -> None:
         """
         Add an entry to entity history.
         
@@ -4718,14 +4810,20 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
         history_entry['history_user_id'] = user_id
         history_entry['history_comment'] = comment
         
-        # Generate insert SQL
-        fields = list(history_entry.keys())
+        # Get the list of columns in the history table to ensure we only use existing columns
+        field_names = await self._get_field_names(entity_name, is_history=True)
+        
+        # Filter history_entry to only include fields that exist in the table
+        filtered_entry = {k: v for k, v in history_entry.items() if k in field_names}
+        
+        # Generate insert SQL using only the filtered fields
+        fields = list(filtered_entry.keys())
         placeholders = ', '.join(['?'] * len(fields))
         fields_str = ', '.join([f"[{field}]" for field in fields])
         history_sql = f"INSERT INTO [{entity_name}_history] ({fields_str}) VALUES ({placeholders})"
         
         # Execute insert
-        params = tuple(history_entry[field] for field in fields)
+        params = tuple(filtered_entry[field] for field in fields)
         await self.execute(history_sql, params)
 
 

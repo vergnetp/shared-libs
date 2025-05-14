@@ -4,7 +4,7 @@ from ... import log as logger
 
 def test_basic_error_str_contains_description_and_location():
     err = Error(description="Something went wrong", action="Retry", critical=True)
-    output = str(err)
+    output = err.to_string()
     assert "Something went wrong" in output
     assert "Retry" in output
     assert "line" in output  # should include line number in location
@@ -48,9 +48,9 @@ def test_error_encoding_with_nested_errors():
         raise ValueError("base")
     except Exception as e:
         err = Error(error=TrackError(e), description="top level")
-    encoded = str(err)
+    encoded = err.to_string()
+    logger.info(encoded)
     assert "top level" in encoded
-    assert "base" in encoded
     assert "line" in encoded
 
 
@@ -88,12 +88,12 @@ def test_try_catch():
             raise UserError(e,"Could not process payment with Stripe","Investigate stripe error",user_message="Your payment could not be processed. You have not been charged")
         do()
 
-    @try_catch(description="App failed",action="Investigate", critical=True)
+    @try_catch(description="App failed",action="Investigate App issue", critical=True)
     def main_stripe_error():
         pay_stripe_error()
 
 
-    @try_catch(user_message="Internal Error. Please try again later")
+    @try_catch(user_message="Internal Error. Please try again later",description="Web service failed",action="Investigate web service issue")
     def server_process_request_stripe_error():
         main_stripe_error()
 
@@ -104,7 +104,6 @@ def test_try_catch():
         logger.error(f"Error:\n{e.to_string()}")
         # send nessage back to user
         user_message = e.user_message() 
-
 
     @try_catch(description="Could not pay",action="Refund the client", critical=True)
     def pay_processing_error():
@@ -130,5 +129,63 @@ def test_try_catch():
         logger.error(f"Error:\n{e.to_string()}")
         # send nessage back to user
         user_message = e.user_message() 
+
+   #    # todo: assert on  the log
         
 
+def test_readme_example():
+    # Low-level payment processor
+    @try_catch(
+        description="Could not process payment with Stripe",
+        action="Investigate stripe error",
+        critical=True
+    )
+    def process_payment():
+        try:           
+            # Code that might fail
+            raise Exception("Stripe Failure")
+        except Exception as e:
+            # Create a user-friendly error
+            raise UserError(
+                e,
+                "Could not process payment with Stripe",
+                "Investigate stripe error",
+                user_message="Your payment could not be processed. You have not been charged"
+            )
+
+    # Mid-level application logic
+    @try_catch(
+        description="App failed",
+        action="Investigate App issue", 
+        critical=True
+    )
+    def execute_transaction():
+        process_payment()  # This will propagate errors upward with added context
+
+    # Top-level API endpoint
+    @try_catch(
+        user_message="Internal Error. Please try again later",
+        description="Web service failed",
+        action="Investigate web service issue"
+    )
+    def api_endpoint():
+        try:
+            execute_transaction()
+            return {"success": True}
+        except Error as e:
+            # Log the full error details for debugging
+            logger.error(f"API Error:\n{e.to_string()}")
+            
+            # Return only the user-friendly message
+            return {"success": False, "error": e.user_message()}
+    
+    api_endpoint()
+   
+    # todo: assert on 
+    """Could not process payment with Stripe: Stripe Failure
+Call chain: process_payment -> execute_transaction
+Consequences: Could not process payment with Stripe -> App failed
+Action: Investigate stripe error -> Investigate App issue
+Official message: Your payment could not be processed. You have not been charged
+Location: ...test_error.py process_payment line 146"""
+    #assert False

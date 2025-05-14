@@ -82,7 +82,7 @@ def try_catch(func=None, description=None, action=None, critical=False, user_mes
                 
             # Create a new TrackError
             track_desc = f"An error happened in {current_context}: {error}"
-            raise TrackError(error, description=track_desc, context=current_context)
+            raise TrackError(error,  context=current_context)
 
 
         # Get class info if it's a method
@@ -115,7 +115,7 @@ def try_catch(func=None, description=None, action=None, critical=False, user_mes
                 helper(current_context, error)
             elif hasattr(error, 'context') and not error.context:
                 # This is one of ours and it was raised manually by the developer - we add context and raise as is
-                logger.info(f"^^^^ {error}")
+                #logger.info(f"^^^^ {error}")
                 error.add_context(current_context)
                 raise error                
             else:

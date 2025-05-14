@@ -36,6 +36,30 @@ def delete_pytest_cache():
             logger.info(f"Removing {cache_dir}")
             shutil.rmtree(cache_dir)
 
+def is_docker_running():
+    """Check if Docker daemon is running"""
+    return_code, stdout, stderr = run_command("docker info")
+    return return_code == 0
+
+def try_start_docker():
+    """Try to start Docker daemon"""
+    # Different commands for different platforms
+    if os.name == 'nt':  # Windows
+        return_code, stdout, stderr = run_command("net start docker")
+    else:  # Linux/Mac
+        # Try systemd first (most common)
+        return_code, stdout, stderr = run_command("sudo systemctl start docker")
+        if return_code != 0:
+            # Try service command as fallback
+            return_code, stdout, stderr = run_command("sudo service docker start")
+    
+    # Give Docker a moment to initialize after starting
+    if return_code == 0:
+        time.sleep(5)
+        return is_docker_running()
+    return False
+
+
 def prevent_py_cache():
     """Prevent Python from creating __pycache__ folders"""
     os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -91,9 +115,21 @@ def setup_test_environment(request):
     
     # Find Docker Compose files for each test file
     active_compose_files = []
+    docker_checked = False
     
     for test_path in test_paths:
         compose_file = utils.find_module_docker_compose(test_path)
+
+        if compose_file and not docker_checked:
+            # Check if Docker is running
+            if not is_docker_running():
+                logger.info("Docker is not running. Attempting to start Docker...")
+                docker_started = try_start_docker()
+                if not docker_started:
+                    logger.info("Failed to start Docker daemon. Please start Docker manually and try again.")
+                    pytest.exit("Docker daemon is not running and could not be started automatically")
+            docker_checked = True
+
         if compose_file and compose_file not in [f for f, _ in active_compose_files]:
             logger.info(f"Found Docker Compose file for {test_path}: {compose_file}")
             
@@ -125,18 +161,21 @@ def setup_test_environment(request):
                 logger.info(f"Error starting Docker containers: {stderr}")
                 pytest.exit(f"Docker setup failed with code {return_code}")
             
-            active_compose_files.append((compose_file, project_name))
-            
-            need_more_time = False
+            active_compose_files.append((compose_file, project_name)) 
 
             # Wait for all services with exposed ports to be ready
-            for service_name, _, host_port, host in service_info:
-                if not utils.is_service_ready(host_port, service_name, host):
-                    need_more_time = True
-                    utils.wait_for_service_ready(host_port, service_name, host=host)
-            if need_more_time:
-                logger.info("Waiting a little more to be sure database and other services are really up and running...")
-                time.sleep(30)
+            for service, host_port, host, credentials in service_info:
+                # Prepare arguments for wait_for_service function
+                service_args = {
+                    'service': service,
+                    'host': host,
+                    'port': host_port
+                }                
+                # Add credentials if applicable
+                service_args.update(credentials)
+                if not utils.wait_for_service(**service_args, timeout=30):
+                    logger.info(f"{service} service failed to start properly")
+                    pytest.exit(f"{service} service is not responding on {host}:{host_port}")       
     
     if not active_compose_files:
         logger.info("No Docker Compose files found for any test files. Continuing without Docker setup.")
@@ -147,11 +186,11 @@ def setup_test_environment(request):
     logger.info("Tearing down test environment...")
     
     for compose_file, project_name in active_compose_files:
-        cmd = f"docker-compose -f {compose_file} -p {project_name} down -v"
-        #return_code, stdout, stderr = run_command(cmd)
+        cmd = ""#f"docker-compose -f {compose_file} -p {project_name} down -v"
+        return_code, stdout, stderr = run_command(cmd)
         
-        #if return_code != 0:
-            #logger.info(f"Warning: Error stopping Docker containers: {stderr}")
+        if return_code != 0:
+            logger.info(f"Warning: Error stopping Docker containers: {stderr}")
     
     prevent_py_cache()
     delete_pytest_cache()

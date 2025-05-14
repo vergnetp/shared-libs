@@ -12,5 +12,7 @@ todos:
 * direct debit life insurance
 * pay tiphaine
 * pay electricity 13B
+* alergy appointment
+* MRI
 
 
