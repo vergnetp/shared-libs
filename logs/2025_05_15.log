@@ -1500,3 +1500,15 @@ WARNING: daemon is not using the default seccomp profile
 2025-05-15 00:29:54.938 [INFO] Simple test message
 2025-05-15 00:29:55.892 [INFO] Tearing down test environment...
 2025-05-15 00:29:55.895 [INFO] Running command: 
+2025-05-15 00:40:46.321 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:40:46.324 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:40:46.333 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:40:46.334 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:40:46.339 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:40:46.339 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:44:17.334 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:44:17.340 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:44:17.353 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:44:17.354 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:44:17.365 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:44:17.366 [INFO] ++++++++++ EntityUtils custom_serializers: {}

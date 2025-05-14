@@ -1593,17 +1593,21 @@ class PoolManager(ABC):
     async def _leak_detection_task(self):
         """Background task that periodically checks for and recovers from connection leaks"""
         IDLE_TIMEOUT = 1800  # 30 minutes idle time before considering a connection dead
-        LEAK_THRESHOLD_SECONDS = 300 # if a connection has been used for longer than 5 mns, it shoudl be considered leaked
-        SLEEP_TIME = 300 # 300 seconds are 5 mns
+        LEAK_THRESHOLD_SECONDS = 300  # if a connection has been used for longer than 5 mins, it should be considered leaked
+        SLEEP_TIME = 300  # 300 seconds are 5 mins
 
-        logger.info(f"PoolManager - Leak Detection - The task has been started and will check and reclaim leaked or idle connections every {int(SLEEP_TIME/60)} mns")
+        logger.info(f"Task started: will check and reclaim leaked or idle connections every {int(SLEEP_TIME/60)} mins for pool {self.alias()}", 
+                    pool_name=self.alias(), 
+                    check_interval_mins=int(SLEEP_TIME/60))
+                    
         while True:
             try:
                 # Wait to avoid excessive CPU usage
                 try:
                     await asyncio.sleep(SLEEP_TIME)  
                 except asyncio.CancelledError:
-                    logger.info("PoolManager - Leak Detection - The task has been cancelled")
+                    logger.info(f"Task cancelled for pool {self.alias()}", 
+                            pool_name=self.alias())
                     break
                 
                 # Check for leaked connections
@@ -1616,11 +1620,21 @@ class PoolManager(ABC):
                         conn._mark_leaked()
                         
                         # Try to gracefully return to the pool
-                        logger.warning(f"PoolManager - Leak Detection - Attempting to recover leaked connection in {self.alias()} pool (leaked for {duration:.2f}s)")
+                        logger.warning(f"Attempting to recover leaked connection in {self.alias()} pool ({conn._id} has been leaked for {duration:.2f}s)", 
+                                    pool_name=self.alias(), 
+                                    duration_seconds=duration,
+                                    connection_id=conn._id)
+                                    
                         await self._release_connection_to_pool(conn)
-                        logger.info(f"PoolManager - Leak Detection - Successfully recovered leaked connection in {self.alias()} pool")
+                        
+                        logger.info(f"Successfully recovered leaked connection in {self.alias()} pool", 
+                                pool_name=self.alias(), connection_id=conn._id)
+                                
                     except Exception as e:
-                        logger.error(f"PoolManager - Leak Detection - Failed to recover leaked connection: {e}")
+                        logger.error(f"Failed to recover leaked connection in {self.alias()} pool: {e}", 
+                                    pool_name=self.alias(), connection_id=conn._id,
+                                    error=str(e))
+                                    
                         self._connections.discard(conn)  # Explicitly discard leaked connection
                         # Try to close directly as a last resort
                         try:
@@ -1637,18 +1651,29 @@ class PoolManager(ABC):
                 
                 # Log idle connections
                 if idle_conns:
-                    logger.warning(f"PoolManager - Leak Detection - Found {len(idle_conns)} idle connections in {self.alias()} pool that haven't been active for {int(IDLE_TIMEOUT/60)} mns")
+                    logger.warning(f"Found {len(idle_conns)} idle connections in {self.alias()} pool that haven't been active for {int(IDLE_TIMEOUT/60)} mins", 
+                                pool_name=self.alias(), 
+                                count=len(idle_conns), 
+                                idle_threshold_mins=int(IDLE_TIMEOUT/60))
 
                 # Also recover idle connections
                 for conn in idle_conns:
                     try:
-                        logger.warning(f"PoolManager - Leak Detection - Recovering idle connection in {self.alias()} pool")
+                        logger.warning(f"Recovering idle connection in {self.alias()} pool", 
+                                    pool_name=self.alias(), connection_id=conn._id)
+                                    
                         await self._release_connection_to_pool(conn)
+                        
                     except Exception as e:
-                        logger.error(f"PoolManager - Leak Detection - Failed to recover idle connection: {e}")
+                        logger.error(f"Failed to recover idle connection in {self.alias()} pool: {e}", 
+                                    pool_name=self.alias(), connection_id=conn._id,
+                                    error=str(e))
+                                    
             except Exception as e:
-                logger.error(f"PoolManager - Leak Detection - Error in connection leak detection task: {e}")
-                
+                logger.error(f"Error in connection leak detection task for {self.alias()} pool: {e}", 
+                            pool_name=self.alias(), connection_id=conn._id,
+                            error=str(e))
+
     def alias(self):
         return self._alias
 
