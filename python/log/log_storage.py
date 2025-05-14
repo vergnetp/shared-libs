@@ -1,10 +1,12 @@
+# First, let's update the interface (log_storage.py):
+
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 
 class LogStorageInterface:
     """Interface for log storage backends"""
     
-    async def store_log(self, log_record: Dict[str, Any]) -> Dict[str, Any]:
+    def store_log(self, log_record: Dict[str, Any]) -> Dict[str, Any]:
         """
         Store a single log record.
         
@@ -16,7 +18,7 @@ class LogStorageInterface:
         """
         raise NotImplementedError("Subclasses must implement store_log")
     
-    async def store_batch(self, log_records: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def store_batch(self, log_records: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Store a batch of log records.
         

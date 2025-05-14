@@ -35,28 +35,6 @@ import json
 MAX_LENGTH = 200
 
 
-def try_catch(success_func, exception_func):
-    """
-    Decorator that calls success_func if the decorated function completes successfully,
-    or exception_func if it raises an exception.
-    
-    Args:
-        success_func: Function to call on success (receives the original return value)
-        exception_func: Function to call on exception (receives the exception)
-                       Can return a value or raise a new exception
-    """
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            try:
-                result = func(*args, **kwargs)
-                return success_func(result)
-            except Exception as e:
-                # Call exception_func and let it decide what to do
-                return exception_func(e)
-        return wrapper
-    return decorator
-
-
 def serialize(value):
     """Serialize any value to a JSON string, trimmed to MAX_LENGTH."""
     try:
@@ -990,7 +968,7 @@ class BaseConnection(ConnectionInterface):
         converted_sql, _ = self.sql_generator.convert_query_to_native(final_sql)
         stmt = await self._prepare_statement_async(converted_sql)
         self._statement_cache.put(sql_hash, stmt, final_sql)
-        logger.info(f"This sql shoudl be converted to bative backend: {stmt} vs {converted_sql}")
+
         return stmt
         
     def _get_statement_sync(self, sql: str, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]] = None) -> Any:
@@ -1080,7 +1058,6 @@ class AsyncConnection(BaseConnection):
         stmt = await self._get_statement_async(sql, timeout, tags)        
         raw_result = await self._execute_statement_async(stmt, params)
         result = self._normalize_result(raw_result)
-        logger.info(f"AsyncConnection.execute:\nSQL: {sql[:200]}\nparams: {str(params)[:200]}\ntimeout: {timeout}\ntags: {tags}\nresult: {str(result)[:200]}\n----------------------")
         return result
 
     @async_method
@@ -1121,7 +1098,6 @@ class AsyncConnection(BaseConnection):
             normalized = self._normalize_result(raw_result)
             if normalized:
                 results.extend(normalized)
-        logger.info(f"AsyncConnection.executemany:\nSQL: {sql[:200]}\nparams: {str(param_list)[:200]}\ntimeout: {timeout}\ntags: {tags}\nresult: {str(results)[:200]}\n----------------------")
         return results
        
 
@@ -1617,30 +1593,21 @@ class PoolManager(ABC):
     async def _leak_detection_task(self):
         """Background task that periodically checks for and recovers from connection leaks"""
         IDLE_TIMEOUT = 1800  # 30 minutes idle time before considering a connection dead
-        
+        LEAK_THRESHOLD_SECONDS = 300 # if a connection has been used for longer than 5 mns, it shoudl be considered leaked
+        SLEEP_TIME = 300 # 300 seconds are 5 mns
+
+        logger.info(f"PoolManager - Leak Detection - The task has been started and will check and reclaim leaked or idle connections every {int(SLEEP_TIME/60)} mns")
         while True:
             try:
                 # Wait to avoid excessive CPU usage
                 try:
-                    await asyncio.sleep(300)  # Check every 5 minutes
+                    await asyncio.sleep(SLEEP_TIME)  
                 except asyncio.CancelledError:
-                    logger.info("Leak detection task cancelled")
+                    logger.info("PoolManager - Leak Detection - The task has been cancelled")
                     break
                 
                 # Check for leaked connections
-                leaked_conns = await self.check_for_leaked_connections(threshold_seconds=300)
-                
-                # Additionally check for idle connections
-                now = time.time()
-                idle_conns = []
-                
-                for conn in self._connections:
-                    if conn._is_idle(IDLE_TIMEOUT) and not conn._is_leaked:
-                        idle_conns.append(conn)
-                
-                # Log idle connections
-                if idle_conns:
-                    logger.warning(f"Found {len(idle_conns)} idle connections in {self.alias()} pool that haven't been active for 30+ minutes")
+                leaked_conns = await self.check_for_leaked_connections(threshold_seconds=LEAK_THRESHOLD_SECONDS)  
                 
                 # Attempt recovery for leaked connections
                 for conn, duration, stack in leaked_conns:
@@ -1649,11 +1616,11 @@ class PoolManager(ABC):
                         conn._mark_leaked()
                         
                         # Try to gracefully return to the pool
-                        logger.warning(f"Attempting to recover leaked connection in {self.alias()} pool (leaked for {duration:.2f}s)")
+                        logger.warning(f"PoolManager - Leak Detection - Attempting to recover leaked connection in {self.alias()} pool (leaked for {duration:.2f}s)")
                         await self._release_connection_to_pool(conn)
-                        logger.info(f"Successfully recovered leaked connection in {self.alias()} pool")
+                        logger.info(f"PoolManager - Leak Detection - Successfully recovered leaked connection in {self.alias()} pool")
                     except Exception as e:
-                        logger.error(f"Failed to recover leaked connection: {e}")
+                        logger.error(f"PoolManager - Leak Detection - Failed to recover leaked connection: {e}")
                         self._connections.discard(conn)  # Explicitly discard leaked connection
                         # Try to close directly as a last resort
                         try:
@@ -1661,15 +1628,26 @@ class PoolManager(ABC):
                         except Exception:
                             pass
                 
+                # Additionally check for idle connections               
+                idle_conns = []
+                
+                for conn in self._connections:
+                    if conn._is_idle(IDLE_TIMEOUT) and not conn._is_leaked:
+                        idle_conns.append(conn)
+                
+                # Log idle connections
+                if idle_conns:
+                    logger.warning(f"PoolManager - Leak Detection - Found {len(idle_conns)} idle connections in {self.alias()} pool that haven't been active for {int(IDLE_TIMEOUT/60)} mns")
+
                 # Also recover idle connections
                 for conn in idle_conns:
                     try:
-                        logger.warning(f"Recovering idle connection in {self.alias()} pool")
+                        logger.warning(f"PoolManager - Leak Detection - Recovering idle connection in {self.alias()} pool")
                         await self._release_connection_to_pool(conn)
                     except Exception as e:
-                        logger.error(f"Failed to recover idle connection: {e}")
+                        logger.error(f"PoolManager - Leak Detection - Failed to recover idle connection: {e}")
             except Exception as e:
-                logger.error(f"Error in connection leak detection task: {e}")
+                logger.error(f"PoolManager - Leak Detection - Error in connection leak detection task: {e}")
                 
     def alias(self):
         return self._alias

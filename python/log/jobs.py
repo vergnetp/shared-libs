@@ -20,7 +20,7 @@ class SimpleLogger:
     def critical(msg): print(f"CRITICAL: {msg}")
 
 # This processor handles a single log record
-async def process_log_record(log_record: Dict[str, Any]) -> Dict[str, Any]:
+def process_log_record(log_record: Dict[str, Any]) -> Dict[str, Any]:
     """
     Process a single log record.
     
@@ -34,11 +34,11 @@ async def process_log_record(log_record: Dict[str, Any]) -> Dict[str, Any]:
     storage = get_storage_instance()
     
     # Store the log
-    result = await storage.store_log(log_record)
+    result = storage.store_log(log_record)
     return result
 
 # This processor handles a batch of log records
-async def process_log_batch(log_batch: Dict[str, Any]) -> Dict[str, Any]:
+def process_log_batch(log_batch: Dict[str, Any]) -> Dict[str, Any]:
     """
     Process a batch of log records.
     
@@ -56,7 +56,7 @@ async def process_log_batch(log_batch: Dict[str, Any]) -> Dict[str, Any]:
     storage = get_storage_instance()
     
     # Store the batch
-    result = await storage.store_batch(log_records)
+    result = storage.store_batch(log_records)
     return result
 
 # Singleton storage instance

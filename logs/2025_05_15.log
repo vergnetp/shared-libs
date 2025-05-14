@@ -1,0 +1,1502 @@
+2025-05-15 00:00:23.932 [INFO] Command error:  opensearch Pulling 
+ 19c84195fcd2 Pulling fs layer 
+ 345138bef4c6 Pulling fs layer 
+ 4f4fb700ef54 Pulling fs layer 
+ 551c4c46ebbf Pulling fs layer 
+ 19c84195fcd2 Already exists 
+ 345138bef4c6 Downloading [============================================>      ]  671.1MB/753.4MB
+ 4f4fb700ef54 Already exists 
+ 551c4c46ebbf Already exists 
+ 345138bef4c6 Downloading [============================================>      ]  672.1MB/753.4MB
+ 345138bef4c6 Downloading [============================================>      ]  674.2MB/753.4MB
+ 345138bef4c6 Downloading [============================================>      ]  675.3MB/753.4MB
+ 345138bef4c6 Downloading [============================================>      ]  676.3MB/753.4MB
+ 345138bef4c6 Downloading [============================================>      ]  677.4MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  678.4MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  680.5MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  681.6MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  683.7MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  684.7MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  685.8MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  687.9MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  688.9MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  690.2MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  692.1MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  694.2MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  694.2MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  697.3MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  698.4MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  698.4MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  700.4MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  701.5MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  702.5MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  703.6MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  705.7MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  706.7MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  707.8MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  707.8MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  707.8MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  707.8MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  707.8MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  707.8MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  707.8MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  708.8MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  709.9MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  710.9MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]    712MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]    713MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  715.1MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  717.2MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  718.3MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  719.3MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  719.3MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  719.3MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  721.4MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  721.4MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  722.5MB/753.4MB
+ 345138bef4c6 Downloading [================================================>  ]  724.6MB/7... [truncated]
+2025-05-15 00:00:23.937 [INFO] Error starting Docker containers:  opensearch Pulling 
+ 19c84195fcd2 Pulling fs layer 
+ 345138bef4c6 Pulling fs layer 
+ 4f4fb700ef54 Pulling fs layer 
+ 551c4c46ebbf Pulling fs layer 
+ 19c84195fcd2 Already exists 
+ 345138bef4c6 Downloading [============================================>      ]  671.1MB/753.4MB
+ 4f4fb700ef54 Already exists 
+ 551c4c46ebbf Already exists 
+ 345138bef4c6 Downloading [============================================>      ]  672.1MB/753.4MB
+ 345138bef4c6 Downloading [============================================>      ]  674.2MB/753.4MB
+ 345138bef4c6 Downloading [============================================>      ]  675.3MB/753.4MB
+ 345138bef4c6 Downloading [============================================>      ]  676.3MB/753.4MB
+ 345138bef4c6 Downloading [============================================>      ]  677.4MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  678.4MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  680.5MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  681.6MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  683.7MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  684.7MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  685.8MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  687.9MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  688.9MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  690.2MB/753.4MB
+ 345138bef4c6 Downloading [=============================================>     ]  692.1MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  694.2MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  694.2MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  697.3MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  698.4MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  698.4MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  700.4MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  701.5MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  702.5MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  703.6MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  705.7MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  706.7MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  707.8MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  707.8MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  707.8MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  707.8MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  707.8MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  707.8MB/753.4MB
+ 345138bef4c6 Downloading [==============================================>    ]  707.8MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  708.8MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  709.9MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  710.9MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]    712MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]    713MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  715.1MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  717.2MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  718.3MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  719.3MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  719.3MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  719.3MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  721.4MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  721.4MB/753.4MB
+ 345138bef4c6 Downloading [===============================================>   ]  722.5MB/753.4MB
+ 345138bef4c6 Downloading [============================================... [truncated]
+2025-05-15 00:00:26.775 [INFO] Command error:  opensearch Pulling 
+ 128d54f2c9b1 Pulling fs layer 
+ 551c4c46ebbf Pulling fs layer 
+ 345138bef4c6 Pulling fs layer 
+ 0449471b8317 Pulling fs layer 
+ 1c73f4eb6b58 Pulling fs layer 
+ 4f4fb700ef54 Pulling fs layer 
+ 19c84195fcd2 Pulling fs layer 
+ 4f4fb700ef54 Already exists 
+ 551c4c46ebbf Download complete 
+ 128d54f2c9b1 Downloading [>                                                  ]  1.049MB/62.48MB
+ 19c84195fcd2 Downloading [==================================================>]  1.658kB/1.658kB
+ 128d54f2c9b1 Downloading [=>                                                 ]  2.097MB/62.48MB
+ 128d54f2c9b1 Downloading [==>                                                ]  3.146MB/62.48MB
+ 0449471b8317 Download complete 
+ 19c84195fcd2 Download complete 
+ 128d54f2c9b1 Downloading [==>                                                ]  3.146MB/62.48MB
+ 128d54f2c9b1 Downloading [===>                                               ]  4.194MB/62.48MB
+ 345138bef4c6 Downloading [>                                                  ]  1.049MB/753.4MB
+ 128d54f2c9b1 Downloading [===>                                               ]  4.194MB/62.48MB
+ 1c73f4eb6b58 Downloading [===>                                               ]  1.049MB/15.25MB
+ 345138bef4c6 Downloading [>                                                  ]  1.049MB/753.4MB
+ 128d54f2c9b1 Downloading [===>                                               ]  4.194MB/62.48MB
+ 1c73f4eb6b58 Downloading [===>                                               ]  1.049MB/15.25MB
+ 345138bef4c6 Downloading [>                                                  ]  1.049MB/753.4MB
+ 128d54f2c9b1 Downloading [====>                                              ]  5.243MB/62.48MB
+ 345138bef4c6 Downloading [>                                                  ]  2.097MB/753.4MB
+ 128d54f2c9b1 Downloading [====>                                              ]  5.243MB/62.48MB
+ 1c73f4eb6b58 Downloading [======>                                            ]  2.097MB/15.25MB
+ 1c73f4eb6b58 Downloading [======>                                            ]  2.097MB/15.25MB
+ 345138bef4c6 Downloading [>                                                  ]  2.097MB/753.4MB
+ 128d54f2c9b1 Downloading [=====>                                             ]  6.291MB/62.48MB
+ 1c73f4eb6b58 Downloading [======>                                            ]  2.097MB/15.25MB
+ 345138bef4c6 Downloading [>                                                  ]  2.097MB/753.4MB
+ 128d54f2c9b1 Downloading [=====>                                             ]  6.291MB/62.48MB
+ 1c73f4eb6b58 Downloading [==========>                                        ]  3.146MB/15.25MB
+ 345138bef4c6 Downloading [>                                                  ]  3.146MB/753.4MB
+ 128d54f2c9b1 Downloading [=====>                                             ]  6.291MB/62.48MB
+ 1c73f4eb6b58 Downloading [==========>                                        ]  3.146MB/15.25MB
+ 345138bef4c6 Downloading [>                                                  ]  3.146MB/753.4MB
+ 128d54f2c9b1 Downloading [=====>                                             ]   7.34MB/62.48MB
+ 1c73f4eb6b58 Downloading [==========>                                        ]  3.146MB/15.25MB
+ 345138bef4c6 Downloading [>                                                  ]  3.146MB/753.4MB
+ 128d54f2c9b1 Downloading [=====>                                             ]   7.34MB/62.48MB
+ 1c73f4eb6b58 Downloading [=============>                                     ]  4.194MB/15.25MB
+ 345138bef4c6 Downloading [>                                                  ]  4.194MB/753.4MB
+ 128d54f2c9b1 Downloading [=====>                                             ]   7.34MB/62.48MB
+ 345138bef4c6 Downloading [>                                                  ]  4.194MB/753.4MB
+ 128d54f2c9b1 Downloading [======>                                            ]  8.389MB/62.48MB
+ 1c73f4eb6b58 Downloading [=============>                                     ]  4.194MB/15.25MB
+ 1c73f4eb6b58 Downloading [=================>                                 ]  5.243MB/15.25MB
+ 345138bef4c6 Downloading [>                                                  ]  4.694MB/753.4MB
+ 128d54f2c9b1 Downloading [======>                                            ]  8.389MB/62.48MB
+ 1c73f4eb6b58 Downloading [=================>                                 ]  5.243MB/15.25MB
+ 345138bef4c6 Downloading [>                                                  ]  5.243MB/753.4MB
+ 128d54f2c9b1 Downloading [======>                                            ]  8.389MB/62.48MB
+ 1c73f4eb6b58 Downloading [=================>                                 ]  5.243MB/15.25MB
+ 345138bef4c6 Downloading [>                                                  ]  5.243MB/753.4MB
+ 128d54f2c9b1 Downloading [======>                                            ]  8.733MB/62.48MB
+ 1c73f4eb6b58 Downloading [====================>    ... [truncated]
+2025-05-15 00:00:26.814 [INFO] Waiting for redis to be ready at localhost:6382...
+2025-05-15 00:00:27.482 [INFO] TCP connection to localhost:6382 successful
+2025-05-15 00:00:27.667 [INFO] redis at localhost:6382 is ready!
+2025-05-15 00:00:27.669 [INFO] Waiting for generic to be ready at localhost:9200...
+2025-05-15 00:00:27.691 [INFO] TCP connection to localhost:9200 successful
+2025-05-15 00:00:27.694 [INFO] generic at localhost:9200 is ready (TCP connection successful)!
+2025-05-15 00:00:27.709 [INFO] Waiting for generic to be ready at localhost:9600...
+2025-05-15 00:00:27.723 [INFO] TCP connection to localhost:9600 successful
+2025-05-15 00:00:27.725 [INFO] generic at localhost:9600 is ready (TCP connection successful)!
+2025-05-15 00:01:53.585 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:01:53.587 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:01:53.595 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:01:53.596 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:01:53.602 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:01:53.603 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:02:05.561 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:02:05.564 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:02:05.575 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:02:05.577 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:02:05.582 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:02:05.583 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:02:18.811 [INFO] Setting up test environment...
+2025-05-15 00:02:18.813 [INFO] Removing .\.pytest_cache
+2025-05-15 00:02:19.024 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_opensearch.py'}
+2025-05-15 00:02:19.025 [INFO] Running command: docker info
+2025-05-15 00:02:21.532 [INFO] Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 4
+  Running: 4
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+
+2025-05-15 00:02:21.533 [INFO] Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+
+2025-05-15 00:02:21.534 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_opensearch.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-15 00:02:21.538 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-15 00:02:21.539 [INFO]   - redis: {}:localhost (container port: 6382)
+2025-05-15 00:02:21.540 [INFO]   - generic: {}:localhost (container port: 9200)
+2025-05-15 00:02:21.543 [INFO]   - generic: {}:localhost (container port: 9600)
+2025-05-15 00:02:21.544 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-15 00:02:22.813 [INFO] Command error:  Container test-opensearch  Running
+ Container test-log-redis-1  Running
+
+2025-05-15 00:02:22.814 [INFO] Waiting for redis to be ready at localhost:6382...
+2025-05-15 00:02:22.845 [INFO] TCP connection to localhost:6382 successful
+2025-05-15 00:02:22.855 [INFO] redis at localhost:6382 is ready!
+2025-05-15 00:02:22.856 [INFO] Waiting for generic to be ready at localhost:9200...
+2025-05-15 00:02:22.858 [INFO] TCP connection to localhost:9200 successful
+2025-05-15 00:02:22.859 [INFO] generic at localhost:9200 is ready (TCP connection successful)!
+2025-05-15 00:02:22.861 [INFO] Waiting for generic to be ready at localhost:9600...
+2025-05-15 00:02:22.866 [INFO] TCP connection to localhost:9600 successful
+2025-05-15 00:02:22.867 [INFO] generic at localhost:9600 is ready (TCP connection successful)!
+2025-05-15 00:02:24.338 [INFO] Tearing down test environment...
+2025-05-15 00:02:24.428 [INFO] Running command: 
+2025-05-15 00:04:36.724 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:04:36.726 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:04:36.742 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:04:36.744 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:04:36.753 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:04:36.754 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:05:00.148 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:05:00.150 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:05:00.162 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:05:00.163 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:05:00.167 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:05:00.168 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:05:09.513 [INFO] Setting up test environment...
+2025-05-15 00:05:09.515 [INFO] Removing .\.pytest_cache
+2025-05-15 00:05:09.554 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_opensearch.py'}
+2025-05-15 00:05:09.555 [INFO] Running command: docker info
+2025-05-15 00:05:10.077 [INFO] Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 4
+  Running: 4
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+
+2025-05-15 00:05:10.078 [INFO] Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+
+2025-05-15 00:05:10.079 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_opensearch.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-15 00:05:10.083 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-15 00:05:10.085 [INFO]   - redis: {}:localhost (container port: 6382)
+2025-05-15 00:05:10.087 [INFO]   - generic: {}:localhost (container port: 9200)
+2025-05-15 00:05:10.088 [INFO]   - generic: {}:localhost (container port: 9600)
+2025-05-15 00:05:10.089 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-15 00:05:10.474 [INFO] Command error:  Container test-log-redis-1  Running
+ Container test-opensearch  Running
+
+2025-05-15 00:05:10.475 [INFO] Waiting for redis to be ready at localhost:6382...
+2025-05-15 00:05:10.484 [INFO] TCP connection to localhost:6382 successful
+2025-05-15 00:05:10.504 [INFO] redis at localhost:6382 is ready!
+2025-05-15 00:05:10.507 [INFO] Waiting for generic to be ready at localhost:9200...
+2025-05-15 00:05:10.511 [INFO] TCP connection to localhost:9200 successful
+2025-05-15 00:05:10.512 [INFO] generic at localhost:9200 is ready (TCP connection successful)!
+2025-05-15 00:05:10.513 [INFO] Waiting for generic to be ready at localhost:9600...
+2025-05-15 00:05:10.515 [INFO] TCP connection to localhost:9600 successful
+2025-05-15 00:05:10.516 [INFO] generic at localhost:9600 is ready (TCP connection successful)!
+2025-05-15 00:05:29.128 [INFO] Tearing down test environment...
+2025-05-15 00:05:29.129 [INFO] Running command: 
+2025-05-15 00:07:39.954 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:07:39.961 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:07:39.971 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:07:39.973 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:07:39.985 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:07:39.987 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:08:12.889 [INFO] Setting up test environment...
+2025-05-15 00:08:12.891 [INFO] Removing .\.pytest_cache
+2025-05-15 00:08:12.944 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_opensearch.py'}
+2025-05-15 00:08:12.945 [INFO] Running command: docker info
+2025-05-15 00:08:14.517 [INFO] Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 4
+  Running: 4
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+
+2025-05-15 00:08:14.519 [INFO] Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+
+2025-05-15 00:08:14.519 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_opensearch.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-15 00:08:14.526 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-15 00:08:14.527 [INFO]   - redis: {}:localhost (container port: 6382)
+2025-05-15 00:08:14.528 [INFO]   - generic: {}:localhost (container port: 9200)
+2025-05-15 00:08:14.528 [INFO]   - generic: {}:localhost (container port: 9600)
+2025-05-15 00:08:14.529 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-15 00:08:14.902 [INFO] Command error:  Container test-log-redis-1  Running
+ Container test-opensearch  Running
+
+2025-05-15 00:08:14.905 [INFO] Waiting for redis to be ready at localhost:6382...
+2025-05-15 00:08:14.914 [INFO] TCP connection to localhost:6382 successful
+2025-05-15 00:08:14.926 [INFO] redis at localhost:6382 is ready!
+2025-05-15 00:08:14.927 [INFO] Waiting for generic to be ready at localhost:9200...
+2025-05-15 00:08:14.930 [INFO] TCP connection to localhost:9200 successful
+2025-05-15 00:08:14.931 [INFO] generic at localhost:9200 is ready (TCP connection successful)!
+2025-05-15 00:08:14.932 [INFO] Waiting for generic to be ready at localhost:9600...
+2025-05-15 00:08:14.934 [INFO] TCP connection to localhost:9600 successful
+2025-05-15 00:08:14.935 [INFO] generic at localhost:9600 is ready (TCP connection successful)!
+2025-05-15 00:08:15.195 [INFO] Tearing down test environment...
+2025-05-15 00:08:15.196 [INFO] Running command: 
+2025-05-15 00:10:55.323 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:10:55.326 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:10:55.339 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:10:55.340 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:10:55.346 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:10:55.346 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:11:03.474 [INFO] Setting up test environment...
+2025-05-15 00:11:03.476 [INFO] Removing .\.pytest_cache
+2025-05-15 00:11:03.508 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_opensearch.py'}
+2025-05-15 00:11:03.510 [INFO] Running command: docker info
+2025-05-15 00:11:04.099 [INFO] Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 4
+  Running: 4
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: nvidia runc io.containerd.runc.v2
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+
+2025-05-15 00:11:04.100 [INFO] Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+
+2025-05-15 00:11:04.101 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_opensearch.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-15 00:11:04.105 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-15 00:11:04.108 [INFO]   - redis: {}:localhost (container port: 6382)
+2025-05-15 00:11:04.110 [INFO]   - generic: {}:localhost (container port: 9200)
+2025-05-15 00:11:04.111 [INFO]   - generic: {}:localhost (container port: 9600)
+2025-05-15 00:11:04.112 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-15 00:11:04.487 [INFO] Command error:  Container test-opensearch  Running
+ Container test-log-redis-1  Running
+
+2025-05-15 00:11:04.490 [INFO] Waiting for redis to be ready at localhost:6382...
+2025-05-15 00:11:04.497 [INFO] TCP connection to localhost:6382 successful
+2025-05-15 00:11:04.507 [INFO] redis at localhost:6382 is ready!
+2025-05-15 00:11:04.510 [INFO] Waiting for generic to be ready at localhost:9200...
+2025-05-15 00:11:04.513 [INFO] TCP connection to localhost:9200 successful
+2025-05-15 00:11:04.514 [INFO] generic at localhost:9200 is ready (TCP connection successful)!
+2025-05-15 00:11:04.515 [INFO] Waiting for generic to be ready at localhost:9600...
+2025-05-15 00:11:04.517 [INFO] TCP connection to localhost:9600 successful
+2025-05-15 00:11:04.519 [INFO] generic at localhost:9600 is ready (TCP connection successful)!
+2025-05-15 00:11:09.241 [INFO] Tearing down test environment...
+2025-05-15 00:11:09.242 [INFO] Running command: 
+2025-05-15 00:11:42.177 [INFO] Setting up test environment...
+2025-05-15 00:11:42.179 [INFO] Removing .\.pytest_cache
+2025-05-15 00:11:42.221 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_opensearch.py', 'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log.py', 'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-15 00:11:42.225 [INFO] Running command: docker info
+2025-05-15 00:11:42.787 [INFO] Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 4
+  Running: 4
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+
+2025-05-15 00:11:42.788 [INFO] Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+
+2025-05-15 00:11:42.790 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_opensearch.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-15 00:11:42.795 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-15 00:11:42.798 [INFO]   - redis: {}:localhost (container port: 6382)
+2025-05-15 00:11:42.798 [INFO]   - generic: {}:localhost (container port: 9200)
+2025-05-15 00:11:42.799 [INFO]   - generic: {}:localhost (container port: 9600)
+2025-05-15 00:11:42.800 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-15 00:11:43.125 [INFO] Command error:  Container test-log-redis-1  Running
+ Container test-opensearch  Running
+
+2025-05-15 00:11:43.126 [INFO] Waiting for redis to be ready at localhost:6382...
+2025-05-15 00:11:43.132 [INFO] TCP connection to localhost:6382 successful
+2025-05-15 00:11:43.152 [INFO] redis at localhost:6382 is ready!
+2025-05-15 00:11:43.155 [INFO] Waiting for generic to be ready at localhost:9200...
+2025-05-15 00:11:43.159 [INFO] TCP connection to localhost:9200 successful
+2025-05-15 00:11:43.160 [INFO] generic at localhost:9200 is ready (TCP connection successful)!
+2025-05-15 00:11:43.161 [INFO] Waiting for generic to be ready at localhost:9600...
+2025-05-15 00:11:43.163 [INFO] TCP connection to localhost:9600 successful
+2025-05-15 00:11:43.164 [INFO] generic at localhost:9600 is ready (TCP connection successful)!
+2025-05-15 00:11:43.473 [INFO] Simple test message
+2025-05-15 00:11:47.745 [INFO] Tearing down test environment...
+2025-05-15 00:11:47.750 [INFO] Running command: 
+2025-05-15 00:13:38.753 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:13:38.756 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:13:38.767 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:13:38.768 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:13:38.774 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:13:38.776 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:14:18.572 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:14:18.574 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:14:18.581 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:14:18.583 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:14:18.587 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:14:18.588 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:14:26.815 [INFO] Setting up test environment...
+2025-05-15 00:14:26.820 [INFO] Removing .\.pytest_cache
+2025-05-15 00:14:26.850 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_opensearch.py'}
+2025-05-15 00:14:26.851 [INFO] Running command: docker info
+2025-05-15 00:14:27.322 [INFO] Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 4
+  Running: 4
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+
+2025-05-15 00:14:27.324 [INFO] Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+
+2025-05-15 00:14:27.324 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_opensearch.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-15 00:14:27.330 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-15 00:14:27.331 [INFO]   - redis: {}:localhost (container port: 6382)
+2025-05-15 00:14:27.331 [INFO]   - generic: {}:localhost (container port: 9200)
+2025-05-15 00:14:27.332 [INFO]   - generic: {}:localhost (container port: 9600)
+2025-05-15 00:14:27.333 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-15 00:14:27.653 [INFO] Command error:  Container test-log-redis-1  Running
+ Container test-opensearch  Running
+
+2025-05-15 00:14:27.654 [INFO] Waiting for redis to be ready at localhost:6382...
+2025-05-15 00:14:27.665 [INFO] TCP connection to localhost:6382 successful
+2025-05-15 00:14:27.681 [INFO] redis at localhost:6382 is ready!
+2025-05-15 00:14:27.682 [INFO] Waiting for generic to be ready at localhost:9200...
+2025-05-15 00:14:27.685 [INFO] TCP connection to localhost:9200 successful
+2025-05-15 00:14:27.686 [INFO] generic at localhost:9200 is ready (TCP connection successful)!
+2025-05-15 00:14:27.687 [INFO] Waiting for generic to be ready at localhost:9600...
+2025-05-15 00:14:27.689 [INFO] TCP connection to localhost:9600 successful
+2025-05-15 00:14:27.691 [INFO] generic at localhost:9600 is ready (TCP connection successful)!
+2025-05-15 00:14:29.598 [INFO] Tearing down test environment...
+2025-05-15 00:14:29.601 [INFO] Running command: 
+2025-05-15 00:17:02.750 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:17:02.753 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:17:02.768 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:17:02.769 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:17:02.778 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:17:02.779 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:17:07.489 [INFO] Setting up test environment...
+2025-05-15 00:17:07.491 [INFO] Removing .\.pytest_cache
+2025-05-15 00:17:07.528 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_opensearch.py'}
+2025-05-15 00:17:07.529 [INFO] Running command: docker info
+2025-05-15 00:17:08.098 [INFO] Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 4
+  Running: 4
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+
+2025-05-15 00:17:08.100 [INFO] Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+
+2025-05-15 00:17:08.101 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_opensearch.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-15 00:17:08.105 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-15 00:17:08.106 [INFO]   - redis: {}:localhost (container port: 6382)
+2025-05-15 00:17:08.107 [INFO]   - generic: {}:localhost (container port: 9200)
+2025-05-15 00:17:08.108 [INFO]   - generic: {}:localhost (container port: 9600)
+2025-05-15 00:17:08.109 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-15 00:17:08.432 [INFO] Command error:  Container test-opensearch  Running
+ Container test-log-redis-1  Running
+
+2025-05-15 00:17:08.433 [INFO] Waiting for redis to be ready at localhost:6382...
+2025-05-15 00:17:08.441 [INFO] TCP connection to localhost:6382 successful
+2025-05-15 00:17:08.452 [INFO] redis at localhost:6382 is ready!
+2025-05-15 00:17:08.453 [INFO] Waiting for generic to be ready at localhost:9200...
+2025-05-15 00:17:08.457 [INFO] TCP connection to localhost:9200 successful
+2025-05-15 00:17:08.459 [INFO] generic at localhost:9200 is ready (TCP connection successful)!
+2025-05-15 00:17:08.460 [INFO] Waiting for generic to be ready at localhost:9600...
+2025-05-15 00:17:08.463 [INFO] TCP connection to localhost:9600 successful
+2025-05-15 00:17:08.464 [INFO] generic at localhost:9600 is ready (TCP connection successful)!
+2025-05-15 00:17:10.055 [INFO] Tearing down test environment...
+2025-05-15 00:17:10.056 [INFO] Running command: 
+2025-05-15 00:21:27.171 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:21:27.173 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:21:27.184 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:21:27.185 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:21:27.190 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:21:27.191 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:23:25.571 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:23:25.573 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:23:25.584 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:23:25.585 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:23:25.591 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:23:25.592 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:23:45.445 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:23:45.463 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:23:45.476 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:23:45.477 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:23:45.483 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:23:45.484 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:24:36.633 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:24:36.635 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:24:36.648 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:24:36.649 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:24:36.653 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:24:36.654 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:25:32.059 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:25:32.062 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:25:32.075 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:25:32.076 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:25:32.081 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:25:32.083 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:26:14.089 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:26:14.092 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:26:14.104 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:26:14.105 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:26:14.109 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:26:14.109 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:26:23.074 [INFO] Setting up test environment...
+2025-05-15 00:26:23.076 [INFO] Removing .\.pytest_cache
+2025-05-15 00:26:23.122 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log.py', 'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_opensearch.py', 'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'}
+2025-05-15 00:26:23.131 [INFO] Running command: docker info
+2025-05-15 00:26:25.260 [INFO] Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 4
+  Running: 4
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+
+2025-05-15 00:26:25.261 [INFO] Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+
+2025-05-15 00:26:25.263 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-15 00:26:25.269 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-15 00:26:25.271 [INFO]   - redis: {}:localhost (container port: 6382)
+2025-05-15 00:26:25.272 [INFO]   - generic: {}:localhost (container port: 9200)
+2025-05-15 00:26:25.273 [INFO]   - generic: {}:localhost (container port: 9600)
+2025-05-15 00:26:25.274 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-15 00:26:25.836 [INFO] Command error:  Container test-log-redis-1  Running
+ Container test-opensearch  Running
+
+2025-05-15 00:26:25.837 [INFO] Waiting for redis to be ready at localhost:6382...
+2025-05-15 00:26:25.844 [INFO] TCP connection to localhost:6382 successful
+2025-05-15 00:26:25.861 [INFO] redis at localhost:6382 is ready!
+2025-05-15 00:26:25.863 [INFO] Waiting for generic to be ready at localhost:9200...
+2025-05-15 00:26:25.866 [INFO] TCP connection to localhost:9200 successful
+2025-05-15 00:26:25.867 [INFO] generic at localhost:9200 is ready (TCP connection successful)!
+2025-05-15 00:26:25.869 [INFO] Waiting for generic to be ready at localhost:9600...
+2025-05-15 00:26:25.872 [INFO] TCP connection to localhost:9600 successful
+2025-05-15 00:26:25.873 [INFO] generic at localhost:9600 is ready (TCP connection successful)!
+2025-05-15 00:26:26.640 [INFO] Simple test message
+2025-05-15 00:26:29.807 [INFO] Tearing down test environment...
+2025-05-15 00:26:29.829 [INFO] Running command: 
+2025-05-15 00:29:27.241 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:29:27.243 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:29:27.251 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:29:27.252 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:29:27.258 [INFO] ++++++++++ Creating EntityUtils
+2025-05-15 00:29:27.260 [INFO] ++++++++++ EntityUtils custom_serializers: {}
+2025-05-15 00:29:41.584 [INFO] Setting up test environment...
+2025-05-15 00:29:41.587 [INFO] Removing .\.pytest_cache
+2025-05-15 00:29:41.637 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_opensearch.py'}
+2025-05-15 00:29:41.638 [INFO] Running command: docker info
+2025-05-15 00:29:42.182 [INFO] Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 4
+  Running: 4
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: runc io.containerd.runc.v2 nvidia
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+
+2025-05-15 00:29:42.183 [INFO] Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+
+2025-05-15 00:29:42.184 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_opensearch.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-15 00:29:42.188 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-15 00:29:42.190 [INFO]   - redis: {}:localhost (container port: 6382)
+2025-05-15 00:29:42.193 [INFO]   - generic: {}:localhost (container port: 9200)
+2025-05-15 00:29:42.194 [INFO]   - generic: {}:localhost (container port: 9600)
+2025-05-15 00:29:42.195 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-15 00:29:42.639 [INFO] Command error:  Container test-opensearch  Running
+ Container test-log-redis-1  Running
+
+2025-05-15 00:29:42.641 [INFO] Waiting for redis to be ready at localhost:6382...
+2025-05-15 00:29:42.648 [INFO] TCP connection to localhost:6382 successful
+2025-05-15 00:29:42.664 [INFO] redis at localhost:6382 is ready!
+2025-05-15 00:29:42.665 [INFO] Waiting for generic to be ready at localhost:9200...
+2025-05-15 00:29:42.668 [INFO] TCP connection to localhost:9200 successful
+2025-05-15 00:29:42.669 [INFO] generic at localhost:9200 is ready (TCP connection successful)!
+2025-05-15 00:29:42.672 [INFO] Waiting for generic to be ready at localhost:9600...
+2025-05-15 00:29:42.675 [INFO] TCP connection to localhost:9600 successful
+2025-05-15 00:29:42.677 [INFO] generic at localhost:9600 is ready (TCP connection successful)!
+2025-05-15 00:29:43.746 [INFO] Tearing down test environment...
+2025-05-15 00:29:43.748 [INFO] Running command: 
+2025-05-15 00:29:53.627 [INFO] Setting up test environment...
+2025-05-15 00:29:53.628 [INFO] Removing .\.pytest_cache
+2025-05-15 00:29:53.663 [INFO] Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log.py', 'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py', 'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_opensearch.py'}
+2025-05-15 00:29:53.667 [INFO] Running command: docker info
+2025-05-15 00:29:54.193 [INFO] Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 4
+  Running: 4
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: nvidia runc io.containerd.runc.v2
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+
+2025-05-15 00:29:54.194 [INFO] Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+
+2025-05-15 00:29:54.195 [INFO] Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml
+2025-05-15 00:29:54.200 [INFO] Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml:
+2025-05-15 00:29:54.202 [INFO]   - redis: {}:localhost (container port: 6382)
+2025-05-15 00:29:54.204 [INFO]   - generic: {}:localhost (container port: 9200)
+2025-05-15 00:29:54.205 [INFO]   - generic: {}:localhost (container port: 9600)
+2025-05-15 00:29:54.206 [INFO] Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d
+2025-05-15 00:29:54.579 [INFO] Command error:  Container test-opensearch  Running
+ Container test-log-redis-1  Running
+
+2025-05-15 00:29:54.582 [INFO] Waiting for redis to be ready at localhost:6382...
+2025-05-15 00:29:54.589 [INFO] TCP connection to localhost:6382 successful
+2025-05-15 00:29:54.597 [INFO] redis at localhost:6382 is ready!
+2025-05-15 00:29:54.598 [INFO] Waiting for generic to be ready at localhost:9200...
+2025-05-15 00:29:54.601 [INFO] TCP connection to localhost:9200 successful
+2025-05-15 00:29:54.605 [INFO] generic at localhost:9200 is ready (TCP connection successful)!
+2025-05-15 00:29:54.607 [INFO] Waiting for generic to be ready at localhost:9600...
+2025-05-15 00:29:54.611 [INFO] TCP connection to localhost:9600 successful
+2025-05-15 00:29:54.612 [INFO] generic at localhost:9600 is ready (TCP connection successful)!
+2025-05-15 00:29:54.938 [INFO] Simple test message
+2025-05-15 00:29:55.892 [INFO] Tearing down test environment...
+2025-05-15 00:29:55.895 [INFO] Running command: 

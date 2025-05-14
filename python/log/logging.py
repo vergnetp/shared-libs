@@ -363,7 +363,7 @@ class AsyncLogger:
 
 
 # Public API - Simple functions for common use
-def _log(level: LogLevel, prefix: str, message: str, indent: int = 0, context: Dict[str, Any] = None):
+def _log(level: LogLevel, prefix: str, message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
     """
     Log a message using the logger instance.
     
@@ -373,6 +373,7 @@ def _log(level: LogLevel, prefix: str, message: str, indent: int = 0, context: D
         message: The message to log
         indent: Indentation level
         context: Additional context data
+        **fields: Additional structured fields to include in the log
     """
     # Print to console with prefix
     from ..framework.context import request_id_var
@@ -382,27 +383,74 @@ def _log(level: LogLevel, prefix: str, message: str, indent: int = 0, context: D
     else: 
         print(f"{prefix} {message}")
     
+    # Merge context and fields if needed
+    combined_context = context.copy() if context else {}
+    if fields:
+        combined_context.update(fields)
+    
     # Log through the logger
     logger = AsyncLogger.get_instance()
-    logger.log(level, message, indent=indent, context=context)
+    logger.log(level, message, indent=indent, context=combined_context)
 
-def debug(message: str, indent: int = 0, context: Dict[str, Any] = None):
-    _log(LogLevel.DEBUG, "[DEBUG]", message, indent, context)
+def debug(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
+    """Log a debug message with structured fields."""
+    component, subcomponent = utils.get_caller_info(frames_back=1)
+    if 'component' not in fields or 'subcomponent' not in fields:        
+        if 'component' not in fields:
+            fields['component'] = component
+        if 'subcomponent' not in fields:
+            fields['subcomponent'] = subcomponent 
+    _log(LogLevel.DEBUG, f"[DEBUG] {component} - {subcomponent} - ", message, indent, context, **fields)
 
-def info(message: str, indent: int = 0, context: Dict[str, Any] = None):
-    _log(LogLevel.INFO, "[INFO]", message, indent, context)
+def info(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
+    """Log a debug message with structured fields."""
+    component, subcomponent = utils.get_caller_info(frames_back=1)
+    if 'component' not in fields or 'subcomponent' not in fields:
+        if 'component' not in fields:
+            fields['component'] = component
+        if 'subcomponent' not in fields:
+            fields['subcomponent'] = subcomponent 
+    _log(LogLevel.INFO, "[INFO] {component} - {subcomponent} - ", message, indent, context, **fields)
 
-def warning(message: str, indent: int = 0, context: Dict[str, Any] = None):
-    _log(LogLevel.WARN, "[WARN]", message, indent, context)
+def warning(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
+    """Log an info message with structured fields."""
+    component, subcomponent = utils.get_caller_info(frames_back=1)
+    if 'component' not in fields or 'subcomponent' not in fields:
+        if 'component' not in fields:
+            fields['component'] = component
+        if 'subcomponent' not in fields:
+            fields['subcomponent'] = subcomponent 
+    _log(LogLevel.WARN, "[WARN] {component} - {subcomponent} - ", message, indent, context, **fields)
 
-def error(message: str, indent: int = 0, context: Dict[str, Any] = None):
-    _log(LogLevel.ERROR, "[ERROR]", message, indent, context)
+def error(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
+    """Log an error message with structured fields."""
+    component, subcomponent = utils.get_caller_info(frames_back=1)
+    if 'component' not in fields or 'subcomponent' not in fields:
+        if 'component' not in fields:
+            fields['component'] = component
+        if 'subcomponent' not in fields:
+            fields['subcomponent'] = subcomponent 
+    _log(LogLevel.ERROR, "[ERROR] {component} - {subcomponent} - ", message, indent, context, **fields)
 
-def critical(message: str, context: Dict[str, Any] = None):
-    _log(LogLevel.CRITICAL, "[CRITICAL]", message, 0, context)
+def critical(message: str, context: Dict[str, Any] = None, **fields):
+    """Log a critical message with structured fields."""
+    component, subcomponent = utils.get_caller_info(frames_back=1)
+    if 'component' not in fields or 'subcomponent' not in fields: 
+        if 'component' not in fields:
+            fields['component'] = component
+        if 'subcomponent' not in fields:
+            fields['subcomponent'] = subcomponent 
+    _log(LogLevel.CRITICAL, "[CRITICAL] {component} - {subcomponent} - ", message, 0, context, **fields)
 
-def profile(message: str, indent: int = 0, context: Dict[str, Any] = None):
-    _log(LogLevel.DEBUG, "[PROFILER]", message, indent, context)
+def profile(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
+    """Log a prfofiling message with structured fields."""
+    component, subcomponent = utils.get_caller_info(frames_back=1)
+    if 'component' not in fields or 'subcomponent' not in fields:
+        if 'component' not in fields:
+            fields['component'] = component
+        if 'subcomponent' not in fields:
+            fields['subcomponent'] = subcomponent 
+    _log(LogLevel.DEBUG, "[PROFILER] {component} - {subcomponent} - ", message, indent, context, **fields)
 
 def get_log_file():
     """
