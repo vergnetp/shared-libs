@@ -200,11 +200,13 @@ class AsyncLogger:
         return cls._instance
     
     def log(self, 
-           level: LogLevel, 
-           message: str, 
-           indent: int = 0, 
-           truncate: bool = True,
-           context: Dict[str, Any] = None):
+        level: LogLevel, 
+        message: str, 
+        indent: int = 0, 
+        truncate: bool = True,
+        context: Dict[str, Any] = None,
+        prefix: str = None,
+        **fields):
         """
         Log a message - handles local logging and Redis queueing if enabled.
         
@@ -214,6 +216,8 @@ class AsyncLogger:
             indent: Indentation level (for local log formatting)
             truncate: Whether to truncate long messages
             context: Additional contextual data to include in structured log
+            prefix: Optional prefix for the message (like [DEBUG], [INFO], etc.)
+            **fields: Additional structured fields to include in the log
         """
         # Skip logs below minimum level immediately
         if level.value < self.min_level.value:
@@ -222,27 +226,73 @@ class AsyncLogger:
         # Truncate long messages if requested
         if truncate and len(message) > MAX_MESSAGE_SIZE:
             message = message[:MAX_MESSAGE_SIZE] + "... [truncated]"
-            
-        # Handle local logging first
+        
+        # Create timestamp once for consistency
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        
+        # Merge context and fields for complete structured data
+        combined_context = context.copy() if context else {}
+        if fields:
+            combined_context.update(fields)
+        
+        # Add request_id if available and not already present
+        if 'request_id' not in combined_context:
+            from ..framework.context import request_id_var
+            request_id = request_id_var.get()
+            if request_id:
+                combined_context['request_id'] = request_id
+        
+        # Add timestamp if not already present
+        if 'timestamp' not in combined_context:
+            combined_context['timestamp'] = timestamp
+        
+        # Format indentation
         indent_str = '    ' * indent
         
+        # Store original message for Redis/OpenSearch
+        original_message = message
+        
+        # Add prefix for console/file logs if provided
+        if prefix:
+            message = f"{prefix} {message}"
+        
+        # Format structured fields for text output
+        field_str = ""
+        if combined_context:
+            field_parts = []
+            for key, value in combined_context.items():
+                if key != 'timestamp':  # Skip timestamp in fields as it's already in the log prefix
+                    # Convert value to string and truncate if needed
+                    value_str = str(value)
+                    if len(value_str) > 50:  # Truncate long values
+                        value_str = value_str[:47] + "..."
+                    field_parts.append(f"{key}={value_str}")
+            
+            if field_parts:
+                field_str = " | " + " ".join(field_parts)
+                # Truncate entire field string if too long
+                if len(field_str) > 500:
+                    field_str = field_str[:497] + "..."
+        
+        # Create consistent formatted output for console and file
+        formatted_output = f"{timestamp} {indent_str}{message}{field_str}"
+        
         # Print to console based on level
-        formatted_console = f"{timestamp} {indent_str}{message}"
         if level in (LogLevel.ERROR, LogLevel.CRITICAL):
-            print(formatted_console, file=sys.stderr, flush=True)
+            print(formatted_output, file=sys.stderr, flush=True)
         else:
             # For debug messages, only print if debug to file is enabled
             if level != LogLevel.DEBUG or self.log_debug_to_file:
-                print(formatted_console, flush=True)
+                print(formatted_output, flush=True)
         
-        # Write to file
+        # Write to file with the same format plus level name
         if level != LogLevel.DEBUG or self.log_debug_to_file:
             try:
                 log_path = self._get_log_file_path()
                 with self._file_lock:
                     os.makedirs(os.path.dirname(log_path), exist_ok=True)
-                    formatted_file = f"{timestamp} [{level.name}] {indent_str}{message}"
+                    # Add level name in brackets for file logs
+                    formatted_file = f"{timestamp} [{level.name}] {indent_str}{message}{field_str}"
                     with open(log_path, 'a') as log_file:
                         log_file.write(f"{formatted_file}\n")
                         if level == LogLevel.CRITICAL:
@@ -253,26 +303,22 @@ class AsyncLogger:
         
         # Only queue to Redis if Redis is enabled
         if self.use_redis:
-            # Create the log record
+            # Create the log record with original message (not prefixed)
             log_record = {
                 'timestamp': timestamp,
                 'level': level.name,  # Use name instead of enum for serialization
-                'message': message,
+                'message': original_message,  # Use original message without prefix
                 'indent': indent,
                 'service': self.service_name,
                 'pid': os.getpid(),
                 'thread': threading.get_ident(),
             }
             
-            # Add request_id if available
-            from ..framework.context import request_id_var
-            request_id = request_id_var.get()
-            if request_id:
-                log_record['request_id'] = request_id
-                
-            # Add context if provided
-            if context:
-                log_record['context'] = context
+            # Add all fields from combined_context directly to log_record
+            if combined_context:
+                for key, value in combined_context.items():
+                    if key != 'timestamp' and key not in log_record:  # Don't duplicate fields
+                        log_record[key] = value
             
             try:
                 # Use queue manager to enqueue the log
@@ -289,7 +335,7 @@ class AsyncLogger:
                 # If Redis queueing fails, just log locally and continue
                 if not self.quiet_init:
                     print(f"Failed to queue log to Redis: {e}", file=sys.stderr)
-    
+
     def _get_log_file_path(self, date=None):
         """
         Returns the file path where logs should be saved.
@@ -375,22 +421,9 @@ def _log(level: LogLevel, prefix: str, message: str, indent: int = 0, context: D
         context: Additional context data
         **fields: Additional structured fields to include in the log
     """
-    # Print to console with prefix
-    from ..framework.context import request_id_var
-    request_id = request_id_var.get()
-    if request_id:
-        print(f"{prefix} [request_id={request_id}] {message}")
-    else: 
-        print(f"{prefix} {message}")
-    
-    # Merge context and fields if needed
-    combined_context = context.copy() if context else {}
-    if fields:
-        combined_context.update(fields)
-    
-    # Log through the logger
+    # Get logger instance and call log method with all parameters
     logger = AsyncLogger.get_instance()
-    logger.log(level, message, indent=indent, context=combined_context)
+    logger.log(level, message, indent=indent, context=context, prefix=prefix, **fields)
 
 def debug(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
     """Log a debug message with structured fields."""

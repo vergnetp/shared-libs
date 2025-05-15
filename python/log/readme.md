@@ -88,26 +88,33 @@ info("Order processed",
 
 ### Automatic Component and Subcomponent
 
-The logging system automatically captures the component (class name) and subcomponent (method name) for each log entry:
+The logging system automatically captures important context for each log entry:
 
-```python
-# In YourClass.your_method():
-debug("Processing started")
+- **timestamp**: Current time in "YYYY-MM-DD HH:MM:SS.mmm" format
+- **request_id**: Current request ID (if available from request_id_var)
+- **component**: Class name of the caller
+- **subcomponent**: Method name of the caller
 
-# This produces a log message like:
-# [DEBUG] YourClass - your_method - Processing started
+In text logs (console/file), this appears as a prefix:
 
-# And adds structured fields:
-# {
-#   "level": "DEBUG",
-#   "message": "Processing started",
-#   "component": "YourClass",
-#   "subcomponent": "your_method",
-#   ...
-# }
+```
+[INFO] YourClass - your_method - Processing started
 ```
 
-You can override these values if needed:
+In OpenSearch, these are separate fields:
+
+```json
+{
+  "level": "INFO",
+  "message": "Processing started",
+  "component": "YourClass",
+  "subcomponent": "your_method",
+  "timestamp": "2025-05-15 12:34:56.789",
+  "request_id": "45ef-a123-b456-789c"
+}
+```
+
+You can override these automatic fields when needed:
 
 ```python
 debug("Custom categorization", 
@@ -115,19 +122,46 @@ debug("Custom categorization",
       subcomponent="OAuth")
 ```
 
-### Logger Initialization
+## Logging Formats
 
-```python
-from myapp.log.logging import initialize_logger
+The logging system uses different formats for different output channels:
 
-# Initialize with Redis for distributed logging
-initialize_logger(
-    use_redis=True,
-    redis_url="redis://localhost:6379/0",
-    service_name="api-service",
-    min_level="INFO"
-)
+### Console and File Logs
+
+Console and file logs use a human-readable format that includes all information:
+
 ```
+2025-05-15 12:34:56.789 [ERROR] PoolManager - LeakDetection - Failed to process item | operation_id=op-123 | error_type=ConnectionError
+```
+
+Format components:
+- **Timestamp**: ISO format with milliseconds
+- **Log Level**: In brackets in file logs ([INFO], [ERROR], etc.)
+- **Component/Subcomponent**: Automatically detected from caller
+- **Message**: The main log message
+- **Fields**: All structured fields in `key=value` format (truncated if too long)
+
+### OpenSearch Logs
+
+OpenSearch logs use a structured format with clean separation of concerns:
+
+```json
+{
+  "timestamp": "2025-05-15 12:34:56.789",
+  "level": "ERROR",
+  "message": "Failed to process item",
+  "component": "PoolManager",
+  "subcomponent": "LeakDetection",
+  "operation_id": "op-123",
+  "error_type": "ConnectionError"
+}
+```
+
+Key differences from text logs:
+- **Clean Message**: Contains only the message without prefixes
+- **Separate Fields**: All metadata in dedicated fields for better querying
+- **Non-truncated Values**: All values are stored in full without truncation
+- **Top-level Fields**: Context fields are moved to the top level
 
 ## Running the Log Processing Worker
 
@@ -269,22 +303,12 @@ GET logs-*/_search
 With structured logging, you can query specific fields:
 
 ```json
-// Find all activities for a specific user
+// Find all logs from a specific component
 GET logs-*/_search
 {
   "query": {
     "term": {
-      "context.user_id": "user123"
-    }
-  }
-}
-
-// Find logs from a specific component
-GET logs-*/_search
-{
-  "query": {
-    "term": {
-      "context.component": "PoolManager"
+      "component": "PoolManager"
     }
   }
 }
@@ -294,7 +318,7 @@ GET logs-*/_search
 {
   "query": {
     "term": {
-      "context.subcomponent": "LeakDetection"
+      "subcomponent": "LeakDetection"
     }
   }
 }
@@ -305,10 +329,10 @@ GET logs-*/_search
   "query": {
     "bool": {
       "must": [
-        { "exists": { "field": "context.query_time_ms" } }
+        { "exists": { "field": "query_time_ms" } }
       ],
       "filter": [
-        { "range": { "context.query_time_ms": { "gt": 1000 } } }
+        { "range": { "query_time_ms": { "gt": 1000 } } }
       ]
     }
   }

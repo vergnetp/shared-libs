@@ -17,11 +17,11 @@ class MockLogger:
     def __init__(self):
         self.logs = {"error": [], "warning": [], "info": [], "debug": [], "critical": []}
     
-    def error(self, msg): self.logs["error"].append(msg)
-    def warning(self, msg): self.logs["warning"].append(msg)
-    def info(self, msg): self.logs["info"].append(msg)
-    def debug(self, msg): self.logs["debug"].append(msg)
-    def critical(self, msg): self.logs["critical"].append(msg)
+    def error(self, msg, **fields): self.logs["error"].append(msg)
+    def warning(self, msg, **fields): self.logs["warning"].append(msg)
+    def info(self, msg, **fields): self.logs["info"].append(msg)
+    def debug(self, msg, **fields): self.logs["debug"].append(msg)
+    def critical(self, msg, **fields): self.logs["critical"].append(msg)
 
 # Test processor functions
 async def successful_processor(data):

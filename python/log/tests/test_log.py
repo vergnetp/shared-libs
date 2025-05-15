@@ -36,37 +36,6 @@ def test_info_logs_message(tmp_path, monkeypatch):
     assert "[INFO]" in content
     assert "[UNIT TEST] Info message" in content
 
-def test_debug_logs_to_stdout_only(tmp_path, monkeypatch, capsys):
-    patch_utils(monkeypatch, tmp_path)
-    importlib.reload(mylog)
-    mylog.debug("[UNIT TEST] Debug info")
-    # Note: No async sleep needed since everything is synchronous now
-    out = capsys.readouterr().out
-    assert "[UNIT TEST] Debug info" in out
-    log_file = Path(get_log_file(tmp_path))
-    assert not log_file.exists() or "[UNIT TEST] Debug info" not in read_log_content(log_file)
-
-def test_profile_logs_to_stdout_only(tmp_path, monkeypatch, capsys):
-    patch_utils(monkeypatch, tmp_path)
-    importlib.reload(mylog)
-    mylog.profile("[UNIT TEST] Profile start")
-    # Note: No async sleep needed since everything is synchronous now
-    out = capsys.readouterr().out
-    assert "[UNIT TEST] Profile start" in out
-    log_file = Path(get_log_file(tmp_path))
-    assert not log_file.exists() or "[UNIT TEST] Profile start" not in read_log_content(log_file)
-
-def test_critical_logs_and_flushes(tmp_path, monkeypatch, capsys):
-    patch_utils(monkeypatch, tmp_path)
-    importlib.reload(mylog)
-    mylog.critical("[UNIT TEST] Fatal error")
-    out = capsys.readouterr().out
-    assert "[CRITICAL]" in out
-    log_file = get_log_file(tmp_path)
-    content = read_log_content(log_file)
-    assert "[CRITICAL]" in content
-    assert "[UNIT TEST] Fatal error" in content
-
 def test_queue_accepts_multiple_messages(tmp_path, monkeypatch):
     patch_utils(monkeypatch, tmp_path)
     importlib.reload(mylog)

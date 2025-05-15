@@ -43,7 +43,9 @@ class QueueWorker:
             
     async def _worker_loop(self, worker_id: int):
         """Main worker loop for processing queue items."""
-        self.config.logger.info(f"Worker {worker_id} started")
+        self.config.logger.info("Worker started", 
+                    worker_id=worker_id, 
+                    max_workers=self.max_workers)
         
         try:
             while self.running:
@@ -54,11 +56,14 @@ class QueueWorker:
                 if not processed:
                     await asyncio.sleep(1)
         except asyncio.CancelledError:
-            self.config.logger.info(f"Worker {worker_id} cancelled")
+            self.config.logger.warning("Worker cancelled", worker_id=worker_id)
         except Exception as e:
-            self.config.logger.error(f"Error in worker {worker_id}: {str(e)}")
+            self.config.logger.error("Worker loop error",
+                        worker_id=worker_id,
+                        error_type=type(e).__name__,
+                        error_message=e.to_string() if hasattr(e, 'to_string') else str(e))
         finally:
-            self.config.logger.info(f"Worker {worker_id} stopped")
+            self.config.logger.info("Worker stopped", worker_id=worker_id)
     
     async def _process_queue_item(self, worker_id: int) -> bool:
         """Process a single item from the queue."""

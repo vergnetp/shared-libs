@@ -1,3 +1,6 @@
+import functools
+from .error import UserError
+
 def success_or_error(success_msg=None, error_msg=None):
     """
     Decorator that catches exceptions and returns a success/error response.
@@ -24,7 +27,7 @@ def success_or_error(success_msg=None, error_msg=None):
         # Result will be: {"success": True|False, "message": "..."}
     """
     def decorator(func):
-        @wraps(func)
+        @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             try:
                 # Execute the original function
@@ -34,21 +37,19 @@ def success_or_error(success_msg=None, error_msg=None):
                     "message": success_msg or "Operation completed successfully",
                     "result": result
                 }
-            except ProcessingError as e:
-                # Get the user message from the ProcessingError
-                message = error_msg or e.user_message() or str(e)
+            except UserError as e:
+                # Get the user message from the UserError
+                message = error_msg or e.user_message() or 'Internal Error'
                 return {
                     "success": False,
-                    "message": message,
-                    "error": str(e)
+                    "message": message
                 }
             except Exception as e:
                 # Handle other exceptions
-                message = error_msg or str(e)
+                message = error_msg or 'Internal Error'
                 return {
                     "success": False,
-                    "message": message,
-                    "error": str(e)
+                    "message": message
                 }
         return wrapper
     return decorator

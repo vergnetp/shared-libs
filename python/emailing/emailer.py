@@ -10,10 +10,11 @@ from email import encoders
 from typing import List, Optional
 
 from .. import log as logger
-from ..errors import TrackError
+from ..errors import TrackError, try_catch
 
 MAX_FILE_SIZE_MB = 25  # MB file size limit
 
+@try_catch
 def compress_file(data: str | bytes) -> bytes:
     """
     Compresses a file or bytes into a ZIP archive.
@@ -35,6 +36,7 @@ def compress_file(data: str | bytes) -> bytes:
     except Exception as e:
         raise TrackError(f"Error compressing file: {e}")
 
+@try_catch
 def send_email(subject: str, recipients: List[str], text: Optional[str] = None, html: Optional[str] = None,
                use_gmail: bool = True, attached_file: Optional[str | bytes] = None, 
                compress: Optional[bool] = False, attached_file_name: Optional[str] = None):

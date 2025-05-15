@@ -8,4 +8,4 @@ Eample:
         raise TrackError(e) # to simply add the exception in the tracked stack
 """
 from .error import *
-from .try_catch import *
+from .try_catch import try_catch

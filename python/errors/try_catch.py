@@ -1,6 +1,5 @@
 import functools
 from .error import TrackError, Error, UserError
-from .. import log as logger
 
 
 def get_defining_class(instance, method_name):
@@ -28,7 +27,7 @@ def get_defining_class(instance, method_name):
     
     return defining_cls.__name__ if defining_cls else None
 
-def try_catch(func=None, description=None, action=None, critical=False, user_message=None):
+def try_catch(func=None, description=None, action=None, critical=False, user_message=None, log_success=False):
     """
     Decorator that logs method calls and wraps exceptions.
     
@@ -38,6 +37,7 @@ def try_catch(func=None, description=None, action=None, critical=False, user_mes
         action: Optional action to take
         critical: Whether this error is critical
         user_message: Optional user-friendly error message (creates a UserError instead of TrackError)
+        log_success (bool): whether to log as info the result if success (otherwise debug it only)
         
     Returns:
         Decorated function
@@ -49,15 +49,11 @@ def try_catch(func=None, description=None, action=None, critical=False, user_mes
     
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-
+        from .. import log as logger
         def helper(current_context, error):
             should_raise_custom_error = any([description, action, critical, user_message])
             
-            if should_raise_custom_error:
-                # Log the error at error level
-                error_msg = f"Error in {current_context}: {error}"
-                #logger.error(error_msg)
-                
+            if should_raise_custom_error:                   
                 custom_desc = description or f"An error happened in {current_context}: {error}"
                 
                 # Create appropriate error type
@@ -105,7 +101,10 @@ def try_catch(func=None, description=None, action=None, critical=False, user_mes
             # For successful execution, log at debug level
             args_str = str(method_args)[:200] 
             result_str = str(result)[:200]
-            logger.debug(f"{current_context}({args_str}) returned {result_str}")
+            if log_success:
+                logger.info(f"{current_context}({args_str}) returned {result_str}")
+            else:
+                logger.debug(f"{current_context}({args_str}) returned {result_str}")
             
             return result
             

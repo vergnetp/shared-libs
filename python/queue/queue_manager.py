@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Union, Callable
 
 from .queue_config import QueueConfig
 from .queue_retry_config import QueueRetryConfig
+from ..errors.try_catch import try_catch
 
 class QueueManager:
     """Manager for queueing operations - used in API endpoints."""
@@ -17,7 +18,7 @@ class QueueManager:
             config: QueueConfig instance
         """
         self.config = config
-        
+
     def _generate_operation_id(self) -> str:
         """Generate a unique operation ID"""
         return str(uuid.uuid4())
@@ -36,6 +37,9 @@ class QueueManager:
         normalized = json.dumps(entity, sort_keys=True, default=str)
         return hashlib.sha256(normalized.encode()).hexdigest()
     
+    @try_catch(
+    description='Failed to enqueue operation',
+    action='Check queue connectivity and entity format')
     def enqueue(self, 
                 entity: Dict[str, Any], 
                 processor: Callable,
@@ -73,77 +77,102 @@ class QueueManager:
         Returns:
             Dict with operation status and metadata
         """
-        # Generate or use operation ID
-        op_id = operation_id or self._generate_operation_id()
-        entity_hash = self._hash_entity(entity)
-        
-        # Determine queue name if not provided
-        if queue_name is None:
-            if callable(processor):
-                queue_name = f"{processor.__module__}.{processor.__name__}"
-            else:
-                # Assume processor is a string like "module.function" if not callable
-                queue_name = processor
-        
-        # Register processor if not already registered
-        if callable(processor) and queue_name not in self.config.operations_registry:
-            self.config.operations_registry[queue_name] = processor
+        try:
+            # Generate or use operation ID
+            op_id = operation_id or self._generate_operation_id()
 
-        # Register callbacks if they are callables
-        has_callbacks = bool(on_success or on_failure)
-        if callable(on_success):
-            self.config.register_callback(on_success)
-        if callable(on_failure):
-            self.config.register_callback(on_failure)
-        
-        # Validate callbacks if provided
-        if on_success and not callable(on_success) and not isinstance(on_success, str):
-            raise ValueError("on_success must be a callable or string function name")
-        if on_failure and not callable(on_failure) and not isinstance(on_failure, str):
-            raise ValueError("on_failure must be a callable or string function name")
-        
-        # Prepare the queue data
-        queue_data = {
-            "entity": entity,
-            "operation_id": op_id,
-            "entity_hash": entity_hash,
-            "timestamp": time.time(),
-            "attempts": 0,
-            "processor": processor.__name__ if callable(processor) else processor,
-            "processor_module": processor.__module__ if callable(processor) else None,
-        }
-        
-        # Add callback info if provided
-        if on_success:
-            queue_data["on_success"] = on_success.__name__ if callable(on_success) else on_success
-            queue_data["on_success_module"] = on_success.__module__ if callable(on_success) else None
-        
-        if on_failure:
-            queue_data["on_failure"] = on_failure.__name__ if callable(on_failure) else on_failure
-            queue_data["on_failure_module"] = on_failure.__module__ if callable(on_failure) else None
-        
-        # Add retry configuration if provided
-        if retry_config:
-            queue_data.update({
-                "max_attempts": retry_config.max_attempts,
-                "delays": retry_config.delays,
-                "timeout": retry_config.timeout,
-                "next_retry_time": time.time()
-            })
-        else:
-            # Default max attempts
-            queue_data["max_attempts"] = 5
-        
-        # Queue the operation
-        self._queue_operation(queue_data, queue_name, priority)
-        
-        # Return the operation details
-        return {
-            "operation_id": op_id,
-            "status": "queued",
-            "has_callbacks": has_callbacks
-        }
+            entity_hash = self._hash_entity(entity)
+            
+            # Determine queue name if not provided
+            if queue_name is None:
+                if callable(processor):
+                    queue_name = f"{processor.__module__}.{processor.__name__}"
+                else:
+                    # Assume processor is a string like "module.function" if not callable
+                    queue_name = processor
+            
+            self.config.logger.debug(f"Enqueueing operation {op_id} on {queue_name}", 
+            operation_id=op_id,
+            processor=processor.__name__ if callable(processor) else processor,
+            queue_name=queue_name,
+            priority=priority,
+            has_callbacks=bool(on_success or on_failure))
+                    
+            # Register processor if not already registered
+            if callable(processor) and queue_name not in self.config.operations_registry:
+                self.config.operations_registry[queue_name] = processor
+
+            # Register callbacks if they are callables
+            has_callbacks = bool(on_success or on_failure)
+            if callable(on_success):
+                self.config.register_callback(on_success)
+            if callable(on_failure):
+                self.config.register_callback(on_failure)
+            
+            # Validate callbacks if provided
+            if on_success and not callable(on_success) and not isinstance(on_success, str):
+                raise ValueError("on_success must be a callable or string function name")
+            if on_failure and not callable(on_failure) and not isinstance(on_failure, str):
+                raise ValueError("on_failure must be a callable or string function name")
+            
+            # Prepare the queue data
+            queue_data = {
+                "entity": entity,
+                "operation_id": op_id,
+                "entity_hash": entity_hash,
+                "timestamp": time.time(),
+                "attempts": 0,
+                "processor": processor.__name__ if callable(processor) else processor,
+                "processor_module": processor.__module__ if callable(processor) else None,
+            }
+            
+            # Add callback info if provided
+            if on_success:
+                queue_data["on_success"] = on_success.__name__ if callable(on_success) else on_success
+                queue_data["on_success_module"] = on_success.__module__ if callable(on_success) else None
+            
+            if on_failure:
+                queue_data["on_failure"] = on_failure.__name__ if callable(on_failure) else on_failure
+                queue_data["on_failure_module"] = on_failure.__module__ if callable(on_failure) else None
+            
+            # Add retry configuration if provided
+            if retry_config:
+                queue_data.update({
+                    "max_attempts": retry_config.max_attempts,
+                    "delays": retry_config.delays,
+                    "timeout": retry_config.timeout,
+                    "next_retry_time": time.time()
+                })
+            else:
+                # Default max attempts
+                queue_data["max_attempts"] = 5
+            
+            # Queue the operation
+            self._queue_operation(queue_data, queue_name, priority)
+            
+            self.config.logger.debug("Operation queued successfully", 
+                  operation_id=op_id, 
+                  queue_name=queue_name, 
+                  priority=priority,
+                  entity_id=getattr(entity, 'id', None),
+                  has_callbacks=has_callbacks)
+            
+            # Return the operation details
+            return {
+                "operation_id": op_id,
+                "status": "queued",
+                "has_callbacks": has_callbacks
+            }
+        except Exception as e:
+            self.config.logger.error("Failed to enqueue operation", 
+                        operation_id=op_id if 'op_id' in locals() else None, 
+                        entity_id=getattr(entity, 'id', None), 
+                        processor=queue_name if 'queue_name' in locals() else None,
+                        error_type=type(e).__name__,
+                        error_message=e.to_sting() if hasattr(e, 'to_string') else str(e))
+            raise
     
+    @try_catch
     def _queue_operation(self,
                        queue_data: Dict[str, Any],
                        queue_name: str,
@@ -168,6 +197,7 @@ class QueueManager:
         # Register the queue
         redis.sadd(self.config.registry_key, queue_key)
     
+    @try_catch
     def get_queue_status(self) -> Dict[str, int]:
         """
         Get the status of all processing queues.
