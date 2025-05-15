@@ -410,7 +410,7 @@ def info(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields
             fields['component'] = component
         if 'subcomponent' not in fields:
             fields['subcomponent'] = subcomponent 
-    _log(LogLevel.INFO, "[INFO] {component} - {subcomponent} - ", message, indent, context, **fields)
+    _log(LogLevel.INFO, f"[INFO] {component} - {subcomponent} - ", message, indent, context, **fields)
 
 def warning(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
     """Log an info message with structured fields."""
@@ -420,7 +420,7 @@ def warning(message: str, indent: int = 0, context: Dict[str, Any] = None, **fie
             fields['component'] = component
         if 'subcomponent' not in fields:
             fields['subcomponent'] = subcomponent 
-    _log(LogLevel.WARN, "[WARN] {component} - {subcomponent} - ", message, indent, context, **fields)
+    _log(LogLevel.WARN, f"[WARN] {component} - {subcomponent} - ", message, indent, context, **fields)
 
 def error(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
     """Log an error message with structured fields."""
@@ -430,7 +430,7 @@ def error(message: str, indent: int = 0, context: Dict[str, Any] = None, **field
             fields['component'] = component
         if 'subcomponent' not in fields:
             fields['subcomponent'] = subcomponent 
-    _log(LogLevel.ERROR, "[ERROR] {component} - {subcomponent} - ", message, indent, context, **fields)
+    _log(LogLevel.ERROR, f"[ERROR] {component} - {subcomponent} - ", message, indent, context, **fields)
 
 def critical(message: str, context: Dict[str, Any] = None, **fields):
     """Log a critical message with structured fields."""
@@ -440,7 +440,7 @@ def critical(message: str, context: Dict[str, Any] = None, **fields):
             fields['component'] = component
         if 'subcomponent' not in fields:
             fields['subcomponent'] = subcomponent 
-    _log(LogLevel.CRITICAL, "[CRITICAL] {component} - {subcomponent} - ", message, 0, context, **fields)
+    _log(LogLevel.CRITICAL, f"[CRITICAL] {component} - {subcomponent} - ", message, 0, context, **fields)
 
 def profile(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
     """Log a prfofiling message with structured fields."""
@@ -450,7 +450,7 @@ def profile(message: str, indent: int = 0, context: Dict[str, Any] = None, **fie
             fields['component'] = component
         if 'subcomponent' not in fields:
             fields['subcomponent'] = subcomponent 
-    _log(LogLevel.DEBUG, "[PROFILER] {component} - {subcomponent} - ", message, indent, context, **fields)
+    _log(LogLevel.DEBUG, f"[PROFILER] {component} - {subcomponent} - ", message, indent, context, **fields)
 
 def get_log_file():
     """

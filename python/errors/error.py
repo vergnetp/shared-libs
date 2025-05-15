@@ -1,5 +1,6 @@
 import json
 import traceback
+import os
 import sys
 import re
 from .. import log as logger
@@ -15,26 +16,69 @@ def _get_location(frame_offset=2):
 
 def _get_exception_location(exception):
     """Extract the location information from an exception's traceback."""
+    t = _get_caller_details(exception)
+    if not t:
+        return None
+    return f'{t[1]} {t[2]} line {t[3]}'
+
+def _get_caller_details(exception: Exception, tag=None):
+    """
+    Extract detailed location information including class from an exception's traceback.
+    
+    Returns:
+        tuple: (module_or_class, funcname, filename, lineno) or None
+    """
     try:
         if not hasattr(exception, '__traceback__'):
             return None
             
+        # First, get the regular traceback info
         tb = traceback.extract_tb(exception.__traceback__)
         if not tb:
             return None
-            
-        # Get the deepest frame that's not in the Error class or decorators
-        for frame in reversed(tb):
-            filename, lineno, funcname, _ = frame
-            if 'error.py' not in filename and funcname != 'wrapper':
-                return f'{filename} {funcname} line {lineno}'
+        
+        # Go through frames to find a suitable one
+        for frame_summary in reversed(tb):
+            filename, lineno, funcname, line = frame_summary
+          
+            if  'try_catch.py' not in filename:
                 
-        # Fallback to the last frame if we couldn't find a suitable one
+                # We found our target frame, now try to get the class
+                
+                # Try to access the actual frame object to extract more info
+                frame = None
+                tb_frame = exception.__traceback__
+                while tb_frame:
+                    if tb_frame.tb_frame.f_code.co_name == funcname and tb_frame.tb_lineno == lineno:
+                        frame = tb_frame.tb_frame
+                        break
+                    tb_frame = tb_frame.tb_next
+                
+                # If we have the frame, check for 'self'
+                component = None
+                if frame and 'self' in frame.f_locals:
+                    try:
+                        # Try to get class from self
+                        self_obj = frame.f_locals.get('self')
+                        if self_obj and hasattr(self_obj, '__class__'):
+                            component = self_obj.__class__.__name__
+                    except Exception:
+                        pass
+                
+                # Fallback to module name if we couldn't get the class
+                if not component:
+                    module_name = os.path.basename(filename).split('.')[0]
+                    component = module_name
+                #logger.info(f"**** {funcname} tag: {tag}")
+                return (component, funcname, filename, lineno)
+        
+        # Fallback to the last frame if we couldn't find a suitable one       
         filename, lineno, funcname, _ = tb[-1]
-        return f'{filename} {funcname} line {lineno}'
-    except Exception:
-        return "unknown exception location"
-
+        module_name = os.path.basename(filename).split('.')[0]
+        return (module_name, funcname, filename, lineno)
+        
+    except Exception as e:
+        return None
 
 def _clean_description(description):
     """Remove 'An error happened in X:' prefix from descriptions."""
@@ -161,19 +205,19 @@ class Error(Exception):
             self._in_str_call = True
             
             # Build a single comprehensive error message
-            parts = []
-            inner = self._get_inner_error()
+            parts = []            
            
             # 1. Description 
-            if inner:
-                if inner.description:
-                    parts.append(f"{inner.description}"+("" if not inner.error else f": {str(inner.error)}"))
-                elif inner.error:
-                    parts.append(f"An error happened in {inner.context}: {str(inner.error)}")
+            inner = self._get_inner_error() or self
+            if inner.error:
+                t = _get_caller_details(inner.error, 'to_string')
+                if t:
+                    parts.append(f"An error happened in {t[0]}.{t[1]}: {str(inner.error)}")
                 else:
                     parts.append(f"{str(inner)}")
             else:
-                parts.append(self.description+"" if not self.error else f": {str(self.error)}")
+                parts.append(f"{str(inner)}") 
+
             
             # 2. Call chain
             call_chain = self._get_call_chain()
@@ -271,35 +315,18 @@ class Error(Exception):
         while current and hasattr(current, 'action'):
             if current.action and current.action not in actions:
                 actions.append(current.action)
-            current = getattr(current, 'error', None)
+            current = current.error
             
         actions.reverse()
         return " -> ".join(actions) if actions else ""
         
     def _get_user_message(self):
-        """Get the user message."""
-        msg = "Internal Error"
-        # Check this error first
-        if hasattr(self, '_user_message') and self._user_message:
-            msg = self._user_message
-            
-        # Check nested errors
-        current = self.error
-        while current:
-            if hasattr(current, '_user_message') and current._user_message:
-                msg = current._user_message
-            
-            # Special handling for UserError objects
-            if hasattr(current, 'user_message') and callable(getattr(current, 'user_message')):
-                try:
-                    # Get the message using the method
-                    msg = current.user_message()
-                except Exception:
-                    pass
-                    
-            # Move to the next error
-            current = getattr(current, 'error', None)
-            
+        """Get the first user message."""
+        msg = "Internal Error"       
+        current = self
+        while current:         
+            msg = getattr(current, '_user_message', None)  or msg
+            current = getattr(current, 'error', None)          
         return msg
 
     def add_context(self, context):

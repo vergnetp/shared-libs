@@ -2,6 +2,31 @@ import pytest
 from .. import Error, TrackError, ApiKeyError, try_catch, UserError
 from ... import log as logger
 
+def test_eror_chain():
+    def connect():
+        raise Exception('Connection refused')
+
+    def save_user():
+        connect()
+
+    @try_catch(user_message="Could not register you.")
+    def register():
+        save_user()
+
+    @try_catch()
+    def api_register():
+        register()
+    
+    try:
+        api_register()
+    except Exception as e:
+        msg = e.to_string()
+
+    assert 'An error happened in test_error.connect: Connection refused' in msg # We can find the real exception caller details
+    assert 'Call chain: register -> api_register' in msg # not many @try_catch, so we show what we can
+    assert 'Consequences: Connection refused' in msg # No description anywhere, we revert to the real exception str
+    assert 'Official message: Could not register you.' in msg # The last user_message we find (or default)
+
 def test_basic_error_str_contains_description_and_location():
     err = Error(description="Something went wrong", action="Retry", critical=True)
     output = err.to_string()
@@ -100,10 +125,12 @@ def test_try_catch():
     try:
         server_process_request_stripe_error()
     except Error as e:
-        # Print the full error information
-        logger.error(f"Error:\n{e.to_string()}")
-        # send nessage back to user
-        user_message = e.user_message() 
+        msg =e.to_string()
+        assert "An error happened in test_error.pay_stripe_error: Stripe Failure" in msg
+        assert "Call chain: pay_stripe_error -> main_stripe_error -> server_process_request_stripe_error" in msg
+        assert "Consequences: Could not process payment with Stripe -> App failed -> Web service failed" in msg
+        assert "Action: Investigate stripe error -> Investigate App issue -> Investigate web service issue" in msg
+        assert "Official message: Your payment could not be processed. You have not been charged" in msg
 
     @try_catch(description="Could not pay",action="Refund the client", critical=True)
     def pay_processing_error():
@@ -125,33 +152,36 @@ def test_try_catch():
     try:
         server_process_request_processing_error()
     except Error as e:
-        # Print the full error information
-        logger.error(f"Error:\n{e.to_string()}")
-        # send nessage back to user
-        user_message = e.user_message() 
+        msg = e.to_string()
+        assert "An error happened in Postgres.connect: Connection refused" in msg
+        assert "Call chain: Database.connect -> Postgres.reconnect -> do -> pay_processing_error -> main_processing_error -> server_process_request_processing_error" in msg
+        assert "Consequences: Could not pay -> App failed" in msg
+        assert "Action: Refund the client -> Investigate" in msg
+        assert "Official message: Internal Error. Please try again later" in msg
 
-   #    # todo: assert on  the log
-        
+
 
 def test_readme_example():
-    # Low-level payment processor
     @try_catch(
         description="Could not process payment with Stripe",
         action="Investigate stripe error",
         critical=True
     )
     def process_payment():
-        try:           
-            # Code that might fail
+        try: 
             raise Exception("Stripe Failure")
         except Exception as e:
-            # Create a user-friendly error
+            # Manual user-friendly error
             raise UserError(
                 e,
-                "Could not process payment with Stripe",
-                "Investigate stripe error",
+                "Stripe is kapput",
+                "resign!",
                 user_message="Your payment could not be processed. You have not been charged"
             )
+
+    # "Forgotten" intermediary call
+    def pass_through():
+        process_payment()
 
     # Mid-level application logic
     @try_catch(
@@ -160,7 +190,7 @@ def test_readme_example():
         critical=True
     )
     def execute_transaction():
-        process_payment()  # This will propagate errors upward with added context
+        pass_through()  # This will propagate errors upward with added context
 
     # Top-level API endpoint
     @try_catch(
@@ -173,19 +203,18 @@ def test_readme_example():
             execute_transaction()
             return {"success": True}
         except Error as e:
-            # Log the full error details for debugging
-            logger.error(f"API Error:\n{e.to_string()}")
-            
-            # Return only the user-friendly message
-            return {"success": False, "error": e.user_message()}
+            # probably: return {"success": False, "error": e.user_message()}
+            raise e
     
-    api_endpoint()
-   
-    # todo: assert on 
-    """Could not process payment with Stripe: Stripe Failure
-Call chain: process_payment -> execute_transaction
-Consequences: Could not process payment with Stripe -> App failed
-Action: Investigate stripe error -> Investigate App issue
-Official message: Your payment could not be processed. You have not been charged
-Location: ...test_error.py process_payment line 146"""
-    #assert False
+    try:
+        api_endpoint()
+    except Error as e:
+        msg = e.to_string()
+        assert "An error happened in test_error.process_payment: Stripe Failure" in msg # We get the caller of the real Exception
+        assert "Call chain: process_payment -> execute_transaction" in msg # We show what we can (user should really put @try_catch everytime it matters)
+        assert "Consequences: Stripe is kapput -> App failed" in msg # We show the chained descriptions(or the real Exception if none found)
+        assert "Action: resign! -> Investigate App issue" in msg # Chained actions. We ignore the try_catch argumenst if an Error (or subclasss like UserError) was manually raised in teh function
+        assert "Official message: Your payment could not be processed. You have not been charged" in msg # the first user message ever available in the chain (or default)
+        assert "Location:" in msg
+       
+ 

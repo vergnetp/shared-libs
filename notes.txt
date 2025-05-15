@@ -16,3 +16,12 @@ todos:
 * MRI
 
 
+
+
+next:
+
+* improve logging and try_catch in base2
+* split base2
+
+
+
