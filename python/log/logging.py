@@ -1,4 +1,4 @@
-# Fixed Logging System (python/log/logging.py)
+# Improved Logging System (python/log/logging.py)
 # Fully synchronous implementation using Queue module
 
 import threading
@@ -32,51 +32,29 @@ class Logger:
             **kwargs: Configuration options passed directly if no config object
         """      
         # If no config object provided, create one from kwargs
-        if config is None:
-            config = LoggerConfig(**kwargs)
-
-        # Set up the logger using the config
-        self.config = config
-        
-        # Use config properties
-        self.service_name = config.service_name
-        self.environment = config.environment
-        self.log_debug_to_file = config.log_debug_to_file
-        self.quiet_init = config.quiet_init
-        self.flush_interval = config.flush_interval
-        self.min_level = config.min_level
-        self.redis_url = config.redis_url
-        self.use_redis = config.use_redis
-        self.log_processor = config.log_processor
-        self.log_batch_processor = config.log_batch_processor
-        self.add_caller_info = config.add_caller_info
-        self.global_context = config.global_context.copy()
-        self.excluded_fields = config.excluded_fields.copy()
-        self.DEFAULT_FLUSH_INTERVAL = config.DEFAULT_FLUSH_INTERVAL
-        self.MAX_MESSAGE_SIZE = config.MAX_MESSAGE_SIZE
-        self.log_dir = config.log_dir 
+        self.config = config if config is not None else LoggerConfig(**kwargs)
 
         # Thread synchronization
         self._file_lock = threading.RLock()
         
         # Initialize QueueConfig if Redis is enabled
-        if self.use_redis:
+        if self.config.use_redis:
             try:
                 self.queue_config = QueueConfig(
-                    redis_url=self.redis_url,
+                    redis_url=self.config.redis_url,
                     queue_prefix="log:",
-                    logger=self.create_simple_logger()
+                    logger=self._create_simple_logger()
                 )
                 
                 # Initialize QueueManager
                 self.queue_manager = QueueManager(config=self.queue_config)
             except Exception as e:
-                if not self.quiet_init:
+                if not self.config.quiet_init:
                     print(f"Failed to initialize Redis: {e}. Falling back to local logging only.")
-                self.use_redis = False
+                self.config.use_redis = False
         
         # Ensure log directory exists if not using default path
-        if self.log_dir is not None:
+        if self.config.log_dir is not None:
             self._ensure_log_dir()
         else:
             # For default path, ensure the logs directory exists
@@ -94,11 +72,10 @@ class Logger:
         atexit.register(self._cleanup)
         
         # Initial startup log - only if not quiet
-        if not self.quiet_init:
-            print(f"Logger initialized: redis={self.use_redis}, path={self._get_log_file_path()}, service={self.service_name}", flush=True)
+        if not self.config.quiet_init:
+            print(f"Logger initialized: redis={self.config.use_redis}, path={self._get_log_file_path()}, service={self.config.service_name}", flush=True)
     
-    @staticmethod
-    def create_simple_logger(self):
+    def _create_simple_logger(self):
         """Create a simple logger for the QueueConfig or unit tests"""
         class SimpleLogger:
             def __init__(self, quiet_init=False):
@@ -120,7 +97,7 @@ class Logger:
                 if not self.quiet_init:
                     print(f"CRITICAL: {msg}")
                     
-        return SimpleLogger(quiet_init=self.quiet_init)
+        return SimpleLogger(quiet_init=self.config.quiet_init)
     
     def _cleanup(self):
         """Cleanup function for atexit that uses the current instance"""
@@ -133,21 +110,21 @@ class Logger:
     def _ensure_log_dir(self):
         """Ensure the log directory exists"""
         with self._file_lock:
-            if not os.path.exists(self.log_dir):
+            if not os.path.exists(self.config.log_dir):
                 try:
-                    os.makedirs(self.log_dir, exist_ok=True)
+                    os.makedirs(self.config.log_dir, exist_ok=True)
                 except (OSError, PermissionError) as e:
                     # Print instead of logging to avoid recursion
                     print(f"Failed to create log directory: {e}", file=sys.stderr)
                     # Try to find a writable directory as fallback
                     try:
-                        self.log_dir = os.path.join(os.path.expanduser("~"), ".logs")
-                        os.makedirs(self.log_dir, exist_ok=True)
-                        print(f"Using fallback log directory: {self.log_dir}", file=sys.stderr)
+                        self.config.log_dir = os.path.join(os.path.expanduser("~"), ".logs")
+                        os.makedirs(self.config.log_dir, exist_ok=True)
+                        print(f"Using fallback log directory: {self.config.log_dir}", file=sys.stderr)
                     except Exception:
                         # Last resort is to use current directory
-                        self.log_dir = os.getcwd()
-                        print(f"Using current directory for logs: {self.log_dir}", file=sys.stderr)
+                        self.config.log_dir = os.getcwd()
+                        print(f"Using current directory for logs: {self.config.log_dir}", file=sys.stderr)
     
     @classmethod
     def get_instance(cls, **kwargs) -> "Logger":
@@ -158,7 +135,7 @@ class Logger:
             **kwargs: Configuration options passed to __init__ if creating instance.
                       
         Returns:
-            AsyncLogger: The singleton logger instance
+            Logger: The singleton logger instance
         """
         if cls._instance is None:
             with cls._instance_lock:
@@ -171,13 +148,13 @@ class Logger:
         return cls._instance
     
     def log(self, 
-        level: LogLevel, 
-        message: str, 
-        indent: int = 0, 
-        truncate: bool = True,
-        context: Dict[str, Any] = None,
-        prefix: str = None,
-        **fields):
+            level: LogLevel, 
+            message: str, 
+            indent: int = 0, 
+            truncate: bool = True,
+            context: Dict[str, Any] = None,
+            prefix: str = None,
+            **fields):
         """
         Log a message - handles local logging and Redis queueing if enabled.
         
@@ -191,36 +168,31 @@ class Logger:
             **fields: Additional structured fields to include in the log
         """
         # Skip logs below minimum level immediately
-        if level.value < self.min_level.value:
+        if level.value < self.config.min_level.value:
             return
 
         # Merge global context, context parameter, and fields
-        combined_context = self.global_context.copy()
+        combined_context = self.config.global_context.copy()
         if context:
             combined_context.update(context)
         combined_context.update(fields)
         
         # Remove excluded fields
-        for field in self.excluded_fields:
+        for field in self.config.excluded_fields:
             combined_context.pop(field, None)
         
         # Add caller info if enabled
-        if self.add_caller_info and 'component' not in combined_context:
+        if self.config.add_caller_info and 'component' not in combined_context:
             component, subcomponent = utils.get_caller_info(frames_back=2)
             combined_context['component'] = component
             combined_context['subcomponent'] = subcomponent
 
         # Truncate long messages if requested
-        if truncate and len(message) > self.MAX_MESSAGE_SIZE:
-            message = message[:self.MAX_MESSAGE_SIZE] + "... [truncated]"
+        if truncate and len(message) > self.config.MAX_MESSAGE_SIZE:
+            message = message[:self.config.MAX_MESSAGE_SIZE] + "... [truncated]"
         
         # Create timestamp once for consistency
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-        
-        # Merge context and fields for complete structured data
-        combined_context = context.copy() if context else {}
-        if fields:
-            combined_context.update(fields)
         
         # Add request_id if available and not already present
         if 'request_id' not in combined_context:
@@ -229,14 +201,15 @@ class Logger:
             if request_id:
                 combined_context['request_id'] = request_id
         
+        # Add standard fields to context if not already present
         if 'timestamp' not in combined_context:
             combined_context['timestamp'] = timestamp
 
         if 'service_name' not in combined_context:
-            combined_context['service_name'] = self.service_name
+            combined_context['service_name'] = self.config.service_name
 
         if 'environment' not in combined_context:
-            combined_context['environment'] = self.environment
+            combined_context['environment'] = self.config.environment
         
         # Format indentation
         indent_str = '    ' * indent
@@ -249,36 +222,56 @@ class Logger:
             message = f"{prefix} {message}"
         
         # Format structured fields for text output
-        field_str = ""
-        if combined_context:
-            field_parts = []
-            for key, value in combined_context.items():
-                if key != 'timestamp':  # Skip timestamp in fields as it's already in the log prefix
-                    # Convert value to string and truncate if needed
-                    value_str = str(value)
-                    if len(value_str) > 50:  # Truncate long values
-                        value_str = value_str[:47] + "..."
-                    field_parts.append(f"{key}={value_str}")
-            
-            if field_parts:
-                field_str = " | " + " ".join(field_parts)
-                # Truncate entire field string if too long
-                if len(field_str) > 500:
-                    field_str = field_str[:497] + "..."
+        field_str = self._format_field_string(combined_context)
         
         # Create consistent formatted output for console and file
         formatted_output = f"{timestamp} {indent_str}{message}{field_str}"
         
-        # Print to console based on level
+        # Handle console output
+        self._output_to_console(level, formatted_output)
+        
+        # Handle file output
+        self._output_to_file(level, timestamp, indent_str, message, field_str)
+        
+        # Handle Redis output if enabled
+        if self.config.use_redis:
+            self._output_to_redis(level, timestamp, original_message, indent, combined_context)
+
+    def _format_field_string(self, context: Dict[str, Any]) -> str:
+        """Format context fields as a string for text output."""
+        if not context:
+            return ""
+            
+        field_parts = []
+        for key, value in context.items():
+            if key != 'timestamp':  # Skip timestamp in fields as it's already in the log prefix
+                # Convert value to string and truncate if needed
+                value_str = str(value)
+                if len(value_str) > 50:  # Truncate long values
+                    value_str = value_str[:47] + "..."
+                field_parts.append(f"{key}={value_str}")
+        
+        if not field_parts:
+            return ""
+            
+        field_str = " | " + " ".join(field_parts)
+        # Truncate entire field string if too long
+        if len(field_str) > 500:
+            field_str = field_str[:497] + "..."
+            
+        return field_str
+        
+    def _output_to_console(self, level: LogLevel, formatted_output: str):
+        """Output log message to console based on level."""
         if level in (LogLevel.ERROR, LogLevel.CRITICAL):
             print(formatted_output, file=sys.stderr, flush=True)
-        else:
-            # For debug messages, only print if debug to file is enabled
-            if level != LogLevel.DEBUG or self.log_debug_to_file:
-                print(formatted_output, flush=True)
-        
-        # Write to file with the same format plus level name
-        if level != LogLevel.DEBUG or self.log_debug_to_file:
+        elif level != LogLevel.DEBUG or self.config.log_debug_to_file:
+            # For non-debug messages, or debug if enabled
+            print(formatted_output, flush=True)
+            
+    def _output_to_file(self, level: LogLevel, timestamp: str, indent_str: str, message: str, field_str: str):
+        """Output log message to file."""
+        if level != LogLevel.DEBUG or self.config.log_debug_to_file:
             try:
                 log_path = self._get_log_file_path()
                 with self._file_lock:
@@ -290,43 +283,42 @@ class Logger:
                         if level == LogLevel.CRITICAL:
                             log_file.flush()
             except Exception as e:
-                if not self.quiet_init:
+                if not self.config.quiet_init:
                     print(f"Failed to write log to file: {e}", file=sys.stderr)
-        
-        # Only queue to Redis if Redis is enabled
-        if self.use_redis:
-            # Create the log record with original message (not prefixed)
+                    
+    def _output_to_redis(self, level: LogLevel, timestamp: str, message: str, indent: int, context: Dict[str, Any]):
+        """Queue log message to Redis."""
+        try:
+            # Create the log record
             log_record = {
                 'timestamp': timestamp,
                 'level': level.name,  # Use name instead of enum for serialization
-                'message': original_message,  # Use original message without prefix
+                'message': message,   # Use original message without prefix
                 'indent': indent,
-                'service': self.service_name,
+                'service': self.config.service_name,
                 'pid': os.getpid(),
                 'thread': threading.get_ident(),
             }
             
-            # Add all fields from combined_context directly to log_record
-            if combined_context:
-                for key, value in combined_context.items():
-                    if key != 'timestamp' and key not in log_record:  # Don't duplicate fields
-                        log_record[key] = value
+            # Add all fields from context directly to log_record
+            for key, value in context.items():
+                if key != 'timestamp' and key not in log_record:  # Don't duplicate fields
+                    log_record[key] = value
             
-            try:
-                # Use queue manager to enqueue the log
-                retry_config = QueueRetryConfig(max_attempts=3, delays=[1, 5, 15])
-                
-                # This is now synchronous
-                self.queue_manager.enqueue(
-                    entity=log_record,
-                    processor=self.log_processor,  # Use configured processor name
-                    priority="high" if level in (LogLevel.ERROR, LogLevel.CRITICAL) else "normal",
-                    retry_config=retry_config
-                )
-            except Exception as e:
-                # If Redis queueing fails, just log locally and continue
-                if not self.quiet_init:
-                    print(f"Failed to queue log to Redis: {e}", file=sys.stderr)
+            # Use queue manager to enqueue the log
+            retry_config = QueueRetryConfig(max_attempts=3, delays=[1, 5, 15])
+            
+            # This is synchronous
+            self.queue_manager.enqueue(
+                entity=log_record,
+                processor=self.config.log_processor,  # Use configured processor name
+                priority="high" if level in (LogLevel.ERROR, LogLevel.CRITICAL) else "normal",
+                retry_config=retry_config
+            )
+        except Exception as e:
+            # If Redis queueing fails, just log locally and continue
+            if not self.config.quiet_init:
+                print(f"Failed to queue log to Redis: {e}", file=sys.stderr)
 
     def _get_log_file_path(self, date=None):
         """
@@ -342,12 +334,12 @@ class Logger:
             date = datetime.now().strftime("%Y_%m_%d")
             
         # Use the custom path builder to maintain compatibility with original logger
-        if self.log_dir is None:
+        if self.config.log_dir is None:
             # If no log_dir specified, use default path 3 directories up
             return utils.build_path(utils.get_root(), 'logs', f'{date}.log')
         else:
             # Otherwise use the specified log directory
-            return os.path.join(self.log_dir, f"{date}.log")
+            return os.path.join(self.config.log_dir, f"{date}.log")
     
     def set_log_level(self, level: Union[LogLevel, str]):
         """
@@ -357,14 +349,14 @@ class Logger:
             level: New minimum log level (enum or string)
         """
         if isinstance(level, str):
-            self.min_level = LogLevel.from_string(level)
+            self.config.min_level = LogLevel.from_string(level)
         else:
-            self.min_level = level
+            self.config.min_level = level
             
-        if not self.quiet_init:
+        if not self.config.quiet_init:
             self.log(
                 LogLevel.INFO,
-                f"Log level changed to {self.min_level.name}"
+                f"Log level changed to {self.config.min_level.name}"
             )
     
     def register_log_processor(self, processor_func, processor_name=None):
@@ -375,7 +367,7 @@ class Logger:
             processor_func: The processor function for handling logs
             processor_name: Optional name for the processor (defaults to function name)
         """
-        if not self.use_redis:
+        if not self.config.use_redis:
             return
             
         if processor_name is None:
@@ -383,7 +375,7 @@ class Logger:
             
         self.queue_config.operations_registry[processor_name] = processor_func
         
-        if not self.quiet_init:
+        if not self.config.quiet_init:
             print(f"Registered log processor: {processor_name}")
             
     def shutdown(self):
@@ -396,7 +388,7 @@ class Logger:
         self._shutdown = True
         
         # Log that we're shutting down, but only if not quiet
-        if not self.quiet_init:
+        if not self.config.quiet_init:
             print("Logger shutdown complete", file=sys.stderr)
 
 
@@ -420,61 +412,55 @@ def _log(level: LogLevel, prefix: str, message: str, indent: int = 0, context: D
 def debug(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
     """Log a debug message with structured fields."""
     component, subcomponent = utils.get_caller_info(frames_back=1)
-    if 'component' not in fields or 'subcomponent' not in fields:        
-        if 'component' not in fields:
-            fields['component'] = component
-        if 'subcomponent' not in fields:
-            fields['subcomponent'] = subcomponent 
+    if 'component' not in fields:
+        fields['component'] = component
+    if 'subcomponent' not in fields:
+        fields['subcomponent'] = subcomponent 
     _log(LogLevel.DEBUG, f"[DEBUG] {component} - {subcomponent} - ", message, indent, context, **fields)
 
 def info(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
-    """Log a debug message with structured fields."""
+    """Log an info message with structured fields."""
     component, subcomponent = utils.get_caller_info(frames_back=1)
-    if 'component' not in fields or 'subcomponent' not in fields:
-        if 'component' not in fields:
-            fields['component'] = component
-        if 'subcomponent' not in fields:
-            fields['subcomponent'] = subcomponent 
+    if 'component' not in fields:
+        fields['component'] = component
+    if 'subcomponent' not in fields:
+        fields['subcomponent'] = subcomponent 
     _log(LogLevel.INFO, f"[INFO] {component} - {subcomponent} - ", message, indent, context, **fields)
 
 def warning(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
-    """Log an info message with structured fields."""
+    """Log a warning message with structured fields."""
     component, subcomponent = utils.get_caller_info(frames_back=1)
-    if 'component' not in fields or 'subcomponent' not in fields:
-        if 'component' not in fields:
-            fields['component'] = component
-        if 'subcomponent' not in fields:
-            fields['subcomponent'] = subcomponent 
+    if 'component' not in fields:
+        fields['component'] = component
+    if 'subcomponent' not in fields:
+        fields['subcomponent'] = subcomponent 
     _log(LogLevel.WARN, f"[WARN] {component} - {subcomponent} - ", message, indent, context, **fields)
 
 def error(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
     """Log an error message with structured fields."""
     component, subcomponent = utils.get_caller_info(frames_back=1)
-    if 'component' not in fields or 'subcomponent' not in fields:
-        if 'component' not in fields:
-            fields['component'] = component
-        if 'subcomponent' not in fields:
-            fields['subcomponent'] = subcomponent 
+    if 'component' not in fields:
+        fields['component'] = component
+    if 'subcomponent' not in fields:
+        fields['subcomponent'] = subcomponent 
     _log(LogLevel.ERROR, f"[ERROR] {component} - {subcomponent} - ", message, indent, context, **fields)
 
 def critical(message: str, context: Dict[str, Any] = None, **fields):
     """Log a critical message with structured fields."""
     component, subcomponent = utils.get_caller_info(frames_back=1)
-    if 'component' not in fields or 'subcomponent' not in fields: 
-        if 'component' not in fields:
-            fields['component'] = component
-        if 'subcomponent' not in fields:
-            fields['subcomponent'] = subcomponent 
+    if 'component' not in fields:
+        fields['component'] = component
+    if 'subcomponent' not in fields:
+        fields['subcomponent'] = subcomponent 
     _log(LogLevel.CRITICAL, f"[CRITICAL] {component} - {subcomponent} - ", message, 0, context, **fields)
 
 def profile(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
-    """Log a prfofiling message with structured fields."""
+    """Log a profiling message with structured fields."""
     component, subcomponent = utils.get_caller_info(frames_back=1)
-    if 'component' not in fields or 'subcomponent' not in fields:
-        if 'component' not in fields:
-            fields['component'] = component
-        if 'subcomponent' not in fields:
-            fields['subcomponent'] = subcomponent 
+    if 'component' not in fields:
+        fields['component'] = component
+    if 'subcomponent' not in fields:
+        fields['subcomponent'] = subcomponent 
     _log(LogLevel.DEBUG, f"[PROFILER] {component} - {subcomponent} - ", message, indent, context, **fields)
 
 def get_log_file():

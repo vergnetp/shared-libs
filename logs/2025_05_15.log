@@ -804,3 +804,272 @@ WARNING: daemon is not using the default seccomp profile
 2025-05-15 17:07:25.994 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-13220 environment=dev
 2025-05-15 17:07:26.000 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-13220 environment=dev
 2025-05-15 17:07:26.000 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-13220 environment=dev
+2025-05-15 17:13:08.348 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-10760 environment=dev
+2025-05-15 17:13:08.996 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-10760 environment=dev
+2025-05-15 17:13:09.004 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-10760 environment=dev
+2025-05-15 17:13:09.006 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-10760 environment=dev
+2025-05-15 17:13:09.011 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-10760 environment=dev
+2025-05-15 17:13:09.012 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-10760 environment=dev
+2025-05-15 17:20:32.788 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-18392 environment=dev
+2025-05-15 17:20:33.387 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-18392 environment=dev
+2025-05-15 17:20:33.393 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-18392 environment=dev
+2025-05-15 17:20:33.394 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-18392 environment=dev
+2025-05-15 17:20:33.401 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-18392 environment=dev
+2025-05-15 17:20:33.402 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-18392 environment=dev
+2025-05-15 17:20:57.998 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-11188 environment=dev
+2025-05-15 17:20:58.464 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-11188 environment=dev
+2025-05-15 17:20:58.476 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-11188 environment=dev
+2025-05-15 17:20:58.477 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-11188 environment=dev
+2025-05-15 17:20:58.485 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-11188 environment=dev
+2025-05-15 17:20:58.486 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-11188 environment=dev
+2025-05-15 17:22:39.346 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-13460 environment=dev
+2025-05-15 17:22:40.029 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-13460 environment=dev
+2025-05-15 17:22:40.068 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_opensearch.py', 'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log.py', 'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'} | component=conftest subcomponent=setup_test_environment service_name=service-13460 environment=dev
+2025-05-15 17:22:40.072 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-13460 environment=dev
+2025-05-15 17:22:40.812 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 5
+  Running: 5
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-13460 environment=dev
+2025-05-15 17:22:40.814 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-13460 environment=dev
+2025-05-15 17:22:40.815 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_opensearch.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-13460 environment=dev
+2025-05-15 17:22:40.821 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-13460 environment=dev
+2025-05-15 17:22:40.822 [INFO] [INFO] conftest - setup_test_environment -    - redis: {}:localhost (container port: 6382) | component=conftest subcomponent=setup_test_environment service_name=service-13460 environment=dev
+2025-05-15 17:22:40.823 [INFO] [INFO] conftest - setup_test_environment -    - generic: {}:localhost (container port: 9200) | component=conftest subcomponent=setup_test_environment service_name=service-13460 environment=dev
+2025-05-15 17:22:40.824 [INFO] [INFO] conftest - setup_test_environment -    - generic: {}:localhost (container port: 9600) | component=conftest subcomponent=setup_test_environment service_name=service-13460 environment=dev
+2025-05-15 17:22:40.825 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d | component=conftest subcomponent=run_command service_name=service-13460 environment=dev
+2025-05-15 17:22:41.267 [INFO] [INFO] conftest - run_command -  Command error:  Container test-log-redis-1  Running
+ Container test-opensearch  Running
+ | component=conftest subcomponent=run_command service_name=service-13460 environment=dev
+2025-05-15 17:22:41.268 [INFO] [INFO] services - wait_for_service -  Waiting for redis to be ready at localhost:6382... | component=services subcomponent=wait_for_service service_name=service-13460 environment=dev
+2025-05-15 17:22:41.274 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:6382 successful | component=services subcomponent=wait_for_service service_name=service-13460 environment=dev
+2025-05-15 17:22:41.290 [INFO] [INFO] services - wait_for_service -  redis at localhost:6382 is ready! | component=services subcomponent=wait_for_service service_name=service-13460 environment=dev
+2025-05-15 17:22:41.291 [INFO] [INFO] services - wait_for_service -  Waiting for generic to be ready at localhost:9200... | component=services subcomponent=wait_for_service service_name=service-13460 environment=dev
+2025-05-15 17:22:41.294 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:9200 successful | component=services subcomponent=wait_for_service service_name=service-13460 environment=dev
+2025-05-15 17:22:41.295 [INFO] [INFO] services - wait_for_service -  generic at localhost:9200 is ready (TCP connection successful)! | component=services subcomponent=wait_for_service service_name=service-13460 environment=dev
+2025-05-15 17:22:41.296 [INFO] [INFO] services - wait_for_service -  Waiting for generic to be ready at localhost:9600... | component=services subcomponent=wait_for_service service_name=service-13460 environment=dev
+2025-05-15 17:22:41.300 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:9600 successful | component=services subcomponent=wait_for_service service_name=service-13460 environment=dev
+2025-05-15 17:22:41.302 [INFO] [INFO] services - wait_for_service -  generic at localhost:9600 is ready (TCP connection successful)! | component=services subcomponent=wait_for_service service_name=service-13460 environment=dev
+2025-05-15 17:22:43.246 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-13460 environment=dev
+2025-05-15 17:22:43.256 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-13460 environment=dev
+2025-05-15 17:23:31.763 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-17400 environment=dev
+2025-05-15 17:23:32.207 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-17400 environment=dev
+2025-05-15 17:23:32.213 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-17400 environment=dev
+2025-05-15 17:23:32.214 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-17400 environment=dev
+2025-05-15 17:23:32.220 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-17400 environment=dev
+2025-05-15 17:23:32.221 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-17400 environment=dev
+2025-05-15 17:23:37.354 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-17104 environment=dev
+2025-05-15 17:23:38.008 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-17104 environment=dev
+2025-05-15 17:23:38.045 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\log\\tests\\test_log_with_redis.py'} | component=conftest subcomponent=setup_test_environment service_name=service-17104 environment=dev
+2025-05-15 17:23:38.049 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-17104 environment=dev
+2025-05-15 17:23:38.510 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 5
+  Running: 5
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-17104 environment=dev
+2025-05-15 17:23:38.511 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-17104 environment=dev
+2025-05-15 17:23:38.512 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\test_log_with_redis.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-17104 environment=dev
+2025-05-15 17:23:38.516 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-17104 environment=dev
+2025-05-15 17:23:38.517 [INFO] [INFO] conftest - setup_test_environment -    - redis: {}:localhost (container port: 6382) | component=conftest subcomponent=setup_test_environment service_name=service-17104 environment=dev
+2025-05-15 17:23:38.518 [INFO] [INFO] conftest - setup_test_environment -    - generic: {}:localhost (container port: 9200) | component=conftest subcomponent=setup_test_environment service_name=service-17104 environment=dev
+2025-05-15 17:23:38.519 [INFO] [INFO] conftest - setup_test_environment -    - generic: {}:localhost (container port: 9600) | component=conftest subcomponent=setup_test_environment service_name=service-17104 environment=dev
+2025-05-15 17:23:38.521 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\log\tests\docker-compose.yml -p test-log up -d | component=conftest subcomponent=run_command service_name=service-17104 environment=dev
+2025-05-15 17:23:38.841 [INFO] [INFO] conftest - run_command -  Command error:  Container test-log-redis-1  Running
+ Container test-opensearch  Running
+ | component=conftest subcomponent=run_command service_name=service-17104 environment=dev
+2025-05-15 17:23:38.843 [INFO] [INFO] services - wait_for_service -  Waiting for redis to be ready at localhost:6382... | component=services subcomponent=wait_for_service service_name=service-17104 environment=dev
+2025-05-15 17:23:38.849 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:6382 successful | component=services subcomponent=wait_for_service service_name=service-17104 environment=dev
+2025-05-15 17:23:38.863 [INFO] [INFO] services - wait_for_service -  redis at localhost:6382 is ready! | component=services subcomponent=wait_for_service service_name=service-17104 environment=dev
+2025-05-15 17:23:38.864 [INFO] [INFO] services - wait_for_service -  Waiting for generic to be ready at localhost:9200... | component=services subcomponent=wait_for_service service_name=service-17104 environment=dev
+2025-05-15 17:23:38.867 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:9200 successful | component=services subcomponent=wait_for_service service_name=service-17104 environment=dev
+2025-05-15 17:23:38.868 [INFO] [INFO] services - wait_for_service -  generic at localhost:9200 is ready (TCP connection successful)! | component=services subcomponent=wait_for_service service_name=service-17104 environment=dev
+2025-05-15 17:23:38.869 [INFO] [INFO] services - wait_for_service -  Waiting for generic to be ready at localhost:9600... | component=services subcomponent=wait_for_service service_name=service-17104 environment=dev
+2025-05-15 17:23:38.871 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:9600 successful | component=services subcomponent=wait_for_service service_name=service-17104 environment=dev
+2025-05-15 17:23:38.873 [INFO] [INFO] services - wait_for_service -  generic at localhost:9600 is ready (TCP connection successful)! | component=services subcomponent=wait_for_service service_name=service-17104 environment=dev
+2025-05-15 17:23:38.876 [INFO] [INFO] test_log_with_redis - test_logger_with_redis -  Simple test message | component=test_log_with_redis subcomponent=test_logger_with_redis service_name=service-17104 environment=dev
+2025-05-15 17:23:38.888 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-17104 environment=dev
+2025-05-15 17:23:38.892 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-17104 environment=dev

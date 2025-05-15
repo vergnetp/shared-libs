@@ -6,19 +6,6 @@ from ..queue import QueueConfig, QueueManager, QueueWorker, QueueRetryConfig
 from .log_storage import LogStorageInterface
 from .opensearch_storage import OpenSearchLogStorage
 
-# Simple logger for our queue system
-class SimpleLogger:
-    @staticmethod
-    def error(msg): print(f"ERROR: {msg}")
-    @staticmethod
-    def warning(msg): print(f"WARNING: {msg}")
-    @staticmethod
-    def debug(msg): print(f"DEBUG: {msg}")
-    @staticmethod
-    def info(msg): print(f"INFO: {msg}")
-    @staticmethod
-    def critical(msg): print(f"CRITICAL: {msg}")
-
 # This processor handles a single log record
 def process_log_record(log_record: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -123,8 +110,7 @@ def initialize_log_processing(redis_url: Optional[str] = None,
     # Initialize QueueConfig
     _queue_config = QueueConfig(
         redis_url=redis_url,
-        queue_prefix="log:",
-        logger=SimpleLogger()
+        queue_prefix="log:"     
     )
     
     # Create QueueManager for job submission

@@ -123,12 +123,12 @@ class QueueConfig:
 
 class SimpleLogger:
     @staticmethod
-    def error(msg): print(f"ERROR: {msg}")
+    def error(msg, **kwargs): print(f"ERROR: {msg}")
     @staticmethod
-    def warning(msg): print(f"WARNING: {msg}")
+    def warning(msg, **kwargs): print(f"WARNING: {msg}")
     @staticmethod
-    def debug(msg): print(f"DEBUG: {msg}")
+    def debug(msg, **kwargs): print(f"DEBUG: {msg}")
     @staticmethod
-    def info(msg): print(f"INFO: {msg}")
+    def info(msg, **kwargs): print(f"INFO: {msg}")
     @staticmethod
-    def critical(msg): print(f"CRITICAL: {msg}")
+    def critical(msg, **kwargs): print(f"CRITICAL: {msg}")

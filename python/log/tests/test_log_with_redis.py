@@ -124,7 +124,7 @@ def test_logger_with_redis(redis_logger):
     if redis_logger is None:
         pytest.skip("Redis logger not available")
     
-    assert redis_logger.use_redis is True, "Logger not configured to use Redis"
+    assert redis_logger.config.use_redis is True, "Logger not configured to use Redis"
     
     try:
         # Log a simple message
