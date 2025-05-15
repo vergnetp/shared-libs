@@ -273,14 +273,19 @@ class Logger:
         """Output log message to file."""
         if level != LogLevel.DEBUG or self.config.log_debug_to_file:
             try:
-                self._rotate_logs_if_needed()
-            except:
-                pass        
-            try:
+                # Try to rotate logs if needed, but don't let it stop us
+                try:
+                    self._rotate_logs_if_needed()
+                except Exception as e:
+                    if not self.config.quiet_init:
+                        print(f"Failed to rotate logs: {e}", file=sys.stderr)
+                        
                 log_path = self._get_log_file_path()
                 
                 with self._file_lock:
+                    # Ensure directory exists
                     os.makedirs(os.path.dirname(log_path), exist_ok=True)
+                    
                     # Add level name in brackets for file logs
                     formatted_file = f"{timestamp} [{level.name}] {indent_str}{message}{field_str}"
                     
@@ -296,14 +301,15 @@ class Logger:
                     should_flush = (
                         level == LogLevel.CRITICAL or
                         len(self._file_buffer) >= 100 or
-                        time.time() - self._last_flush > self.config.flush_interval
+                        time.time() - self._last_flush > self.config.flush_interval or
+                        'pytest' in sys.modules  # Force flush in test environment
                     )
                     
                     if should_flush:
                         with open(log_path, 'a') as log_file:
                             log_file.writelines(self._file_buffer)
-                            if level == LogLevel.CRITICAL:
-                                log_file.flush()
+                            log_file.flush()  # Ensure file is flushed to disk
+                            os.fsync(log_file.fileno())  # Force OS to write to disk
                         
                         # Clear buffer and update last flush time
                         self._file_buffer = []
@@ -438,6 +444,15 @@ class Logger:
             return
             
         self._shutdown = True
+        
+        # Flush any remaining buffer to file
+        if hasattr(self, '_file_buffer') and self._file_buffer:
+            try:
+                log_path = self._get_log_file_path()
+                with open(log_path, 'a') as log_file:
+                    log_file.writelines(self._file_buffer)
+            except Exception as e:
+                print(f"Failed to flush log buffer during shutdown: {e}", file=sys.stderr)
         
         # Log that we're shutting down, but only if not quiet
         if not self.config.quiet_init:

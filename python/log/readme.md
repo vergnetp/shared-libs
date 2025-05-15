@@ -1,22 +1,24 @@
 # Structured Logging System
 
-A flexible, high-performance logging system with structured data support and OpenSearch integration.
+A flexible, high-performance logging system with structured data support, Redis queuing, and OpenSearch integration.
 
 ## Features
 
-- **Thread-safe synchronous logging** with file output
+- **Thread-safe synchronous logging** with file, console, and Redis outputs
 - **Structured logging** with arbitrary field support
 - **Automatic component/subcomponent detection** based on caller context
 - **Redis integration** for asynchronous log processing
 - **OpenSearch storage** for log aggregation and analysis
 - **Configurable log levels** with runtime adjustment
 - **Robust error handling** with graceful fallbacks
+- **Performance optimized** with buffered file writing
+- **Log rotation** based on date and size
 
 ## Architecture
 
 The system consists of three main components:
 
-1. **Logger**: Captures and formats log messages, writes to local files, and queues to Redis
+1. **Logger**: Captures and formats log messages, writes to local files and console, and queues to Redis
 2. **Queue System**: Processes log messages from Redis and forwards to storage
 3. **Storage Backend**: Stores logs in OpenSearch with index management
 
@@ -122,46 +124,45 @@ debug("Custom categorization",
       subcomponent="OAuth")
 ```
 
-## Logging Formats
+## Configuration
 
-The logging system uses different formats for different output channels:
+### Logger Configuration
 
-### Console and File Logs
+```python
+from myapp.log import initialize_logger
+from myapp.log.logger_config import LogLevel
 
-Console and file logs use a human-readable format that includes all information:
+# Initialize with custom settings
+logger = initialize_logger(
+    service_name="api-service",
+    redis_url="redis://localhost:6379/0",
+    log_dir="/var/log/myapp",
+    min_level=LogLevel.INFO,
+    log_debug_to_file=False,
+    flush_interval=5
+)
 
-```
-2025-05-15 12:34:56.789 [ERROR] PoolManager - LeakDetection - Failed to process item | operation_id=op-123 | error_type=ConnectionError
-```
-
-Format components:
-- **Timestamp**: ISO format with milliseconds
-- **Log Level**: In brackets in file logs ([INFO], [ERROR], etc.)
-- **Component/Subcomponent**: Automatically detected from caller
-- **Message**: The main log message
-- **Fields**: All structured fields in `key=value` format (truncated if too long)
-
-### OpenSearch Logs
-
-OpenSearch logs use a structured format with clean separation of concerns:
-
-```json
-{
-  "timestamp": "2025-05-15 12:34:56.789",
-  "level": "ERROR",
-  "message": "Failed to process item",
-  "component": "PoolManager",
-  "subcomponent": "LeakDetection",
-  "operation_id": "op-123",
-  "error_type": "ConnectionError"
-}
+# Or change settings at runtime
+logger.config.update(min_level=LogLevel.DEBUG)
+logger.config.add_global_context(environment="production", version="1.2.3")
 ```
 
-Key differences from text logs:
-- **Clean Message**: Contains only the message without prefixes
-- **Separate Fields**: All metadata in dedicated fields for better querying
-- **Non-truncated Values**: All values are stored in full without truncation
-- **Top-level Fields**: Context fields are moved to the top level
+### Configuration Options
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| service_name | Identifier for the service | service-{pid} |
+| environment | Environment name (dev, test, staging, prod) | dev |
+| use_redis | Enable Redis integration | True |
+| redis_url | Redis connection URL | None |
+| log_dir | Directory for log files | ../../../logs/ |
+| min_level | Minimum log level | LogLevel.INFO |
+| log_debug_to_file | Write DEBUG logs to file | False |
+| flush_interval | Seconds between file flushes | 5 |
+| quiet_init | Suppress initialization messages | False |
+| add_caller_info | Add component and subcomponent info | True |
+| global_context | Dictionary of fields for all logs | {} |
+| excluded_fields | Set of field names to exclude | set() |
 
 ## Running the Log Processing Worker
 
@@ -175,65 +176,40 @@ python -m myapp.log.jobs
 Alternatively, you can run the worker programmatically:
 
 ```python
-import time
+import asyncio
 from myapp.log.jobs import run_worker
 
 # Run the worker
-run_worker()
+asyncio.run(run_worker())
 
 # For a background thread
-from threading import Thread
-worker_thread = Thread(target=run_worker, daemon=True)
+import threading
+def run_worker_thread():
+    asyncio.run(run_worker())
+
+worker_thread = threading.Thread(target=run_worker_thread, daemon=True)
 worker_thread.start()
 ```
 
-## Configuration
+## Customizing Log Storage
 
-### Logger Configuration
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| use_redis | Enable Redis integration | False |
-| redis_url | Redis connection URL | None |
-| log_dir | Directory for log files | ../../../logs/ |
-| service_name | Identifier for the service | service-{pid} |
-| min_level | Minimum log level | LogLevel.INFO |
-| log_debug_to_file | Write DEBUG logs to file | False |
-| flush_interval | Seconds between file flushes | 5 |
-
-### OpenSearch Configuration
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| host | OpenSearch host | localhost |
-| port | OpenSearch port | 9200 |
-| use_ssl | Use SSL for connection | False |
-| index_prefix | Prefix for index names | logs |
-| auth_type | Auth type (none, basic, aws) | none |
-| region | AWS region for aws auth | us-east-1 |
-| username | Username for basic auth | None |
-| password | Password for basic auth | None |
-| verify_certs | Verify SSL certificates | False |
-| timeout | Connection timeout in seconds | 30 |
-| batch_size | Max logs in a batch | 100 |
-
-## Advanced Usage
-
-### Customizing Log Processing
-
-You can register custom log processors for specialized handling:
+You can initialize the log storage with custom settings:
 
 ```python
-from myapp.log.logging import AsyncLogger
+from myapp.log.jobs import initialize_storage
+from myapp.log.opensearch_storage import OpenSearchLogStorage
 
-# Create a custom processor
-def my_custom_processor(log_record):
-    # Do something with the log record
-    return {"status": "processed"}
-
-# Register the processor
-logger = AsyncLogger.get_instance()
-logger.register_log_processor(my_custom_processor)
+# Configure OpenSearch storage
+storage = initialize_storage(
+    storage_class=OpenSearchLogStorage,
+    host="opensearch.example.com",
+    port=9200,
+    use_ssl=True,
+    index_prefix="myapp-logs",
+    auth_type="basic",
+    username="admin",
+    password="password"
+)
 ```
 
 ### Implementing a Custom Storage Backend
@@ -256,6 +232,43 @@ class MyCustomStorage(LogStorageInterface):
 from myapp.log.jobs import initialize_storage
 initialize_storage(storage_class=MyCustomStorage)
 ```
+
+## Advanced Usage
+
+### Customizing Log Processing
+
+You can register custom log processors for specialized handling:
+
+```python
+from myapp.log.logging import Logger
+
+# Create a custom processor
+def my_custom_processor(log_record):
+    # Do something with the log record
+    return {"status": "processed"}
+
+# Register the processor
+logger = Logger.get_instance()
+logger.register_log_processor(my_custom_processor)
+```
+
+### Log Rotation
+
+The logging system automatically rotates logs based on:
+
+1. **Date**: A new log file is created each day
+2. **Size**: Logs are rotated when they exceed 100MB
+
+Rotated logs follow the naming pattern:
+- Daily logs: `YYYY_MM_DD.log`
+- Size-based rotation: `YYYY_MM_DD.log.HHMMSS`
+
+### Thread Safety
+
+All logging operations are thread-safe:
+- File writing is protected with locks
+- Instance creation uses a singleton pattern with thread-safe initialization
+- Buffer management handles concurrent access correctly
 
 ## Query Examples for OpenSearch
 
@@ -349,3 +362,19 @@ GET logs-*/_search
 6. **Add timestamps for events** - Include duration_ms for performance monitoring
 7. **Keep message text human-readable** - The message is for humans, the fields are for machines
 8. **Don't repeat field values in message text** - Avoid redundancy between message and fields
+
+## Performance Considerations
+
+The logging system is designed for high-performance operation:
+
+- **Buffered file writing** reduces I/O operations
+- **Redis queuing** prevents blocking the application thread
+- **Batch processing** in the worker improves OpenSearch ingestion
+- **Thread safety** with minimal contention
+- **Configurable flush intervals** balance latency and throughput
+
+For extremely high-volume environments, consider:
+- Increasing the buffer size
+- Adjusting flush intervals
+- Setting up multiple worker instances
+- Configuring OpenSearch for higher ingest performance
