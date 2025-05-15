@@ -7,7 +7,27 @@ from typing import Any, Dict, List, Optional, Union, Callable
 from .queue_config import QueueConfig
 
 class QueueWorker:
-    """Worker for processing queued operations - started at app startup."""
+    """
+    Worker for processing queued operations - started at app startup.
+    
+    The QueueWorker maintains a configurable number of worker tasks that
+    continuously process items from the queue according to their priority.
+    It handles retries, timeouts, and failure scenarios, ensuring reliable
+    execution of queued operations.
+    
+    Features:
+        - Priority-based processing (high, normal, low)
+        - Configurable retry handling with backoff
+        - Timeout management for long-running operations
+        - Callbacks for success and failure scenarios
+        - Graceful shutdown handling
+    
+    Args:
+        config (QueueConfig): Configuration for queue operations
+        max_workers (int): Maximum number of concurrent worker tasks. Defaults to 5
+        work_timeout (int): the number of seconds after which we terminate teh worker, even if still working. Defaults to 30
+
+    """
     def __init__(self, config: QueueConfig, max_workers=5, work_timeout=30.0):
         """Initialize the queue worker."""
         self.config = config
