@@ -273,18 +273,47 @@ class Logger:
         """Output log message to file."""
         if level != LogLevel.DEBUG or self.config.log_debug_to_file:
             try:
+                self._rotate_logs_if_needed()
+            except:
+                pass        
+            try:
                 log_path = self._get_log_file_path()
+                
                 with self._file_lock:
                     os.makedirs(os.path.dirname(log_path), exist_ok=True)
                     # Add level name in brackets for file logs
                     formatted_file = f"{timestamp} [{level.name}] {indent_str}{message}{field_str}"
-                    with open(log_path, 'a') as log_file:
-                        log_file.write(f"{formatted_file}\n")
-                        if level == LogLevel.CRITICAL:
-                            log_file.flush()
+                    
+                    # Using a buffer for file writing can improve performance
+                    if not hasattr(self, '_file_buffer'):
+                        self._file_buffer = []
+                        self._last_flush = time.time()
+                    
+                    # Add to buffer
+                    self._file_buffer.append(formatted_file + "\n")
+                    
+                    # Flush if buffer is large or critical message or time threshold exceeded
+                    should_flush = (
+                        level == LogLevel.CRITICAL or
+                        len(self._file_buffer) >= 100 or
+                        time.time() - self._last_flush > self.config.flush_interval
+                    )
+                    
+                    if should_flush:
+                        with open(log_path, 'a') as log_file:
+                            log_file.writelines(self._file_buffer)
+                            if level == LogLevel.CRITICAL:
+                                log_file.flush()
+                        
+                        # Clear buffer and update last flush time
+                        self._file_buffer = []
+                        self._last_flush = time.time()
+                        
             except Exception as e:
                 if not self.config.quiet_init:
                     print(f"Failed to write log to file: {e}", file=sys.stderr)
+                    # If file writing fails, try to write to console as fallback
+                    print(formatted_file, file=sys.stderr)
                     
     def _output_to_redis(self, level: LogLevel, timestamp: str, message: str, indent: int, context: Dict[str, Any]):
         """Queue log message to Redis."""
@@ -292,31 +321,30 @@ class Logger:
             # Create the log record
             log_record = {
                 'timestamp': timestamp,
-                'level': level.name,  # Use name instead of enum for serialization
-                'message': message,   # Use original message without prefix
+                'level': level.name,
+                'message': message,
                 'indent': indent,
                 'service': self.config.service_name,
                 'pid': os.getpid(),
                 'thread': threading.get_ident(),
             }
             
-            # Add all fields from context directly to log_record
+            # Add all fields from context
             for key, value in context.items():
-                if key != 'timestamp' and key not in log_record:  # Don't duplicate fields
+                if key != 'timestamp' and key not in log_record:
                     log_record[key] = value
             
-            # Use queue manager to enqueue the log
-            retry_config = QueueRetryConfig(max_attempts=3, delays=[1, 5, 15])
+            # Use queue manager with a timeout for the operation
+            retry_config = QueueRetryConfig(max_attempts=3, delays=[1, 5, 15], timeout=30)        
             
-            # This is synchronous
             self.queue_manager.enqueue(
                 entity=log_record,
-                processor=self.config.log_processor,  # Use configured processor name
+                processor=self.config.log_processor,
                 priority="high" if level in (LogLevel.ERROR, LogLevel.CRITICAL) else "normal",
                 retry_config=retry_config
+
             )
         except Exception as e:
-            # If Redis queueing fails, just log locally and continue
             if not self.config.quiet_init:
                 print(f"Failed to queue log to Redis: {e}", file=sys.stderr)
 
@@ -341,6 +369,30 @@ class Logger:
             # Otherwise use the specified log directory
             return os.path.join(self.config.log_dir, f"{date}.log")
     
+    def _rotate_logs_if_needed(self):
+        """Check if logs need rotation and rotate if needed."""
+        # Skip rotation in testing environments
+        if 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST'):
+            return
+            
+        # This is a simple date-based rotation
+        current_date = datetime.now().strftime("%Y_%m_%d")
+        current_path = self._get_log_file_path(current_date)
+        
+        # Check if current log file is too large (optional)
+        if os.path.exists(current_path):
+            size_mb = os.path.getsize(current_path) / (1024 * 1024)
+            if size_mb > 100:  # Rotate at 100MB
+                # Create an additional rotation with timestamp
+                timestamp = datetime.now().strftime("%H%M%S")
+                rotation_path = f"{current_path}.{timestamp}"
+                try:
+                    with self._file_lock:
+                        # Rename current file to rotation path
+                        os.rename(current_path, rotation_path)
+                except Exception as e:
+                    print(f"Failed to rotate log file: {e}", file=sys.stderr)
+
     def set_log_level(self, level: Union[LogLevel, str]):
         """
         Dynamically change the minimum log level.

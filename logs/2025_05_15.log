@@ -1073,3 +1073,9 @@ WARNING: daemon is not using the default seccomp profile
 2025-05-15 17:23:38.876 [INFO] [INFO] test_log_with_redis - test_logger_with_redis -  Simple test message | component=test_log_with_redis subcomponent=test_logger_with_redis service_name=service-17104 environment=dev
 2025-05-15 17:23:38.888 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-17104 environment=dev
 2025-05-15 17:23:38.892 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-17104 environment=dev
+2025-05-15 17:29:59.967 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-17112 environment=dev
+2025-05-15 17:30:00.724 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-17112 environment=dev
+2025-05-15 17:30:00.739 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-17112 environment=dev
+2025-05-15 17:30:00.741 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-17112 environment=dev
+2025-05-15 17:30:00.747 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-17112 environment=dev
+2025-05-15 17:30:00.749 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-17112 environment=dev
