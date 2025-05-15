@@ -28,7 +28,7 @@ class QueueWorker:
             task = asyncio.create_task(self._worker_loop(i))
             self.tasks.append(task)
         
-        self.config.logger.info(f"Started {self.max_workers} queue worker tasks")
+        self.config.logger.info("Queue workers started", worker_count=self.max_workers)
             
     async def stop(self):
         """Stop queue processing gracefully."""
@@ -39,7 +39,7 @@ class QueueWorker:
             await asyncio.gather(*self.tasks, return_exceptions=True)
             self.tasks = []
             
-        self.config.logger.info("Queue worker stopped")
+        self.config.logger.info("Queue workers stopped")
             
     async def _worker_loop(self, worker_id: int):
         """Main worker loop for processing queue items."""
@@ -63,7 +63,7 @@ class QueueWorker:
                         error_type=type(e).__name__,
                         error_message=e.to_string() if hasattr(e, 'to_string') else str(e))
         finally:
-            self.config.logger.info("Worker stopped", worker_id=worker_id)
+            self.config.logger.info("Worker stopped", worker_count=len(self.tasks))
     
     async def _process_queue_item(self, worker_id: int) -> bool:
         """Process a single item from the queue."""
@@ -130,7 +130,7 @@ class QueueWorker:
                 result = redis.brpop([queue], timeout=0.5)
                 if result:
                     _, item_data = result
-                    self.config.logger.error(f"Invalid JSON in queue {queue}")
+                    self.config.logger.error("Invalid JSON in queue")
                     # Ensure the system_errors_queue is in bytes
                     system_errors_queue = self.config.queue_keys['system_errors']
                     if not isinstance(system_errors_queue, bytes):
@@ -163,7 +163,7 @@ class QueueWorker:
             
             # Add debug logging
             operation_id = item.get('operation_id', 'unknown')
-            self.config.logger.debug(f"Processing item {operation_id} with timeout {item.get('timeout')}")
+            self.config.logger.debug("Processing queued item", operation_id=operation_id, timeout=item.get('timeout'), worker_id=worker_id)
             
             # Check if it's a legacy queue item or callback-based
             if "metadata" in item:
@@ -198,12 +198,12 @@ class QueueWorker:
                         ] = processor
                 except (ImportError, AttributeError) as e:
                     self.config.logger.error(
-                        f"Error importing processor {processor_module}.{processor_name}: {str(e)}"
+                        "Error importing processor", processor_module=processor_module, processor_name=processor_name, error=str(e)
                     )
             
             if not processor:
                 # Cannot find processor - move to system errors
-                self.config.logger.error(f"No processor found for item: {item.get('operation_id')}")
+                self.config.logger.error("No processor found for item", operation_id=operation_id, worker_id=worker_id)
                 # Ensure system_errors_queue is in bytes
                 system_errors_queue = self.config.queue_keys['system_errors']
                 if not isinstance(system_errors_queue, bytes):
@@ -216,14 +216,14 @@ class QueueWorker:
                 # If this is the first attempt, record the start time
                 if "first_attempt_time" not in item:
                     item["first_attempt_time"] = time.time()
-                    self.config.logger.debug(f"Setting first_attempt_time for {operation_id}")
+                    self.config.logger.debug("Setting first_attempt_time for item", operation_id=operation_id, worker_id=worker_id)
                 
                 # Debug logging for timeout check
                 current_time = time.time()
                 elapsed_time = current_time - item["first_attempt_time"]
                 timeout_value = item["timeout"]
                 self.config.logger.debug(
-                    f"Item {operation_id}: elapsed_time={elapsed_time}, timeout={timeout_value}"
+                    "Item elapsed time check", elapsed_time=elapsed_time, timeout=timeout_value, operation_id=operation_id, worker_id=worker_id
                 )
                 
                 # Check if total timeout has been reached
@@ -232,7 +232,7 @@ class QueueWorker:
                     item["failure_reason"] = f"Total timeout reached: {elapsed_time}s > {timeout_value}s"
                     
                     self.config.logger.info(
-                        f"Item {operation_id} reached timeout after {elapsed_time}s (limit: {timeout_value}s)"
+                        "Item reached timeout", elapsed_time=elapsed_time, timeout=timeout_value, operation_id=operation_id, worker_id=worker_id
                     )
                     
                     # Handle callbacks for failure if present
@@ -257,7 +257,7 @@ class QueueWorker:
                     redis.lpush(failures_queue, item_json.encode())
                     
                     self.config.logger.debug(
-                        f"Moved item {operation_id} to failures queue: {failures_queue!r}"
+                        "Moved item to failures queue", timeout=timeout_value, operation_id=operation_id, worker_id=worker_id, failure_queue=self.config.queue_keys['failures']
                     )
                     
                     return True
@@ -279,7 +279,7 @@ class QueueWorker:
                         }
                     )
                 
-                self.config.logger.info(f"Worker {worker_id} processed item {item.get('operation_id')}")
+                self.config.logger.info("Worker processed item successfully", operation_id=operation_id, worker_id=worker_id)
                 return True
                 
             except Exception as e:
@@ -314,7 +314,7 @@ class QueueWorker:
                     
                     redis.lpush(failures_queue, json.dumps(item, default=str).encode())
                     self.config.logger.error(
-                        f"Item {item.get('operation_id')} moved to failures queue: {str(e)}"
+                        "Item moved to failures queue", operation_id=operation_id, worker_id=worker_id, failure_queue=self.config.queue_keys['failures'], error=e.to_string() if hasattr(e, "to_string") else str(e)
                     )
                 else:
                     # Calculate next retry time using delays array
@@ -360,13 +360,12 @@ class QueueWorker:
                         
                         redis.lpush(failures_queue, json.dumps(item, default=str).encode())
                         self.config.logger.error(
-                            f"Item {item.get('operation_id')} would exceed timeout, moved to failures queue"
+                            "Item would exceed timeout, moved to failures queue", operation_id=operation_id, worker_id=worker_id, failure_queue=self.config.queue_keys['failures']
                         )
                     else:
                         # Requeue with the updated next retry time
                         self.config.logger.warning(
-                            f"Item {item.get('operation_id')} requeued after error "
-                            f"(attempt {item['attempts']}): {str(e)}"
+                            "Item requeued after error", operation_id=operation_id, worker_id=worker_id, attempt_nb=item['attempts'], error=e.to_string() if hasattr(e, "to_string") else str(e)
                         )
                         
                         # Add back to queue
@@ -375,7 +374,7 @@ class QueueWorker:
                 return True
                 
         except Exception as e:
-            self.config.logger.error(f"Error processing item from {queue}: {str(e)}")
+            self.config.logger.error("Error processing item from queue", operation_id=operation_id, worker_id=worker_id, error=e.to_string() if hasattr(e, "to_string") else str(e))
             return True
 
     async def _execute_callback(self, callback_name, callback_module, data):
@@ -396,11 +395,11 @@ class QueueWorker:
                         self.config.callbacks_registry[callback_key] = callback
                 except (ImportError, AttributeError) as e:
                     self.config.logger.error(
-                        f"Error importing callback {callback_module}.{callback_name}: {str(e)}"
+                        "Error importing callback", callback_module=callback_module, callback_name=callback_name, error=str(e)
                     )
             
             if not callback:
-                self.config.logger.error(f"Callback {callback_name} not found")
+                self.config.logger.error("Callback not found", callback_module=callback_module, callback_name=callback_name)
                 return None
                 
             # Execute the callback
@@ -410,5 +409,5 @@ class QueueWorker:
                 return callback(data)
                 
         except Exception as e:
-            self.config.logger.error(f"Error executing callback {callback_name}: {str(e)}")
+            self.config.logger.error("Error executing callback",  callback_module=callback_module, callback_name=callback_name, error=e.to_string() if hasattr(e, "to_string") else str(e))
             return None

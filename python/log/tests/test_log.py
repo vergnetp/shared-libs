@@ -22,7 +22,7 @@ def test_error_logs_message(tmp_path, monkeypatch):
     importlib.reload(mylog)
     mylog.error("[UNIT TEST] Error occurred")
     # Shutdown now fully synchronous - no async issues
-    mylog.AsyncLogger.get_instance().shutdown()
+    mylog.Logger.get_instance().shutdown()
     content = read_log_content(get_log_file(tmp_path))
     assert "[ERROR]" in content
     assert "[UNIT TEST] Error occurred" in content
@@ -31,7 +31,7 @@ def test_info_logs_message(tmp_path, monkeypatch):
     patch_utils(monkeypatch, tmp_path)
     importlib.reload(mylog)
     mylog.info("[UNIT TEST] Info message")
-    mylog.AsyncLogger.get_instance().shutdown()
+    mylog.Logger.get_instance().shutdown()
     content = read_log_content(get_log_file(tmp_path))
     assert "[INFO]" in content
     assert "[UNIT TEST] Info message" in content

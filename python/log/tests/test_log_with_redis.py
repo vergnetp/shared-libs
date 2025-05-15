@@ -58,8 +58,8 @@ def redis_logger(redis_url):
         return None
     
     # Reset logger singleton
-    if hasattr(mylog.AsyncLogger, "_instance"):
-        mylog.AsyncLogger._instance = None
+    if hasattr(mylog.Logger, "_instance"):
+        mylog.Logger._instance = None
     
     # Create logger
     try:

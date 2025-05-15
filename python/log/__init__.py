@@ -12,7 +12,7 @@ def init_logger(
     quiet_init: bool = True,
 ):
 
-    AsyncLogger.get_instance(
+    Logger.get_instance(
         service_name=service_name,
         redis_url=redis_url,
         log_dir=log_dir,

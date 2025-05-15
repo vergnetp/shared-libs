@@ -139,9 +139,9 @@ async def test_worker_processes_queue(queue_manager, worker, config):
 async def test_worker_retry_on_failure(queue_manager, worker, config):
     """Test that worker retries failed items."""
     # Enable more detailed logging
-    config.logger.error = lambda msg: print(f"ERROR: {msg}")
-    config.logger.warning = lambda msg: print(f"WARNING: {msg}")
-    config.logger.info = lambda msg: print(f"INFO: {msg}")
+    config.logger.error = lambda msg, **kwargs: print(f"ERROR: {msg}")
+    config.logger.warning = lambda msg, **kwargs: print(f"WARNING: {msg}")
+    config.logger.info = lambda msg, **kwargs: print(f"INFO: {msg}")
     
     # Enqueue a failing item with retry config
     retry_config = QueueRetryConfig(max_attempts=2, delays=[0.1, 0.1])
@@ -189,10 +189,10 @@ async def test_worker_retry_on_failure(queue_manager, worker, config):
 async def test_worker_timeout_handling(queue_manager, worker, config):
     """Test that worker respects timeout settings."""
     # Enable more detailed logging for troubleshooting
-    config.logger.error = lambda msg: print(f"ERROR: {msg}")
-    config.logger.warning = lambda msg: print(f"WARNING: {msg}")
-    config.logger.info = lambda msg: print(f"INFO: {msg}")
-    config.logger.debug = lambda msg: print(f"DEBUG: {msg}")
+    config.logger.error = lambda msg, **kwargs: print(f"ERROR: {msg}")
+    config.logger.warning = lambda msg, **kwargs: print(f"WARNING: {msg}")
+    config.logger.info = lambda msg, **kwargs: print(f"INFO: {msg}")
+    config.logger.debug = lambda msg, **kwargs: print(f"DEBUG: {msg}")
     
     # Set a shorter work_timeout for this test to ensure the slow processor times out
     worker.work_timeout = 0.5  # Shorter than the 2s sleep in slow_processor

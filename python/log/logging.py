@@ -12,24 +12,10 @@ from typing import Optional, Dict, Any, Union, List
 import atexit
 from .. import utils
 from ..queue import QueueConfig, QueueManager, QueueRetryConfig
+from .logger_config import LoggerConfig, LogLevel
 
-# Configuration constants
-MAX_MESSAGE_SIZE = 5000
-DEFAULT_FLUSH_INTERVAL = 5  # seconds
 
-class LogLevel(Enum):
-    DEBUG = 10
-    INFO = 20
-    WARN = 30
-    ERROR = 40
-    CRITICAL = 50
-    
-    @classmethod
-    def from_string(cls, level_str: str) -> "LogLevel":
-        """Convert string level name to enum"""
-        return getattr(cls, level_str.upper(), cls.INFO)
-
-class AsyncLogger:
+class Logger:
     """
     Thread-safe logger with Redis integration using Queue module.
     Uses a singleton pattern for global access.
@@ -37,55 +23,39 @@ class AsyncLogger:
     _instance = None
     _instance_lock = threading.Lock()
     
-    def __init__(self, 
-                 use_redis: bool = False, 
-                 redis_url: str = None,
-                 log_dir: str = None,
-                 service_name: str = None,
-                 min_level: Union[LogLevel, str] = LogLevel.INFO,
-                 log_debug_to_file: bool = False,
-                 flush_interval: int = DEFAULT_FLUSH_INTERVAL,
-                 quiet_init: bool = False,
-                 log_processor: str = "log_message",
-                 log_batch_processor: str = "log_batch"):
+    def __init__(self, config: Optional[LoggerConfig] = None, **kwargs):
         """
-        Initialize the logger with configurable options.
+        Initialize the logger with a LogConfig object or keyword arguments.
         
         Args:
-            use_redis: Whether to use Redis as primary logging destination
-            redis_url: Redis connection URL
-            log_dir: Directory for local log files
-                     If None, uses ../../../logs/ (relative to logger module)
-            service_name: Identifier for this service instance
-            min_level: Minimum log level to process
-            log_debug_to_file: If True, debug messages will be written to file
-                              (default is False for backward compatibility)
-            flush_interval: How often to flush logs to disk/Redis (seconds)
-            quiet_init: If True, suppresses printing the initialization message
-            log_processor: Name of the processor function for single logs
-            log_batch_processor: Name of the processor function for log batches
-        """
-        # Core settings
-        self.log_dir = log_dir  # Can be None to use default path
-        self.service_name = service_name or f"service-{os.getpid()}"
-        self.log_debug_to_file = log_debug_to_file
-        self.quiet_init = quiet_init  # Store quiet_init setting
-        self.flush_interval = flush_interval
+            config: LogConfig instance (overrides any keyword arguments)
+            **kwargs: Configuration options passed directly if no config object
+        """      
+        # If no config object provided, create one from kwargs
+        if config is None:
+            config = LoggerConfig(**kwargs)
+
+        # Set up the logger using the config
+        self.config = config
         
-        # Set minimum log level
-        if isinstance(min_level, str):
-            self.min_level = LogLevel.from_string(min_level)
-        else:
-            self.min_level = min_level
-        
-        # Redis settings
-        self.redis_url = redis_url
-        self.use_redis = use_redis
-        
-        # Processor names
-        self.log_processor = log_processor
-        self.log_batch_processor = log_batch_processor
-        
+        # Use config properties
+        self.service_name = config.service_name
+        self.environment = config.environment
+        self.log_debug_to_file = config.log_debug_to_file
+        self.quiet_init = config.quiet_init
+        self.flush_interval = config.flush_interval
+        self.min_level = config.min_level
+        self.redis_url = config.redis_url
+        self.use_redis = config.use_redis
+        self.log_processor = config.log_processor
+        self.log_batch_processor = config.log_batch_processor
+        self.add_caller_info = config.add_caller_info
+        self.global_context = config.global_context.copy()
+        self.excluded_fields = config.excluded_fields.copy()
+        self.DEFAULT_FLUSH_INTERVAL = config.DEFAULT_FLUSH_INTERVAL
+        self.MAX_MESSAGE_SIZE = config.MAX_MESSAGE_SIZE
+        self.log_dir = config.log_dir 
+
         # Thread synchronization
         self._file_lock = threading.RLock()
         
@@ -95,7 +65,7 @@ class AsyncLogger:
                 self.queue_config = QueueConfig(
                     redis_url=self.redis_url,
                     queue_prefix="log:",
-                    logger=self._create_simple_logger()
+                    logger=self.create_simple_logger()
                 )
                 
                 # Initialize QueueManager
@@ -127,25 +97,26 @@ class AsyncLogger:
         if not self.quiet_init:
             print(f"Logger initialized: redis={self.use_redis}, path={self._get_log_file_path()}, service={self.service_name}", flush=True)
     
-    def _create_simple_logger(self):
-        """Create a simple logger for the QueueConfig"""
+    @staticmethod
+    def create_simple_logger(self):
+        """Create a simple logger for the QueueConfig or unit tests"""
         class SimpleLogger:
             def __init__(self, quiet_init=False):
                 self.quiet_init = quiet_init
                 
-            def error(self, msg): 
+            def error(self, msg, **kwargs): 
                 if not self.quiet_init:
                     print(f"ERROR: {msg}")
-            def warning(self, msg): 
+            def warning(self, msg, **kwargs): 
                 if not self.quiet_init:
                     print(f"WARNING: {msg}")
-            def debug(self, msg): 
+            def debug(self, msg, **kwargs): 
                 if not self.quiet_init:
                     print(f"DEBUG: {msg}")
-            def info(self, msg): 
+            def info(self, msg, **kwargs): 
                 if not self.quiet_init:
                     print(f"INFO: {msg}")
-            def critical(self, msg): 
+            def critical(self, msg, **kwargs): 
                 if not self.quiet_init:
                     print(f"CRITICAL: {msg}")
                     
@@ -179,7 +150,7 @@ class AsyncLogger:
                         print(f"Using current directory for logs: {self.log_dir}", file=sys.stderr)
     
     @classmethod
-    def get_instance(cls, **kwargs) -> "AsyncLogger":
+    def get_instance(cls, **kwargs) -> "Logger":
         """
         Get or create the singleton logger instance.
         
@@ -196,7 +167,7 @@ class AsyncLogger:
                     if 'pytest' in sys.modules or os.getenv('PYTEST_CURRENT_TEST'):
                         kwargs.setdefault('quiet_init', True)
                     
-                    cls._instance = AsyncLogger(**kwargs)
+                    cls._instance = Logger(**kwargs)
         return cls._instance
     
     def log(self, 
@@ -222,10 +193,26 @@ class AsyncLogger:
         # Skip logs below minimum level immediately
         if level.value < self.min_level.value:
             return
-            
+
+        # Merge global context, context parameter, and fields
+        combined_context = self.global_context.copy()
+        if context:
+            combined_context.update(context)
+        combined_context.update(fields)
+        
+        # Remove excluded fields
+        for field in self.excluded_fields:
+            combined_context.pop(field, None)
+        
+        # Add caller info if enabled
+        if self.add_caller_info and 'component' not in combined_context:
+            component, subcomponent = utils.get_caller_info(frames_back=2)
+            combined_context['component'] = component
+            combined_context['subcomponent'] = subcomponent
+
         # Truncate long messages if requested
-        if truncate and len(message) > MAX_MESSAGE_SIZE:
-            message = message[:MAX_MESSAGE_SIZE] + "... [truncated]"
+        if truncate and len(message) > self.MAX_MESSAGE_SIZE:
+            message = message[:self.MAX_MESSAGE_SIZE] + "... [truncated]"
         
         # Create timestamp once for consistency
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
@@ -242,9 +229,14 @@ class AsyncLogger:
             if request_id:
                 combined_context['request_id'] = request_id
         
-        # Add timestamp if not already present
         if 'timestamp' not in combined_context:
             combined_context['timestamp'] = timestamp
+
+        if 'service_name' not in combined_context:
+            combined_context['service_name'] = self.service_name
+
+        if 'environment' not in combined_context:
+            combined_context['environment'] = self.environment
         
         # Format indentation
         indent_str = '    ' * indent
@@ -422,7 +414,7 @@ def _log(level: LogLevel, prefix: str, message: str, indent: int = 0, context: D
         **fields: Additional structured fields to include in the log
     """
     # Get logger instance and call log method with all parameters
-    logger = AsyncLogger.get_instance()
+    logger = Logger.get_instance()
     logger.log(level, message, indent=indent, context=context, prefix=prefix, **fields)
 
 def debug(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
@@ -492,7 +484,7 @@ def get_log_file():
     Returns:
         str: Full path to the log file for today.
     """
-    logger = AsyncLogger.get_instance()
+    logger = Logger.get_instance()
     return logger._get_log_file_path()
 
 def initialize_logger(**kwargs):
@@ -500,9 +492,9 @@ def initialize_logger(**kwargs):
     Initialize the logger with specified parameters.
     
     Args:
-        **kwargs: Parameters for AsyncLogger initialization
+        **kwargs: Parameters for Logger initialization
         
     Returns:
-        AsyncLogger: The configured logger instance
+       Logger: The configured logger instance
     """
-    return AsyncLogger.get_instance(**kwargs)
+    return Logger.get_instance(**kwargs)
