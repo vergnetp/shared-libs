@@ -2,8 +2,12 @@ import json
 import time
 import uuid
 import hashlib
+import datetime
 import threading
 from typing import Any, Dict, List, Optional, Union, Callable, Tuple
+
+import redis
+import asyncio
 
 from .queue_config import QueueConfig
 from .queue_retry_config import QueueRetryConfig
@@ -129,6 +133,9 @@ class QueueManager:
             Dict with operation status and metadata
         """
         with self._enqueue_lock:
+            start_time = time.time()
+            success = False
+            error_type = None
             try:
                 # Generate or use operation ID
                 op_id = operation_id or self._generate_operation_id()
@@ -207,8 +214,13 @@ class QueueManager:
                 # Queue the operation
                 self._queue_operation(queue_data, queue_name, priority, custom_serializer)
                 
+                # Mark as successful
+                success = True
+                
                 # Update metrics
+                acquisition_time = time.time() - start_time
                 self.config.update_metric('enqueued')
+                self.config.update_metric('avg_enqueue_time', acquisition_time)
                 
                 self.config.logger.debug("Operation queued successfully", 
                       operation_id=op_id, 
@@ -221,15 +233,40 @@ class QueueManager:
                 return {
                     "operation_id": op_id,
                     "status": "queued",
-                    "has_callbacks": has_callbacks
+                    "has_callbacks": has_callbacks,
+                    "enqueue_time_ms": int(acquisition_time * 1000)
                 }
+            
+            except asyncio.TimeoutError:
+                # Specifically track timeouts
+                error_type = 'timeout'
+                self.config.update_metric('timeouts')
+                self.config.update_metric('last_timeout_timestamp', time.time())
+                raise
+                
             except Exception as e:
-                self.config.logger.error("Failed to enqueue operation", 
-                            operation_id=op_id if 'op_id' in locals() else None, 
-                            entity_id=getattr(entity, 'id', None), 
-                            processor=queue_name if 'queue_name' in locals() else None,
-                            error_type=type(e).__name__,
-                            error_message=e.to_string() if hasattr(e, 'to_string') else str(e))
+                # Track different types of errors
+                if isinstance(e, redis.RedisError):
+                    error_type = 'redis'
+                    self.config.update_metric('redis_errors')
+                elif isinstance(e, (TypeError, ValueError)):
+                    error_type = 'validation'
+                    self.config.update_metric('validation_errors')
+                else:
+                    error_type = 'general'
+                    self.config.update_metric('general_errors')
+                
+                # Increment total errors
+                self.config.update_metric('errors')
+                
+                # Log with enhanced error details
+                self.config.logger.error(f"Failed to enqueue operation", 
+                        operation_id=op_id if 'op_id' in locals() else None, 
+                        entity_id=getattr(entity, 'id', None), 
+                        processor=queue_name if 'queue_name' in locals() else None,
+                        error_type=error_type,
+                        error_message=e.to_string() if hasattr(e, 'to_string') else str(e),
+                        elapsed_time=time.time() - start_time)
                 raise
     
     @try_catch
@@ -383,34 +420,53 @@ class QueueManager:
         redis.sadd(self.config.registry_key, queue_key)
     
     @try_catch
-    def get_queue_status(self) -> Dict[str, int]:
-        """
-        Get the status of all processing queues.
+    def get_queue_status(self):
+        """Get the current status of all registered queues.
         
         Returns:
-            Dict with queue names and item counts
+            dict: A dictionary containing the status of all queues with counts
+                and additional metadata.
         """
-        redis = self.config._ensure_redis_sync()
+        status = {}
         
         # Get all registered queues
-        queues = redis.smembers(self.config.registry_key)
+        registered_queues = self.config._ensure_redis_sync().smembers(self.config.registry_key)
+        string_queues = set()
+        for queue in registered_queues:
+            if isinstance(queue, bytes):
+                string_queues.add(queue.decode())
+            else:
+                string_queues.add(queue)
         
-        status = {}
-        for queue in queues:
-            # Decode queue name if it's bytes
-            queue_name = queue.decode() if isinstance(queue, bytes) else queue
-            queue_len = redis.llen(queue)
-            status[queue_name] = queue_len
-            
-        # Add failure queues
-        for queue_type, queue_key in self.config.queue_keys.items():
-            queue_key_str = queue_key.decode() if isinstance(queue_key, bytes) else queue_key
-            status[queue_key_str] = redis.llen(queue_key)
-            
-        # Add metrics
-        status['metrics'] = self.config.get_metrics()
-            
-        return status
+        # Get item counts for each queue
+        for queue_name in string_queues:
+            count = self.config._ensure_redis_sync().llen(queue_name)
+            status[queue_name] = count
+        
+        # Add failure queue count
+        failures_key = "queue:failures"
+        status[failures_key] = self.config._ensure_redis_sync().llen(failures_key)
+        
+        # Add system errors count
+        system_errors_key = "queue:system_errors"
+        status[system_errors_key] = self.config._ensure_redis_sync().llen(system_errors_key)
+        
+        # Calculate total items
+        total_items = sum(count for queue_name, count in status.items())
+        
+        # Get metrics
+        metrics = self.config.get_metrics()
+        
+        # Add metadata as a separate dictionary
+        metadata = {
+            "total_items": total_items,
+            "metrics": metrics,
+            "status_time": time.time()
+        }
+        
+        # Return a combined dict with both queue statuses and metadata
+        result = {**status, **metadata}
+        return result
         
     @try_catch
     def purge_queue(self, queue_name: str, priority: str = "normal") -> int:

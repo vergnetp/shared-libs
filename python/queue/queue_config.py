@@ -77,8 +77,19 @@ class QueueConfig:
             'failed': 0,
             'retried': 0,
             'timeouts': 0,
+            'redis_errors': 0,
+            'validation_errors': 0,
+            'general_errors': 0,
+            'avg_enqueue_time': 0.0,
+            'avg_process_time': 0.0,
+            'last_timeout_timestamp': None,
+            'queue_depths': {},  # Track queue depths by queue name
         }
         self._metrics_lock = threading.RLock()
+
+        # Track total enqueues for calculating averages
+        self._total_enqueues = 0
+        self._total_processes = 0
        
     def _define_queue_keys(self):
         """Define keys for actual processing queues."""
@@ -193,24 +204,81 @@ class QueueConfig:
         
         self.callbacks_registry[callback_key] = callback
         
-    def update_metric(self, metric_name: str, value: int = 1):
+    def update_metric(self, metric_name: str, value: Any = 1):
         """
-        Update a metric counter.
+        Update a metric counter or value.
         
         Args:
             metric_name: Name of the metric to update
-            value: Value to add to the metric (default: 1)
+            value: Value to add or set for the metric (default: 1)
         """
         with self._metrics_lock:
-            if metric_name in self._metrics:
+            # If metric doesn't exist yet, initialize it
+            if metric_name not in self._metrics:
+                # Handle different metrics types
+                if metric_name.endswith('_timestamp'):
+                    self._metrics[metric_name] = value
+                elif metric_name.startswith('avg_'):
+                    # Initialize averages with the first value
+                    self._metrics[metric_name] = value
+                else:
+                    # Initialize counters with the given value (usually 1)
+                    self._metrics[metric_name] = value
+                return
+                
+            # Update existing metrics
+            current_value = self._metrics[metric_name]
+            
+            # Handle special cases
+            if metric_name.endswith('_timestamp'):
+                # For timestamps, just replace the value
+                self._metrics[metric_name] = value
+            elif metric_name.startswith('avg_'):
+                # For averages, we need tracking variables
+                total_key = f"_total_{metric_name[4:]}"  # e.g., avg_process_time -> _total_process_time
+                count_key = f"_count_{metric_name[4:]}"  # e.g., avg_process_time -> _count_process_time
+                
+                # Initialize tracking vars if needed
+                if total_key not in self._metrics:
+                    self._metrics[total_key] = 0
+                if count_key not in self._metrics:
+                    self._metrics[count_key] = 0
+                
+                # Update total and count
+                self._metrics[total_key] += value
+                self._metrics[count_key] += 1
+                
+                # Recalculate average
+                self._metrics[metric_name] = self._metrics[total_key] / self._metrics[count_key]
+            else:
+                # Default is to increment counters
                 self._metrics[metric_name] += value
-    
-    def get_metrics(self) -> Dict[str, int]:
+
+    def get_metrics(self) -> Dict[str, Any]:
         """
-        Get current metrics.
+        Get current metrics with enhanced details.
         
         Returns:
-            Dict of metric names and values
+            Dict of metric names and values, including computed fields
         """
         with self._metrics_lock:
-            return self._metrics.copy()
+            # Create a copy of the metrics
+            metrics = self._metrics.copy()
+            
+            # Add some computed metrics
+            if metrics['enqueued'] > 0:
+                metrics['success_rate'] = (metrics['processed'] - metrics['failed']) / metrics['enqueued'] * 100
+            else:
+                metrics['success_rate'] = 0
+                
+            # Add error breakdown percentage
+            total_errors = metrics['errors'] if 'errors' in metrics else 0
+            if total_errors > 0:
+                metrics['error_breakdown'] = {
+                    'timeouts': (metrics['timeouts'] / total_errors) * 100,
+                    'redis': (metrics.get('redis_errors', 0) / total_errors) * 100,
+                    'validation': (metrics.get('validation_errors', 0) / total_errors) * 100,
+                    'general': (metrics.get('general_errors', 0) / total_errors) * 100
+                }
+            
+            return metrics

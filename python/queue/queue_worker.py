@@ -54,9 +54,32 @@ class QueueWorker:
         """Stop queue processing gracefully."""
         self.running = False
         
-        # Wait for tasks to complete
+        # Wait for tasks to complete with proper error handling
         if self.tasks:
-            await asyncio.gather(*self.tasks, return_exceptions=True)
+            try:
+                # Important: Use asyncio.shield to prevent cancellation
+                # and explicitly handle tasks in the current loop
+                current_loop = asyncio.get_running_loop()
+                
+                # For each task, ensure it's in the current loop or transfer it
+                safe_tasks = []
+                for task in self.tasks:
+                    # Only gather tasks from the current loop
+                    if task._loop is current_loop:
+                        safe_tasks.append(task)
+                    else:
+                        # Log tasks on different loops
+                        self.config.logger.warning(
+                            f"Task {task} is on a different event loop and cannot be gathered"
+                        )
+                
+                # Only gather tasks if there are any safe ones
+                if safe_tasks:
+                    await asyncio.gather(*safe_tasks, return_exceptions=True)
+            except Exception as e:
+                self.config.logger.error(f"Error stopping worker", error=str(e))
+                
+            # Clear task list
             self.tasks = []
             
         self.config.logger.info("Queue workers stopped")
@@ -160,7 +183,7 @@ class QueueWorker:
                 
         # No item processed
         return False
-    
+ 
     async def _handle_queue_item(self, worker_id: int, queue: bytes, item_data: bytes) -> bool:
         """
         Handle processing of a queue item.
@@ -169,12 +192,16 @@ class QueueWorker:
             worker_id: ID of the worker
             queue: Queue name (as bytes)
             item_data: Raw item data
-            
+                
         Returns:
             True if processing completed, False otherwise
         """
-        # *** Use synchronous Redis client - KEY CHANGE ***
         redis = self.config._ensure_redis_sync()
+        
+        # Setup outside try block - these will be used in exception handling
+        start_time = time.time()
+        operation_id = "unknown"  # Default value
+        success = False
         
         try:
             # Parse the item
@@ -248,6 +275,9 @@ class QueueWorker:
                 
                 # Check if total timeout has been reached
                 if elapsed_time > item["timeout"]:
+
+                    self.config.update_metric('timeouts')
+
                     # Add failure reason
                     item["failure_reason"] = f"Total timeout reached: {elapsed_time}s > {timeout_value}s"
                     
@@ -267,6 +297,9 @@ class QueueWorker:
                             }
                         )
                     
+                    # Update metrics for timeout
+                    self.config.update_metric('timeouts')
+                    
                     # Move to failures queue - ensure failures_queue is in bytes
                     failures_queue = self.config.queue_keys['failures']
                     if not isinstance(failures_queue, bytes):
@@ -284,7 +317,11 @@ class QueueWorker:
             
             # Process the item with timeout
             try:
+                # This inner try is specifically for the processor execution
                 result = await asyncio.wait_for(processor(entity), timeout=self.work_timeout)
+                
+                # Update success metrics
+                self.config.update_metric('processed')
                 
                 # Check if it's a callback-based item
                 if "on_success" in item and item["on_success"]:
@@ -300,10 +337,31 @@ class QueueWorker:
                     )
                 
                 self.config.logger.info("Worker processed item successfully", operation_id=operation_id, worker_id=worker_id)
+                success = True
                 return True
+                    
+            except asyncio.TimeoutError:
+                # Process execution timed out - handle retry
+                self.config.logger.warning(
+                    "Process execution timed out", work_timeout=self.work_timeout, operation_id=operation_id, worker_id=worker_id
+                )
                 
+                # Update timeout metrics
+                self.config.update_metric('timeouts')
+                
+                # Handle like other exceptions - increment attempt count
+                raise  # Re-raise to be caught by outer exception handler
+                    
             except Exception as e:
-                # Increment attempt count
+                # Processor execution failed - re-raise to be caught by outer handler
+                self.config.logger.error(
+                    "Process execution failed", error=str(e), operation_id=operation_id, worker_id=worker_id
+                )
+                raise
+                
+        except Exception as e:
+            # Increment attempt count
+            if 'item' in locals():
                 item["attempts"] = item.get("attempts", 0) + 1
                 
                 # If this is the first attempt with a timeout, record the start time
@@ -312,8 +370,14 @@ class QueueWorker:
                 
                 # Check if max attempts reached
                 if item["attempts"] >= item.get("max_attempts", 5):
+
+                    self.config.update_metric('failed')
+
                     # Add failure reason
-                    item["failure_reason"] = str(e)
+                    item["failure_reason"] = e.to_string() if hasattr(e, "to_string") else str(e)
+                    
+                    # Update failure metrics
+                    self.config.update_metric('failed')
                     
                     # Handle callbacks for failure if present
                     if "on_failure" in item and item["on_failure"]:
@@ -321,8 +385,8 @@ class QueueWorker:
                             item["on_failure"],
                             item.get("on_failure_module"),
                             {
-                                "entity": entity,
-                                "error": str(e),
+                                "entity": entity if 'entity' in locals() else None,
+                                "error": e.to_string() if hasattr(e, "to_string") else str(e),
                                 "operation_id": item.get("operation_id")
                             }
                         )
@@ -334,7 +398,9 @@ class QueueWorker:
                     
                     redis.lpush(failures_queue, json.dumps(item, default=str).encode())
                     self.config.logger.error(
-                        "Item moved to failures queue", operation_id=operation_id, worker_id=worker_id, failure_queue=self.config.queue_keys['failures'], error=e.to_string() if hasattr(e, "to_string") else str(e)
+                        "Item moved to failures queue", operation_id=operation_id, worker_id=worker_id, 
+                        failure_queue=self.config.queue_keys['failures'], 
+                        error=e.to_string() if hasattr(e, "to_string") else str(e)
                     )
                 else:
                     # Calculate next retry time using delays array
@@ -353,6 +419,9 @@ class QueueWorker:
                     # Set next retry time
                     item["next_retry_time"] = time.time() + retry_delay
                     
+                    # Update retry metrics
+                    self.config.update_metric('retried')
+                    
                     # Check if total timeout would be exceeded
                     if ("timeout" in item and item["timeout"] is not None and 
                         "first_attempt_time" in item and 
@@ -361,13 +430,16 @@ class QueueWorker:
                         # Add failure reason
                         item["failure_reason"] = "Total timeout would be exceeded by next retry"
                         
+                        # Update timeout metrics
+                        self.config.update_metric('timeouts')
+                        
                         # Handle callbacks for failure if present
                         if "on_failure" in item and item["on_failure"]:
                             await self._execute_callback(
                                 item["on_failure"],
                                 item.get("on_failure_module"),
                                 {
-                                    "entity": entity,
+                                    "entity": entity if 'entity' in locals() else None,
                                     "error": "Operation timed out after total retry period",
                                     "operation_id": item.get("operation_id")
                                 }
@@ -392,10 +464,31 @@ class QueueWorker:
                         redis.lpush(queue, json.dumps(item, default=str).encode())
                 
                 return True
+            else:
+                # Handle case where item is not available (e.g., JSON parse error)
+                self.config.logger.error("Error processing item from queue", error=str(e), worker_id=worker_id)
                 
-        except Exception as e:
-            self.config.logger.error("Error processing item from queue", operation_id=operation_id, worker_id=worker_id, error=e.to_string() if hasattr(e, "to_string") else str(e))
-            return True
+                # Move to system errors queue
+                system_errors_queue = self.config.queue_keys['system_errors']
+                if not isinstance(system_errors_queue, bytes):
+                    system_errors_queue = system_errors_queue.encode()
+                
+                redis.lpush(system_errors_queue, item_data)
+                return True
+                
+        finally:
+            # Track processing time for metrics
+            process_time = time.time() - start_time
+            
+            if success:
+                # Only update average processing time for successful operations
+                self.config.update_metric('avg_process_time', process_time)
+                
+            # Log completion regardless of outcome
+            self.config.logger.debug(f"Item processing took {process_time:.2f}s", 
+                                success=success,
+                                operation_id=operation_id, 
+                                worker_id=worker_id)
 
     async def _execute_callback(self, callback_name, callback_module, data):
         """Execute a callback function."""
