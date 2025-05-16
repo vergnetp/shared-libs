@@ -1,4 +1,5 @@
 import threading
+import math
 import redis
 from typing import Optional, Dict, Any, Callable, List
 
@@ -204,55 +205,146 @@ class QueueConfig:
         
         self.callbacks_registry[callback_key] = callback
         
-    def update_metric(self, metric_name: str, value: Any = 1):
+    def update_metric(self, metric_name: str, value: Any = 1, force_log: bool = False):
         """
-        Update a metric counter or value.
+        Update a metric counter or value and log significant changes.
         
         Args:
             metric_name: Name of the metric to update
             value: Value to add or set for the metric (default: 1)
+            force_log: If True, always log regardless of significance
         """
         with self._metrics_lock:
-            # If metric doesn't exist yet, initialize it
-            if metric_name not in self._metrics:
-                # Handle different metrics types
-                if metric_name.endswith('_timestamp'):
-                    self._metrics[metric_name] = value
-                elif metric_name.startswith('avg_'):
-                    # Initialize averages with the first value
-                    self._metrics[metric_name] = value
-                else:
-                    # Initialize counters with the given value (usually 1)
-                    self._metrics[metric_name] = value
-                return
-                
-            # Update existing metrics
-            current_value = self._metrics[metric_name]
+            # Record old value for change detection
+            old_value = self._metrics.get(metric_name, 0)
+            should_log = force_log  # Initialize with force_log
             
-            # Handle special cases
-            if metric_name.endswith('_timestamp'):
-                # For timestamps, just replace the value
+            # Update the metric based on type
+            if metric_name not in self._metrics:
+                # Initialize new metric
                 self._metrics[metric_name] = value
+                should_log = True  # Always log new metrics
+            
+            elif metric_name.endswith('_timestamp'):
+                # Timestamp updates - don't log these normally
+                self._metrics[metric_name] = value
+                should_log = force_log  # Only log if forced
+            
             elif metric_name.startswith('avg_'):
-                # For averages, we need tracking variables
-                total_key = f"_total_{metric_name[4:]}"  # e.g., avg_process_time -> _total_process_time
-                count_key = f"_count_{metric_name[4:]}"  # e.g., avg_process_time -> _count_process_time
+                # Average calculations
+                total_key = f"_total_{metric_name[4:]}"
+                count_key = f"_count_{metric_name[4:]}"
                 
-                # Initialize tracking vars if needed
                 if total_key not in self._metrics:
                     self._metrics[total_key] = 0
                 if count_key not in self._metrics:
                     self._metrics[count_key] = 0
                 
-                # Update total and count
                 self._metrics[total_key] += value
                 self._metrics[count_key] += 1
                 
-                # Recalculate average
-                self._metrics[metric_name] = self._metrics[total_key] / self._metrics[count_key]
+                new_value = self._metrics[total_key] / self._metrics[count_key]
+                self._metrics[metric_name] = new_value
+                
+                # For averages, log on significant changes (>10%)
+                if old_value != 0:
+                    relative_change = abs(new_value - old_value) / abs(old_value)
+                    should_log = should_log or relative_change > 0.1
+                else:
+                    should_log = True  # First real value
+            
             else:
-                # Default is to increment counters
+                # Counter updates
                 self._metrics[metric_name] += value
+                new_value = self._metrics[metric_name]
+                
+                # Smart logging rules for counters
+                if metric_name in ('failed', 'errors', 'timeouts', 'redis_errors'):
+                    # Important error metrics - log every increment
+                    should_log = should_log or new_value > old_value
+                elif old_value < 5:
+                    # First few occurrences of any metric
+                    should_log = True
+                elif new_value >= 10 and old_value < 10:
+                    # Crossing 10
+                    should_log = True
+                elif new_value >= 100 and old_value < 100:
+                    # Crossing 100
+                    should_log = True
+                elif new_value >= 1000 and old_value < 1000:
+                    # Crossing 1000
+                    should_log = True
+                elif new_value >= 10000 and old_value < 10000:
+                    # Crossing 10000
+                    should_log = True
+                elif old_value >= 10000:
+                    # For large counters, log every 10% increase
+                    should_log = should_log or new_value >= old_value * 1.1
+                elif old_value >= 1000:
+                    # For medium-large counters, log every 20% increase
+                    should_log = should_log or new_value >= old_value * 1.2
+                elif old_value >= 100:
+                    # For medium counters, log every 50% increase
+                    should_log = should_log or new_value >= old_value * 1.5
+            
+            # Store updated metric value and if we should log
+            updated_value = self._metrics[metric_name]
+            
+        # End of metrics_lock block - we've released the lock
+        
+        # Now handle logging if needed - outside the metrics lock to prevent deadlocks
+        if should_log and hasattr(self, 'logger'):
+            # Create a separate lock for logging to prevent recursive issues
+            if not hasattr(self, '_logging_lock'):
+                self._logging_lock = threading.RLock()
+                
+            # Try to acquire the logging lock - with timeout to prevent deadlocks
+            if self._logging_lock.acquire(timeout=1.0):
+                try:
+                    # Check if we're already in a recursive logging call
+                    if hasattr(self, '_in_logging') and self._in_logging:
+                        return
+                    
+                    self._in_logging = True
+                    try:
+                        # Get additional context for the log if available
+                        queue_status = None
+                        if hasattr(self, 'queue_manager'):
+                            try:
+                                queue_status = self.queue_manager.get_queue_status()
+                            except Exception:
+                                pass
+                        
+                        # Get current metrics to include in log - copy to avoid lock contention
+                        with self._metrics_lock:
+                            metrics_copy = self._metrics.copy()
+                        
+                        # Select log level based on metric type
+                        if metric_name in ('failed', 'errors', 'timeouts', 'redis_errors') and updated_value > old_value:
+                            log_method = self.logger.warning
+                        else:
+                            log_method = self.logger.info
+                        
+                        # Create the log message
+                        log_method(
+                            f"Queue metric update: {metric_name}",
+                            metric_name=metric_name,
+                            old_value=old_value,
+                            new_value=updated_value,
+                            change=updated_value - old_value if isinstance(old_value, (int, float)) else None,
+                            metrics=metrics_copy,
+                            queue_status=queue_status
+                        )
+                    finally:
+                        self._in_logging = False
+                except Exception as e:
+                    # Ensure logging never breaks the metrics update
+                    try:
+                        self.logger.error(f"Error while logging metrics: {e}")
+                    except:
+                        pass
+                finally:
+                    self._logging_lock.release()
 
     def get_metrics(self) -> Dict[str, Any]:
         """

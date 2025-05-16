@@ -530,3 +530,134 @@ async def test_queue_metrics(queue_manager, worker, config):
             for task in worker.tasks:
                 task.cancel()
             worker.tasks = []
+
+@pytest.mark.asyncio
+async def test_metrics_reporting(queue_manager, worker, config):
+    """Test the metrics reporting system."""
+    # Implement mock logger to capture log calls
+    class MetricsLogCapture:
+        def __init__(self):
+            self.logs = []
+            
+        def info(self, msg, **kwargs):
+            self.logs.append({"level": "info", "msg": msg, "args": kwargs})
+            
+        def warning(self, msg, **kwargs):
+            self.logs.append({"level": "warning", "msg": msg, "args": kwargs})
+            
+        def error(self, msg, **kwargs):
+            self.logs.append({"level": "error", "msg": msg, "args": kwargs})
+
+    # Replace the logger with our capture logger
+    metrics_logger = MetricsLogCapture()
+    original_logger = config.logger
+    config.logger = metrics_logger
+    
+    try:
+        # Clear existing metrics
+        with config._metrics_lock:
+            config._metrics = {}
+        
+        # 1. Test initial metric creation logs
+        config.update_metric('test_metric', 1)
+        assert len(metrics_logger.logs) == 1
+        assert metrics_logger.logs[0]['level'] == 'info'
+        assert 'test_metric' in metrics_logger.logs[0]['msg']
+        assert metrics_logger.logs[0]['args']['new_value'] == 1
+        
+        # Clear logs
+        metrics_logger.logs = []
+        
+        # 2. Test metric updates below threshold
+        for i in range(4):
+            config.update_metric('test_metric', 1)
+        
+        # Should log for values 1, 2, 3, 4, 5
+        assert len(metrics_logger.logs) == 4
+        
+        # Clear logs
+        metrics_logger.logs = []
+        
+        # 3. Test logarithmic threshold logging (crossing 10)
+        # Current value is 5, update to cross 10
+        config.update_metric('test_metric', 5)  # Now at 10
+        assert len(metrics_logger.logs) == 1
+        assert metrics_logger.logs[0]['args']['new_value'] == 10
+        
+        # Clear logs
+        metrics_logger.logs = []
+        
+        # 4. Test updates that don't trigger logs
+        config.update_metric('test_metric', 1)  # 11
+        config.update_metric('test_metric', 1)  # 12
+        assert len(metrics_logger.logs) == 0
+        
+        # 5. Test force_log parameter
+        config.update_metric('test_metric', 1, force_log=True)  # 13
+        assert len(metrics_logger.logs) == 1
+        
+        # Clear logs
+        metrics_logger.logs = []
+        
+        # 6. Test error metrics logging
+        config.update_metric('failed', 1)  # Should always log
+        assert len(metrics_logger.logs) == 1
+        assert metrics_logger.logs[0]['level'] == 'warning'  # Error metrics use warning level
+        
+        # 7. Test average metrics
+        metrics_logger.logs = []
+        config.update_metric('avg_process_time', 100)
+        assert len(metrics_logger.logs) == 1
+        config.update_metric('avg_process_time', 110)  # Small change, shouldn't log
+        assert len(metrics_logger.logs) == 1
+        config.update_metric('avg_process_time', 200)  # Large change (>10%), should log
+        assert len(metrics_logger.logs) == 2
+        
+        # 8. Test batch enqueueing metrics
+        metrics_logger.logs = []
+        
+        # Create a batch of test entities
+        test_entities = [{"id": i} for i in range(5)]
+        
+        # Define a simple test processor
+        async def test_batch_processor(data):
+            return {"processed": data}
+        
+        # Register the processor
+        config.operations_registry['test_batch_processor'] = test_batch_processor
+        
+        # Enqueue batch with force_log
+        results = queue_manager.enqueue_batch(
+            entities=test_entities,
+            processor=test_batch_processor
+        )
+        
+        # Should have logged the batch operation
+        assert len(metrics_logger.logs) >= 1
+        batch_log = next((log for log in metrics_logger.logs if "Batch enqueued" in log['msg']), None)
+        assert batch_log is not None
+        assert batch_log['args']['batch_size'] == 5
+        
+        # 9. Test get_metrics() includes computed fields
+        metrics = config.get_metrics()
+        assert 'enqueued' in metrics
+        assert metrics['enqueued'] >= 5  # At least the batch we just queued
+        
+        # Process the queued items
+        await worker.start()
+        await asyncio.sleep(1)  # Allow time for processing
+        
+        # Get updated metrics
+        metrics = config.get_metrics()
+        
+        # Should have some processed items now
+        assert 'processed' in metrics
+        assert metrics['processed'] > 0
+        
+        # If enough operations occurred, should have a success_rate
+        if 'processed' in metrics and metrics['processed'] > 0:
+            assert 'success_rate' in metrics
+            
+    finally:
+        # Restore original logger
+        config.logger = original_logger

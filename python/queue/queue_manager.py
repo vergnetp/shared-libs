@@ -271,9 +271,9 @@ class QueueManager:
     
     @try_catch
     def enqueue_batch(self, 
-                     entities: List[Dict[str, Any]], 
-                     processor: Callable,
-                     **kwargs) -> List[Dict[str, Any]]:
+                    entities: List[Dict[str, Any]], 
+                    processor: Callable,
+                    **kwargs) -> List[Dict[str, Any]]:
         """
         Enqueue multiple operations at once for batch processing.
         
@@ -281,10 +281,17 @@ class QueueManager:
             entities: List of data entities to process
             processor: Function that processes the entities
             **kwargs: Same parameters as enqueue() method
-            
+                
         Returns:
             List of operation results with IDs and status
         """
+        # Start time for performance tracking
+        start_time = time.time()
+        
+        # No entities to process
+        if not entities:
+            return []
+        
         results = []
         
         # Pre-generate operation IDs
@@ -378,15 +385,31 @@ class QueueManager:
         try:
             pipeline.execute()
             
-            # Update metrics
-            self.config.update_metric('enqueued', len(entities))
+            # Calculate performance metrics
+            total_time = time.time() - start_time
+            avg_time_per_op = total_time / len(entities)
             
-            self.config.logger.info(f"Batch enqueued {len(entities)} operations successfully",
-                queue_name=queue_name, priority=priority)
+            # Update metrics with batch data
+            self.config.update_metric('enqueued', len(entities), force_log=True)
+            self.config.update_metric('avg_enqueue_time', avg_time_per_op)
+            self.config.update_metric(f'enqueued_batch_{priority}', len(entities))
+            
+            # Update queue-specific metrics
+            self.config.update_metric(f'queue_{queue_name.replace(".", "_")}_total', len(entities))
+            
+            self.config.logger.info(
+                f"Batch enqueued {len(entities)} operations successfully",
+                queue_name=queue_name, 
+                priority=priority,
+                batch_size=len(entities),
+                total_time_ms=int(total_time * 1000),
+                avg_time_per_op_ms=int(avg_time_per_op * 1000)
+            )
         except Exception as e:
             self.config.logger.error(f"Failed to enqueue batch operations: {e}")
+            self.config.update_metric('batch_errors')
             raise
-            
+                
         return results
     
     @try_catch
