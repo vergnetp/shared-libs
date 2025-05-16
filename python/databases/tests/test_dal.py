@@ -171,10 +171,10 @@ async def test_postgres(postgres_db_async):
     test_name = "Alice"
     
     async with db.async_connection() as conn:
-        await conn.execute("create table users (name TEXT)")
-        await conn.execute("insert into users values ('Phil')")
-        rows = await conn.execute("select * from users")
-        assert (rows[0][0]=='Phil')
+        await conn.execute(f"create table [{entity_name}] (name TEXT)")
+        await conn.execute(f"insert into [{entity_name}] values (?)", ('Phil',))
+        rows = await conn.execute(f"select * from [{entity_name}]")
+        assert (rows[0][0]=='Phil2')
 
 
 

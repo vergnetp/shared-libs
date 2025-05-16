@@ -18,7 +18,7 @@ import threading
 import enum
 import functools
 from abc import ABC, abstractmethod
-from ..errors import TrackError
+from ..errors import TrackError, try_catch
 from .. import log as logger
 from ..utils.patching import patcher
 import sqlite3
@@ -851,11 +851,13 @@ class StatementCache:
 
 class ConnectionInterface(ABC):
     """Interface that defines the required methods and properties for connections."""
+    @try_catch(log_success=True)
     @abstractmethod
     def execute(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """Execute SQL with parameters"""
         raise NotImplementedError("This method must be implemented by the host class")
     
+    @try_catch(log_success=True)
     @abstractmethod
     def executemany(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """Execute SQL multiple times with different parameters"""
@@ -873,7 +875,8 @@ class BaseConnection(ConnectionInterface):
     """
     def __init__(self):
          self._statement_cache = StatementCache() 
-         
+
+    @try_catch    
     def _normalize_result(self, raw_result: Any) -> List[Tuple]:
         """
         Default implementation to normalize results to a list of tuples.
@@ -944,6 +947,7 @@ class BaseConnection(ConnectionInterface):
 
         return "\n".join(combined_parts)
 
+    @try_catch
     async def _get_statement_async(self, sql: str, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]] = None) -> Any:
         """
         Gets a prepared statement from cache or creates a new one
@@ -970,7 +974,8 @@ class BaseConnection(ConnectionInterface):
         self._statement_cache.put(sql_hash, stmt, final_sql)
 
         return stmt
-        
+
+    @try_catch  
     def _get_statement_sync(self, sql: str, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]] = None) -> Any:
         """
         Gets a prepared statement from cache or creates a new one (synchronous version)
@@ -1034,7 +1039,7 @@ class AsyncConnection(BaseConnection):
         return self._leaked
 
      
-    @async_method
+    @async_method   
     @with_timeout()
     @track_slow_method()
     @circuit_breaker(name="async_execute")    
@@ -1060,7 +1065,7 @@ class AsyncConnection(BaseConnection):
         result = self._normalize_result(raw_result)
         return result
 
-    @async_method
+    @async_method   
     @with_timeout()
     @auto_transaction
     @track_slow_method()
@@ -1108,6 +1113,7 @@ class AsyncConnection(BaseConnection):
     # region -- PRIVATE ABSTRACT METHODS ----------
 
     @async_method
+    @try_catch
     @abstractmethod
     async def _prepare_statement_async(self, native_sql: str) -> Any:
         """
@@ -1122,6 +1128,7 @@ class AsyncConnection(BaseConnection):
         pass
 
     @async_method
+    @try_catch
     @abstractmethod
     async def _execute_statement_async(self, statement: Any, params=None) -> Any:
         """
@@ -1146,6 +1153,7 @@ class AsyncConnection(BaseConnection):
         pass
 
     @async_method
+    @try_catch
     @abstractmethod
     async def begin_transaction(self) -> None:
         """
@@ -1157,6 +1165,7 @@ class AsyncConnection(BaseConnection):
         pass
 
     @async_method
+    @try_catch
     @abstractmethod
     async def commit_transaction(self) -> None:
         """
@@ -1167,6 +1176,7 @@ class AsyncConnection(BaseConnection):
         pass
 
     @async_method
+    @try_catch
     @abstractmethod
     async def rollback_transaction(self) -> None:
         """
@@ -1177,6 +1187,7 @@ class AsyncConnection(BaseConnection):
         pass
 
     @async_method
+    @try_catch
     @abstractmethod
     async def close(self) -> None:
         """
@@ -1280,6 +1291,7 @@ class SyncConnection(BaseConnection):
     
     # region -- PRIVATE ABSTRACT METHODS ----------
 
+    @try_catch
     @abstractmethod
     async def _prepare_statement_sync(self, native_sql: str) -> Any:
         """
@@ -1293,6 +1305,7 @@ class SyncConnection(BaseConnection):
         """
         pass
 
+    @try_catch
     @abstractmethod
     async def _execute_statement_sync(self, statement: Any, params=None) -> Any:
         """
@@ -1322,6 +1335,7 @@ class SyncConnection(BaseConnection):
         """Return True if connection is in an active transaction."""
         pass
 
+    @try_catch
     @abstractmethod
     def begin_transaction(self) -> None:
         """
@@ -1332,6 +1346,7 @@ class SyncConnection(BaseConnection):
         """
         pass
 
+    @try_catch
     @abstractmethod
     def commit_transaction(self) -> None:
         """
@@ -1341,6 +1356,7 @@ class SyncConnection(BaseConnection):
         """
         pass
 
+    @try_catch
     @abstractmethod
     def rollback_transaction(self) -> None:
         """
@@ -1350,6 +1366,7 @@ class SyncConnection(BaseConnection):
         """
         pass
 
+    @try_catch
     @abstractmethod
     def close(self) -> None:
         """
@@ -1388,6 +1405,7 @@ class ConnectionPool(ABC):
         - Must implement health checking for pool vitality
     """
     @async_method
+    @try_catch
     async def health_check(self) -> bool:
         """
         Checks if the pool is healthy by testing a connection.
@@ -1420,12 +1438,14 @@ class ConnectionPool(ABC):
             setattr(self, '_healthy', False)
             return False
     
+    @try_catch
     @abstractmethod
     async def _test_connection(self, connection: Any) -> None:
         """Run a database-specific test query on the connection"""
         pass
 
     @async_method
+    @try_catch
     @abstractmethod
     async def acquire(self, timeout: Optional[float] = None) -> Any:
         """
@@ -1445,6 +1465,7 @@ class ConnectionPool(ABC):
         pass
         
     @async_method
+    @try_catch
     @abstractmethod
     async def release(self, connection: Any) -> None:
         """
@@ -1459,20 +1480,15 @@ class ConnectionPool(ABC):
         pass
         
     @async_method
+    @try_catch
     @abstractmethod
-    async def close(self, force: bool = False, timeout: Optional[float] = None) -> None:
+    async def close(self, timeout: Optional[float] = None) -> None:
         """
         Closes the pool and all connections.
         
-        Args:
-            force (bool): If True, forcibly close connections, potentially 
-                          interrupting operations in progress.
-            timeout (Optional[float]): Maximum time in seconds to wait for graceful shutdown
-                                      when force=False. If None, wait indefinitely.
-                          
-        Notes:
-            - When force=False, wait for all connections to be released naturally
-            - When force=True, terminate any executing operations (may cause data loss)
+        Args:          
+            timeout (Optional[float]): Maximum time in seconds to wait for graceful shutdown                                                           
+
         """
         pass
     
@@ -1596,7 +1612,7 @@ class PoolManager(ABC):
         LEAK_THRESHOLD_SECONDS = 300  # if a connection has been used for longer than 5 mins, it should be considered leaked
         SLEEP_TIME = 300  # 300 seconds are 5 mins
 
-        logger.info(f"Task started: will check and reclaim leaked or idle connections every {int(SLEEP_TIME/60)} mins for pool {self.alias()}", 
+        logger.info("Task started: will check and reclaim leaked or idle connections from the pool", 
                     pool_name=self.alias(), 
                     check_interval_mins=int(SLEEP_TIME/60))
                     
@@ -1606,7 +1622,7 @@ class PoolManager(ABC):
                 try:
                     await asyncio.sleep(SLEEP_TIME)  
                 except asyncio.CancelledError:
-                    logger.info(f"Task cancelled for pool {self.alias()}", 
+                    logger.info("Task cancelled", 
                             pool_name=self.alias())
                     break
                 
@@ -1620,20 +1636,18 @@ class PoolManager(ABC):
                         conn._mark_leaked()
                         
                         # Try to gracefully return to the pool
-                        logger.warning(f"Attempting to recover leaked connection in {self.alias()} pool ({conn._id} has been leaked for {duration:.2f}s)", 
+                        logger.warning(f"Attempting to recover leaked connection that has leaked for {duration:.2f}s)", 
                                     pool_name=self.alias(), 
                                     duration_seconds=duration,
                                     connection_id=conn._id)
                                     
                         await self._release_connection_to_pool(conn)
                         
-                        logger.info(f"Successfully recovered leaked connection in {self.alias()} pool", 
+                        logger.info("Successfully recovered leaked connection", 
                                 pool_name=self.alias(), connection_id=conn._id)
                                 
                     except Exception as e:
-                        logger.error(f"Failed to recover leaked connection in {self.alias()} pool: {e}", 
-                                    pool_name=self.alias(), connection_id=conn._id,
-                                    error=str(e))
+                        logger.error("Failed to recover leaked connection", pool_name=self.alias(), connection_id=conn._id, error=e.to_string() if hasattr(e, 'to_string') else str(e))
                                     
                         self._connections.discard(conn)  # Explicitly discard leaked connection
                         # Try to close directly as a last resort
@@ -1651,28 +1665,28 @@ class PoolManager(ABC):
                 
                 # Log idle connections
                 if idle_conns:
-                    logger.warning(f"Found {len(idle_conns)} idle connections in {self.alias()} pool that haven't been active for {int(IDLE_TIMEOUT/60)} mins", 
+                    logger.warning(f"There some idle connections", 
                                 pool_name=self.alias(), 
-                                count=len(idle_conns), 
+                                idle_connections_count=len(idle_conns), 
                                 idle_threshold_mins=int(IDLE_TIMEOUT/60))
 
                 # Also recover idle connections
                 for conn in idle_conns:
                     try:
-                        logger.warning(f"Recovering idle connection in {self.alias()} pool", 
+                        logger.warning("Recovering idle connection", 
                                     pool_name=self.alias(), connection_id=conn._id)
                                     
                         await self._release_connection_to_pool(conn)
                         
                     except Exception as e:
-                        logger.error(f"Failed to recover idle connection in {self.alias()} pool: {e}", 
+                        logger.error("Failed to recover idle connection", 
                                     pool_name=self.alias(), connection_id=conn._id,
-                                    error=str(e))
+                                    error=e.to_string() if hasattr(e, 'to_string') else str(e))
                                     
             except Exception as e:
                 logger.error(f"Error in connection leak detection task for {self.alias()} pool: {e}", 
                             pool_name=self.alias(), connection_id=conn._id,
-                            error=str(e))
+                            error=e.to_string() if hasattr(e, 'to_string') else str(e))
 
     def alias(self):
         return self._alias
@@ -1680,6 +1694,7 @@ class PoolManager(ABC):
     def hash(self):
         return self._hash
 
+    @try_catch
     def _calculate_pool_size(self) -> Tuple[int, int]:
         """
         Calculate optimal pool size based on workload characteristics.
@@ -1872,6 +1887,7 @@ class PoolManager(ABC):
             self._active_connections[k] = set()
         return self._active_connections[k]      
    
+    @try_catch
     async def _get_connection_from_pool(self, wrap_raw_connection: Callable) -> AsyncConnection:
         """
         Acquires a connection from the pool with timeout handling and leak tracking.
@@ -1921,6 +1937,7 @@ class PoolManager(ABC):
         self._connections.add(async_conn)
         return async_conn
 
+    @try_catch
     async def _release_connection_to_pool(self, async_conn: AsyncConnection) -> None:
         try:
             # Calculate how long this connection was out
@@ -1956,6 +1973,7 @@ class PoolManager(ABC):
             self._connections.discard(async_conn)
 
     @async_method
+    @try_catch
     async def check_for_leaked_connections(self, threshold_seconds=300) -> List[Tuple[AsyncConnection, float, str]]:
         """
         Check for connections that have been active for longer than the threshold.
@@ -1984,6 +2002,7 @@ class PoolManager(ABC):
         
         return leaked_connections
 
+    @try_catch
     async def _initialize_pool_if_needed(self) -> None:
         """
         Initializes the connection pool if it doesn't exist or isn't usable.
@@ -2029,6 +2048,7 @@ class PoolManager(ABC):
                     self._pool = None
                     raise
 
+    @try_catch
     async def _test_connection(self, conn: Any) -> None:
         """
         Tests if a connection is usable by executing a simple query.
@@ -2045,6 +2065,7 @@ class PoolManager(ABC):
             raise
     
     @classmethod
+    @try_catch
     async def _cleanup_connection(cls, async_conn: AsyncConnection):
         try:            
             try:
@@ -2067,6 +2088,7 @@ class PoolManager(ABC):
             logger.error(f"Error during connection cleanup: {e}")
 
     @classmethod
+    @try_catch
     async def _release_pending_connections(cls, key, timeout):
         # Handle active connections first
         active_conns = cls._active_connections.get(key, set())
@@ -2087,6 +2109,7 @@ class PoolManager(ABC):
                     logger.warning(f"Timeout waiting for connections to be released for pool {key}")
 
     @classmethod
+    @try_catch
     async def close_pool(cls, config_hash: Optional[str] = None, timeout: Optional[float]=60) -> None:
         """
         Closes one or all shared connection pools with proper cleanup.
@@ -2119,7 +2142,7 @@ class PoolManager(ABC):
                 if pool:
                     try:
                         # Use the ConnectionPool interface force parameter
-                        await pool.close(force=True)
+                        await pool.close()
                         logger.info(f"Pool for {key} closed")
                     except Exception as e:
                         logger.error(f"Error closing pool for {key}: {e}")
@@ -2131,6 +2154,7 @@ class PoolManager(ABC):
                 cls._shutting_down.pop(key, None)
 
     @abstractmethod
+    @try_catch
     async def _create_pool(self, config: DatabaseConfig, connection_acqusition_timeout: float) -> ConnectionPool:
         """
         Creates a new connection pool.
@@ -2376,6 +2400,7 @@ class ConnectionManager():
 
     # region -- SYNC METHODS ---------
     
+    @try_catch
     def get_sync_connection(self) -> SyncConnection:
         """
         Returns a synchronized database connection.
@@ -2410,6 +2435,7 @@ class ConnectionManager():
         
         return self._local._sync_conn     
 
+    @try_catch
     def release_sync_connection(self) -> None:
         """
         Closes and releases the cached synchronous connection.
@@ -2447,6 +2473,7 @@ class ConnectionManager():
         finally:
             self.release_sync_connection()
 
+    @try_catch
     def __del__(self):
         """
         Destructor that ensures connections are released when the object is garbage collected.
@@ -2467,6 +2494,7 @@ class ConnectionManager():
     # region -- ASYNC METHODS ----------
    
     @async_method
+    @try_catch
     async def get_async_connection(self) -> AsyncConnection:
         """
         Acquires an asynchronous connection from the pool.
@@ -2494,6 +2522,7 @@ class ConnectionManager():
         return async_conn
 
     @async_method
+    @try_catch
     async def release_async_connection(self, async_conn: AsyncConnection):
         """
         Releases an asynchronous connection back to the pool.
@@ -2588,6 +2617,7 @@ class ConnectionManager():
         raise Exception("Derived class must implement this")
 
     @abstractmethod
+    @try_catch
     def _create_sync_connection(self, config: Dict) -> Any:
         """
         Creates a new synchronous database connection.
@@ -2620,6 +2650,7 @@ class SqlEntityGenerator(ABC):
     that handles the specific SQL dialect and features of that database.
     """
     @abstractmethod
+    @try_catch
     def escape_identifier(self, identifier: str) -> str:
         """
         Escape a SQL identifier (table or column name).
@@ -2633,6 +2664,7 @@ class SqlEntityGenerator(ABC):
         raise NotImplementedError("Subclasses must implement escape_identifier")
     
     @abstractmethod
+    @try_catch
     def _convert_parameters(self, sql: str, params: Optional[Tuple] = None) -> Tuple[str, Any]:
         """
         Convert parameter placeholders.
@@ -5179,16 +5211,15 @@ class PostgresConnectionPool(ConnectionPool):
         await self._pool.release(connection)
     
     @async_method
-    async def close(self, force: bool = False, timeout: Optional[float] = None) -> None:
+    async def close(self, timeout: Optional[float] = None) -> None:
         """
         Closes the pool and all connections.
         
         Args:
-            force: If True, forcibly terminate connections
-            timeout: Maximum time to wait for graceful shutdown when force=False
+           
+            timeout: Maximum time to wait for graceful shutdown 
         """
-        # asyncpg.Pool.close() has a cancel_tasks parameter that maps to our force parameter
-        await self._pool.close(cancel_tasks=force)
+        await self._pool.close()
     
 
     async def _test_connection(self, connection):
@@ -5563,21 +5594,14 @@ class MySqlConnectionPool(ConnectionPool):
         self._pool.release(connection)
     
     @async_method
-    async def close(self, force: bool = False, timeout: Optional[float] = None) -> None:
+    async def close(self, timeout: Optional[float] = None) -> None:
         """
         Closes the pool and all connections.
         
-        Args:
-            force: If True, forcibly terminate connections
-            timeout: Maximum time to wait for graceful shutdown when force=False
-        """
-        if force:
-            # aiomysql doesn't have a direct force close option
-            # This is a workaround to mark the pool as closing and wake up waiters
-            #self._pool._closing = True
-            #if hasattr(self._pool, '_cond') and hasattr(self._pool._cond, 'notify_all'):
-                #self._pool._cond._loop.call_soon(self._pool._cond.notify_all)
-            pass
+        Args
+            
+            timeout: Maximum time to wait for graceful shutdown
+        """        
         if self._pool:
             await self._pool.close()            
             self._pool = None
@@ -5960,29 +5984,24 @@ class SqliteConnectionPool(ConnectionPool):
         self._lock.release()
     
     @async_method
-    async def close(self, force: bool = False, timeout: Optional[float] = None) -> None:
+    async def close(self, timeout: Optional[float] = None) -> None:
         """
         Closes the SQLite connection.
         
-        Args:
-            force: If True, close immediately regardless of active use
-            timeout: Maximum time to wait for the connection to be released when force=False
+        Args:       
+            timeout: Maximum time to wait for the connection to be released 
         """
-        if force:
-            # Force close immediately
-            await self._conn.close()
-        else:
-            # Wait for the connection to be released first
-            if self._in_use and timeout:
-                try:
-                    # Try to acquire the lock (which means the connection is released)
-                    # and then release it immediately
-                    acquired = await asyncio.wait_for(self._lock.acquire(), timeout=timeout)
-                    if acquired:
-                        self._lock.release()
-                except asyncio.TimeoutError:
-                    # Timeout waiting for release, close anyway
-                    pass
+        # Wait for the connection to be released first
+        if self._in_use and timeout:
+            try:
+                # Try to acquire the lock (which means the connection is released)
+                # and then release it immediately
+                acquired = await asyncio.wait_for(self._lock.acquire(), timeout=timeout)
+                if acquired:
+                    self._lock.release()
+            except asyncio.TimeoutError:
+                # Timeout waiting for release, close anyway
+                pass
             # Close the connection
             await self._conn.close()
     
