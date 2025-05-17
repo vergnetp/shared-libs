@@ -86,6 +86,15 @@ class QueueConfig:
             'avg_process_time': 0.0,
             'last_timeout_timestamp': None,
             'queue_depths': {},  # Track queue depths by queue name
+            
+            # Thread pool metrics
+            'thread_pool_exhaustion': 0,
+            'thread_pool_usage': 0,
+            'thread_pool_max_usage': 0,
+            'thread_pool_utilization': 0,
+            'avg_thread_processing_time': 0.0,
+            'total_thread_time': 0,
+            'thread_tasks_completed': 0,
         }
         self._metrics_lock = threading.RLock()
 
@@ -247,7 +256,7 @@ class QueueConfig:
                 new_value = self._metrics[metric_name]
                 
                 # Smart logging rules for counters
-                if metric_name in ('failed', 'errors', 'timeouts', 'redis_errors'):
+                if metric_name in ('failed', 'errors', 'timeouts', 'redis_errors', 'thread_pool_exhaustion'):
                     # Important error metrics - log every increment
                     should_log = should_log or new_value > old_value
                 elif old_value < 5:
@@ -308,7 +317,7 @@ class QueueConfig:
                             metrics_copy = self._metrics.copy()
                         
                         # Select log level based on metric type
-                        if metric_name in ('failed', 'errors', 'timeouts', 'redis_errors') and updated_value > old_value:
+                        if metric_name in ('failed', 'errors', 'timeouts', 'redis_errors', 'thread_pool_exhaustion') and updated_value > old_value:
                             log_method = self.logger.warning
                         else:
                             log_method = self.logger.info
@@ -356,5 +365,17 @@ class QueueConfig:
                     'validation': (metrics.get('validation_errors', 0) / total_errors) * 100,
                     'general': (metrics.get('general_errors', 0) / total_errors) * 100
                 }
+            
+            # Add thread pool specific metrics if data exists
+            if 'thread_pool_usage' in metrics and metrics['thread_pool_usage'] > 0:
+                if 'thread_pool_max_usage' not in metrics:
+                    metrics['thread_pool_max_usage'] = metrics['thread_pool_usage']
+                    
+                # Include thread pool exhaustion rate if available
+                if 'thread_tasks_completed' in metrics and metrics['thread_tasks_completed'] > 0:
+                    exhaustion_count = metrics.get('thread_pool_exhaustion', 0)
+                    metrics['thread_pool_exhaustion_rate'] = (
+                        (exhaustion_count / metrics['thread_tasks_completed']) * 100
+                    )
             
             return metrics

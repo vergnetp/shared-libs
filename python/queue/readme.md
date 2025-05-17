@@ -7,13 +7,14 @@ A flexible, Redis-based queue system for asynchronous processing with configurab
 - **Priority Queues**: High, normal, and low priority processing
 - **Flexible Retry Strategies**: Exponential backoff, fixed delays, or custom retry schedules
 - **Circuit Breaker Pattern**: Prevents cascading failures during Redis outages
-- **Timeout Control**: Enforced timeouts at both operation and function levels
+- **Smart Timeout Management**: Enforced timeouts for async processors with graceful handling
+- **Thread Pool for Sync Processors**: Efficient execution of synchronous processors with thread reuse
 - **Automatic Retries**: Smart backoff for transient failures
 - **Callbacks**: Execute functions on success or failure
 - **Graceful Error Handling**: Failed operations moved to dedicated queues
 - **Concurrent Processing**: Multiple worker tasks process queue items in parallel
 - **Automatic Import**: Dynamically import processors and callbacks by name
-- **Smart Metrics Tracking**: Comprehensive metrics with intelligent event-driven logging
+- **Comprehensive Metrics**: Detailed metrics on operation processing, thread pool usage, and system health
 
 ## Installation
 
@@ -33,26 +34,37 @@ config = QueueConfig(redis_url="redis://localhost:6379/0")
 
 # Create queue manager and worker
 queue = QueueManager(config=config)
-worker = QueueWorker(config=config, max_workers=2)
+worker = QueueWorker(config=config, max_workers=2, thread_pool_size=20)
 
-# Define processor function (can be async)
-async def process_data(data):
-    # Process the data...
+# Define async processor (with timeout support)
+async def async_processor(data):
+    # Process the data asynchronously
     return {"status": "success", "result": data}
 
-# Define callback function (can be async)
+# Define sync processor (runs in thread pool without timeout)
+def sync_processor(data):
+    # Process the data synchronously
+    return {"status": "success", "result": data}
+
+# Define callback function
 async def on_success(data):
     print(f"Successfully processed: {data['result']}")
 
-# Enqueue an operation - simple, synchronous API
+# Enqueue operations
 queue.enqueue(
     entity={"user_id": "123", "action": "update"},
-    processor=process_data,
+    processor=async_processor,  # Will execute with timeout
     priority="high",
     on_success=on_success
 )
 
-# Start the worker (this is async because it runs continuously)
+queue.enqueue(
+    entity={"order_id": "456", "action": "process"},
+    processor=sync_processor,  # Will execute in thread pool without timeout
+    priority="normal"
+)
+
+# Start the worker
 async def main():
     await worker.start()
     try:
@@ -67,41 +79,42 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## Resilience Patterns
+## Architecture Overview
 
-### Timeout Control
+The system consists of three main components:
 
-The `with_timeout` decorator ensures functions complete within expected timeframes:
+1. **QueueConfig**: Configuration for Redis connection, queue keys, and shared registries
+2. **QueueManager**: Client for enqueueing operations with priority, retries, and callbacks
+3. **QueueWorker**: Service that processes queued operations with proper timeout and error handling
 
-```python
-@with_timeout(default_timeout=30.0)
-async def critical_operation():
-    # This function will raise TimeoutError if it exceeds 30 seconds
-    ...
-```
+## Timeout and Thread Pool Management
 
-### Circuit Breaker
+The system handles different types of processors differently:
 
-The `circuit_breaker` decorator prevents cascading failures by stopping repeated calls to failing services:
+### Async Processors
+- Executed directly in the asyncio event loop
+- Timeout is applied using `asyncio.wait_for()`
+- If timeout occurs, processor is cancelled at the next await point
+- Proper cancellation handling ensures resources are cleaned up
 
-```python
-@circuit_breaker(name="redis_operations", failure_threshold=5, recovery_timeout=30.0)
-def redis_operation():
-    # If this fails 5 times, circuit opens and immediately rejects further calls
-    # After 30 seconds, it will allow a trial call to see if service recovered
-    ...
-```
+### Sync Processors
+- Executed in a dedicated thread pool
+- No timeout is applied (sync code doesn't support clean timeouts)
+- Thread pool manages concurrency and prevents worker exhaustion
+- Fallback mechanism for thread pool exhaustion
 
-### Retry With Backoff
+## Thread Pool Exhaustion Handling
 
-The `retry_with_backoff` decorator handles transient failures with exponential backoff:
+When the thread pool is exhausted (all threads busy):
 
-```python
-@retry_with_backoff(max_retries=3, base_delay=0.5, exceptions=(ConnectionError,))
-def network_operation():
-    # If ConnectionError occurs, retry up to 3 times with increasing delays
-    ...
-```
+1. The task is requeued with exponential backoff
+2. Metrics are updated to track thread pool exhaustion
+3. After max retries, the task is moved to the failures queue
+
+This approach ensures:
+- Predictable resource usage (fixed thread pool size)
+- Clear failure modes (thread pool exhaustion is tracked and handled)
+- Horizontal scalability (add more worker instances rather than increasing threads)
 
 ## Retry Configuration
 
@@ -144,34 +157,33 @@ retry_config = QueueRetryConfig.custom(
 )
 ```
 
-## Advanced Usage
-
-### Success and Failure Callbacks
-
-```python
-async def notify_success(data):
-    print(f"Operation {data['operation_id']} succeeded")
-
-async def notify_failure(data):
-    print(f"Operation {data['operation_id']} failed: {data['error']}")
-
-queue.enqueue(
-    entity={"user_id": "123"},
-    processor=process_data,
-    retry_config=retry_config,
-    on_success=notify_success,
-    on_failure=notify_failure
-)
-```
-
-### Monitoring Queue Status
+## Monitoring Queue Status
 
 ```python
 status = queue.get_queue_status()
-print(status)  # {'queue:high:process_data': 5, 'queue:normal:send_email': 10, ...}
+print(status)
+# {
+#   'queue:high:async_processor': 5,
+#   'queue:normal:sync_processor': 10,
+#   'queue:failures': 2,
+#   'queue:system_errors': 0,
+#   'total_items': 17,
+#   'metrics': {
+#     'enqueued': 115,
+#     'processed': 98,
+#     'failed': 2,
+#     'retried': 5,
+#     'timeouts': 1,
+#     'thread_pool_exhaustion': 3,
+#     'thread_pool_utilization': 85.0,
+#     'success_rate': 83.5,
+#     ...
+#   },
+#   'status_time': 1621345678.123
+# }
 ```
 
-### Batch Enqueuing
+## Batch Enqueuing
 
 For higher throughput, use batch operations:
 
@@ -193,253 +205,97 @@ results = queue.enqueue_batch(
 print(f"Enqueued {len(results)} items")
 ```
 
-## Metrics and Monitoring
+## Best Practices
 
-The queue system includes comprehensive metrics tracking with intelligent logging:
+### 1. Async Processor Design
 
-```python
-# Get current metrics
-metrics = config.get_metrics()
-
-# Check success rate
-success_rate = metrics.get('success_rate', 0)
-print(f"Success rate: {success_rate:.1f}%")
-
-# Check processing volumes
-processed = metrics.get('processed', 0)
-enqueued = metrics.get('enqueued', 0)
-failed = metrics.get('failed', 0)
-print(f"Processed: {processed}/{enqueued} (Failed: {failed})")
-
-# Check processing times
-avg_process_time = metrics.get('avg_process_time', 0)
-print(f"Average processing time: {avg_process_time:.2f}ms")
-```
-
-### Event-Driven Metrics Logging
-
-The system automatically logs metrics events based on intelligent thresholds:
-
-- **Error metrics**: Logged on every change
-- **Small counters (0-5)**: Logged on every increment
-- **Medium counters**: Logged at logarithmic boundaries (10, 100, 1000)
-- **Large counters**: Logged at percentage-based intervals
-- **Averages**: Logged when they change by more than 10%
-- **Batch operations**: Always logged with performance metrics
-
-These logs can be sent to OpenSearch/Elasticsearch, ELK Stack, or other monitoring systems for visualization and alerting.
-
-## Integration with FastAPI
+Async processors should:
+- Use proper async libraries and context managers
+- Handle cancellation gracefully
+- Yield control frequently (await points)
+- Properly clean up resources in finally blocks
 
 ```python
-from fastapi import FastAPI, BackgroundTasks
-from queue_system import QueueConfig, QueueManager, QueueWorker, QueueRetryConfig
-
-app = FastAPI()
-
-# Create shared configuration
-config = QueueConfig(redis_url="redis://localhost:6379/0")
-
-# Create manager and worker
-queue = QueueManager(config=config)
-worker = QueueWorker(config=config, max_workers=2)
-
-@app.on_event("startup")
-async def startup_event():
-    await worker.start()
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await worker.stop()
-
-@app.post("/process")
-async def process_request(data: dict):
-    # Synchronous API for queueing
-    result = queue.enqueue(
-        entity=data,
-        processor=process_data,
-        retry_config=QueueRetryConfig.exponential(timeout=3600)
-    )
-    return {"operation_id": result["operation_id"], "status": "queued"}
-
-@app.post("/process-batch")
-async def process_batch(data: list):
-    # Batch API for higher throughput
-    results = queue.enqueue_batch(
-        entities=data,
-        processor=process_data,
-        retry_config=QueueRetryConfig.exponential(timeout=3600)
-    )
-    return {"operation_count": len(results), "status": "queued"}
+async def well_designed_async_processor(entity):
+    try:
+        # Use async database driver
+        async with database.connection() as conn:
+            async with conn.transaction():
+                # Process data...
+                result = await conn.fetch("SELECT * FROM items WHERE id = $1", entity["id"])
+                
+                # Allow cancellation point
+                await asyncio.sleep(0)
+                
+                # More processing...
+                processed = await some_other_async_operation(result)
+                
+                return {"success": True, "data": processed}
+    except asyncio.CancelledError:
+        # Clean up any resources not handled by context managers
+        logger.info(f"Processing cancelled for entity {entity.get('id')}")
+        raise  # Re-raise to propagate cancellation
 ```
 
-## Error Handling
+### 2. Sync Processor Design
 
-Failed operations are handled in two ways:
-
-1. **System Errors Queue**: For operations that couldn't be processed due to system-level issues (deserialization failures, missing processor functions)
-2. **Failures Queue**: For operations that consistently failed to execute after the maximum retry attempts
-
-You can inspect these queues for diagnostic purposes:
+Sync processors should:
+- Use proper resource management (context managers, try/finally)
+- Avoid very long-running operations
+- Be idempotent when possible (can be retried safely)
 
 ```python
-# Get queue status
-status = queue.get_queue_status()
-
-# Check failures and system errors
-failures_count = status.get('queue:failures', 0)
-system_errors_count = status.get('queue:system_errors', 0)
-
-print(f"Failed operations: {failures_count}")
-print(f"System errors: {system_errors_count}")
+def well_designed_sync_processor(entity):
+    # Use context managers for resource cleanup
+    with open(entity["filepath"], "r") as file:
+        data = file.read()
+    
+    # Process data...
+    processed = compute_results(data)
+    
+    # Use another context manager for database
+    with database.connection() as conn:
+        with conn.transaction():
+            conn.execute("INSERT INTO results VALUES (?)", [processed])
+    
+    return {"status": "success", "result": processed}
 ```
 
-## Monitoring and Visualization
+### 3. Worker Configuration
 
-The queue system automatically integrates with your existing logging infrastructure:
+Configure workers based on your workload:
 
-### OpenSearch/Elasticsearch Integration
+- **Mostly async processors**: More worker tasks, smaller thread pool
+- **Mostly sync processors**: Fewer worker tasks, larger thread pool
+- **Mixed workload**: Balance worker tasks and thread pool size
 
-Since your logging system already sends logs to OpenSearch, the queue metrics are automatically available for visualization:
+### 4. Monitoring and Alerting
 
-```python
-# Metrics logs are automatically sent to your configured log storage
-# No additional configuration needed - just use your existing logger:
+Set up alerts for critical metrics:
 
-# When a metric changes significantly
-config.update_metric('processed', 1)  # This will log when crossing thresholds
+- Thread pool exhaustion rate > 5%
+- Worker task failures
+- Growing failure queue size
+- Increasing retry counts
 
-# Force logging for important updates
-config.update_metric('success_rate', current_rate, force_log=True)
-```
+## Scaling Guidelines
 
-In OpenSearch, you can create dashboards to visualize queue metrics with queries like:
+When scaling the queue system:
 
-```json
-// Find all queue metric updates
-GET logs-*/_search
-{
-  "query": {
-    "match_phrase": {
-      "message": "Queue metric update"
-    }
-  },
-  "sort": [
-    {
-      "timestamp": {
-        "order": "desc"
-      }
-    }
-  ]
-}
+1. **Monitor Thread Pool Utilization**:
+   - Below 50%: Consider reducing thread pool size
+   - Above 80%: Consider horizontal scaling (adding more workers)
 
-// Track success rate over time
-GET logs-*/_search
-{
-  "query": {
-    "bool": {
-      "must": [
-        { "match_phrase": { "message": "Queue metric update" } },
-        { "match": { "metric_name": "success_rate" } }
-      ]
-    }
-  },
-  "sort": [
-    {
-      "timestamp": {
-        "order": "asc"
-      }
-    }
-  ],
-  "aggs": {
-    "success_rate_over_time": {
-      "date_histogram": {
-        "field": "timestamp",
-        "calendar_interval": "hour"
-      },
-      "aggs": {
-        "avg_success_rate": {
-          "avg": {
-            "field": "metric_value"
-          }
-        }
-      }
-    }
-  }
-}
-```
+2. **Monitor Worker Task Count**:
+   - If all workers busy > 90% of time: Add more worker tasks
 
-## Architecture
+3. **Prefer Horizontal Scaling**:
+   - Add more worker instances rather than increasing threads per instance
+   - Use container orchestration (Kubernetes, ECS) for auto-scaling
 
-The system consists of four main components:
+## Implementation Details
 
-1. **QueueConfig**: Manages Redis connections, keys, and registries
-2. **QueueManager**: Handles queueing operations with a synchronous API
-3. **QueueWorker**: Asynchronously processes queued items with retry handling
-4. **QueueRetryConfig**: Configures retry behavior for failed operations
-
-Queue items are stored in Redis lists with priority-based prefixes:
-- `queue:high:*`: High priority operations
-- `queue:normal:*`: Normal priority operations
-- `queue:low:*`: Low priority operations
-
-## Graceful Shutdown and Cleanup
-
-To properly shut down workers and clean up resources:
-
-```python
-# 1. Signal that workers should stop processing new items
-await worker.stop()
-
-# 2. Optionally flush any metrics or logs
-config.logger.info("Shutting down queue system")
-
-# 3. Close Redis connections explicitly if needed
-if hasattr(config, 'redis_client') and config.redis_client:
-    config.redis_client.close()
-```
-
-## Troubleshooting
-
-### Queue items not being processed
-
-1. Check that Redis is running and accessible
-2. Verify that the worker is running with `worker.running` property
-3. Inspect the queue status with `queue.get_queue_status()`
-4. Check processor functions are callable and properly registered
-
-### Circuit breaker opening unexpectedly
-
-1. Check Redis connectivity and performance
-2. Consider adjusting circuit breaker parameters:
-   ```python
-   @circuit_breaker(failure_threshold=10, recovery_timeout=60.0)
-   ```
-
-### Timeouts occurring too frequently
-
-1. Review operation complexity and expected duration
-2. Adjust timeout values for specific operations:
-   ```python
-   @with_timeout(default_timeout=120.0)  # Increase for longer operations
-   ```
-
-### Redis connection failing
-
-1. Check Redis server is running and accessible
-2. Verify network connectivity and firewall settings
-3. Consider adjusting retry parameters:
-   ```python
-   @retry_with_backoff(max_retries=5, base_delay=1.0, max_delay=30.0)
-   ```
-
-## Performance Considerations
-
-- **Batch Operations**: Use `enqueue_batch()` for higher throughput
-- **Concurrency**: Adjust `max_workers` based on CPU cores and workload
-- **Timeouts**: Set appropriate work timeouts to prevent worker stalling
-- **Connection Pooling**: Redis connection is reused for better performance
-- **Serialization**: Custom serializers can be used for complex data types
+### Key Components
 
 <div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
 
@@ -457,7 +313,7 @@ Configuration for queue operations, managing Redis connections and queue naming.
 | | `get_callback_key` | `callback_name: str`, `callback_module: Optional[str] = None` | `str` | Configuration | Returns the key for a callback function in the registry. |
 | | `register_callback` | `callback: Callable`, `name: Optional[str] = None`, `module: Optional[str] = None` | | Registration | Registers a callback function for later use. |
 | | `update_metric` | `metric_name: str`, `value: Any = 1`, `force_log: bool = False` | | Metrics | Updates a metric counter or value in the metrics registry with intelligent logging. |
-| | `get_metrics` | | `Dict[str, Any]` | Metrics | Returns current metrics with computed fields like success rate. |
+| | `get_metrics` | | `Dict[str, Any]` | Metrics | Returns current metrics with computed fields like success rate and thread pool statistics. |
 
 </details>
 
@@ -477,6 +333,7 @@ Configuration for queue operations, managing Redis connections and queue naming.
 <br>
 
 </div>
+
 <div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
 
 ### class `QueueManager`
@@ -488,9 +345,9 @@ Manager for queueing operations with a synchronous API.
 
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
-| `@try_catch` | `enqueue` | `entity: Dict[str, Any]`, `processor: Union[Callable, str]`, `queue_name: Optional[str] = None`, `priority: str = "normal"`, `operation_id: Optional[str] = None`, `retry_config: Optional[QueueRetryConfig] = None`, `on_success: Optional[Union[Callable, str]] = None`, `on_failure: Optional[Union[Callable, str]] = None`, `timeout: Optional[float] = None`, `deduplication_key: Optional[str] = None`, `custom_serializer: Optional[Callable] = None` | `Dict[str, Any]` | Queueing | Enqueues an operation for asynchronous processing. |
+| `@try_catch` | `enqueue` | `entity: Dict[str, Any]`, `processor: Union[Callable, str]`, `queue_name: Optional[str] = None`, `priority: str = "normal"`, `operation_id: Optional[str] = None`, `retry_config: Optional[QueueRetryConfig] = None`, `on_success: Optional[Union[Callable, str]] = None`, `on_failure: Optional[Union[Callable, str]] = None`, `timeout: Optional[float] = None`, `deduplication_key: Optional[str] = None`, `custom_serializer: Optional[Callable] = None` | `Dict[str, Any]` | Queueing | Enqueues an operation for asynchronous processing, detecting whether the processor is sync or async. |
 | `@try_catch` | `enqueue_batch` | `entities: List[Dict[str, Any]]`, `processor: Callable`, `**kwargs` | `List[Dict[str, Any]]` | Queueing | Enqueues multiple operations for batch processing with efficient metrics tracking. |
-| `@try_catch` <br> `@circuit_breaker` | `get_queue_status` | | `Dict[str, Any]` | Monitoring | Returns the status of all registered queues with counts. |
+| `@try_catch` <br> `@circuit_breaker` | `get_queue_status` | | `Dict[str, Any]` | Monitoring | Returns the status of all registered queues with counts and metrics. |
 | `@try_catch` | `purge_queue` | `queue_name: str`, `priority: str = "normal"` | `int` | Management | Removes all items from a specific queue. |
 
 </details>
@@ -513,6 +370,7 @@ Manager for queueing operations with a synchronous API.
 <br>
 
 </div>
+
 <div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
 
 ### class `QueueWorker`
@@ -523,9 +381,9 @@ Worker for processing queued operations asynchronously.
 <summary><strong>Public Methods</strong></summary>
 
 | Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
+|------------|--------|------|----------|-------------|
 | | `start` | | `None` | Lifecycle | Starts processing the queue with worker tasks. |
-| | `stop` | | `None` | Lifecycle | Stops queue processing gracefully. |
+| | `stop` | | `None` | Lifecycle | Stops queue processing gracefully, including thread pool shutdown. |
 
 </details>
 
@@ -536,17 +394,27 @@ Worker for processing queued operations asynchronously.
 
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
-| | `__init__` | `config: QueueConfig`, `max_workers=5`, `work_timeout=30.0` | | Initialization | Initializes the queue worker with configuration and concurrency settings. |
+| | `__init__` | `config: QueueConfig`, `max_workers=5`, `work_timeout=30.0`, `thread_pool_size=20` | | Initialization | Initializes the queue worker with configuration and concurrency settings. |
 | `@with_timeout` | `_worker_loop` | `worker_id: int` | | Processing | Main worker loop for processing queue items. |
-| `@circuit_breaker` <br> `@with_timeout` | `_process_queue_item` | `worker_id: int` | `bool` | Processing | Processes a single item from the queue. |
-| `@with_timeout` | `_handle_queue_item` | `worker_id: int`, `queue: bytes`, `item_data: bytes` | `bool` | Processing | Handles processing of a queue item. |
-| `@retry_with_backoff` | `_execute_callback` | `callback_name`, `callback_module`, `data` | | Processing | Executes a callback function. |
+| `@circuit_breaker` | `_process_queue_item` | `worker_id: int` | `bool` | Processing | Processes a single item from the queue. |
+| | `_handle_queue_item` | `worker_id: int`, `queue: bytes`, `item_data: bytes` | `bool` | Processing | Handles processing of a queue item, dispatching to the appropriate processor type. |
+| | `_find_processor` | `processor_name: str`, `processor_module: Optional[str] = None` | `Optional[Callable]` | Processing | Finds the processor function by name and module. |
+| | `_calculate_effective_timeout` | `item: Dict[str, Any]` | `float` | Processing | Calculates the effective timeout for an async processor execution. |
+| | `_execute_sync_processor` | `processor: Callable`, `entity: Dict[str, Any]`, `operation_id: str` | `Any` | Processing | Executes a synchronous processor in the thread pool with exhaustion handling. |
+| | `_update_thread_metrics` | `start_time: float` | | Metrics | Updates metrics related to thread pool usage. |
+| | `_handle_pool_exhaustion` | `item: Dict[str, Any]`, `entity: Dict[str, Any]`, `operation_id: str`, `queue: bytes`, `redis: Any`, `worker_id: int` | `bool` | Error Handling | Handles thread pool exhaustion for a sync processor. |
+| | `_handle_timeout_exceeded` | `item: Dict[str, Any]`, `entity: Dict[str, Any]`, `operation_id: str`, `redis: Any` | `bool` | Error Handling | Handles case where total timeout has been exceeded. |
+| | `_handle_execution_timeout` | `item: Dict[str, Any]`, `entity: Dict[str, Any]`, `operation_id: str`, `effective_timeout: float`, `queue: bytes`, `redis: Any`, `worker_id: int` | `bool` | Error Handling | Handles timeout during async processor execution. |
+| | `_handle_would_exceed_timeout` | `item: Dict[str, Any]`, `entity: Dict[str, Any]`, `operation_id: str`, `redis: Any` | `bool` | Error Handling | Handles case where next retry would exceed total timeout. |
+| | `_handle_processing_exception` | `exception: Exception`, `item: Optional[Dict[str, Any]]`, `entity: Optional[Dict[str, Any]]`, `operation_id: str`, `worker_id: int`, `queue: bytes`, `redis: Any`, `item_data: Optional[bytes] = None` | `bool` | Error Handling | Handles general processing exception. |
+| `@retry_with_backoff` | `_execute_callback` | `callback_name`, `callback_module`, `data` | | Callbacks | Executes a callback function, handling both async and sync callbacks. |
 
 </details>
 
 <br>
 
 </div>
+
 <div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
 
 ### class `QueueRetryConfig`
@@ -584,23 +452,32 @@ Configuration for retry behavior in queue operations.
 
 </div>
 
-<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
+## Thread Pool Exhaustion Handling
 
-### Decorator Functions
+The queue system handles thread pool exhaustion (when all threads are busy) intelligently:
 
-Utility decorators for improving resilience and error handling.
+1. **Detection**: When submitting a task to the thread pool, a short timeout (100ms) detects if the pool is saturated
+2. **Metrics**: Updates `thread_pool_exhaustion` metric to track occurrence rate
+3. **Requeue**: The task is requeued with exponential backoff
+4. **Dead Letter Queue**: After max retries, the task is moved to the failures queue
 
-<details>
-<summary><strong>Public Decorators</strong></summary>
+This approach provides clear failure semantics without creating unlimited threads:
 
-| Decorator | Args | Description |
-|-----------|------|-------------|
-| `with_timeout` | `default_timeout: float = 60.0` | Adds timeout functionality to both async and sync methods. |
-| `circuit_breaker` | `name=None`, `failure_threshold=5`, `recovery_timeout=30.0`, `half_open_max_calls=3`, `window_size=60.0` | Applies circuit breaker pattern to prevent cascading failures. |
-| `retry_with_backoff` | `max_retries=3`, `base_delay=0.1`, `max_delay=10.0`, `exceptions=None`, `total_timeout=30.0` | Retries functions with exponential backoff on specified exceptions. |
+```
+Worker detects thread pool exhaustion
+  │
+  ├─ Update metrics (thread_pool_exhaustion += 1)
+  │
+  ├─ Increment attempt count
+  │
+  ├─ Check max attempts reached?
+  │   ├─ Yes ─→ Move to failures queue
+  │   │         Execute failure callback if defined
+  │   │
+  │   └─ No ──→ Calculate next retry time
+  │             Check if would exceed total timeout
+  │             Requeue with exponential backoff
+  │
+  └─ Log appropriate message
+```
 
-</details>
-
-<br>
-
-</div>

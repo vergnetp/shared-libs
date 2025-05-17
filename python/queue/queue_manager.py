@@ -154,15 +154,20 @@ class QueueManager:
                         queue_name = processor
                 
                 self.config.logger.debug(f"Enqueueing operation {op_id} on {queue_name}", 
-                operation_id=op_id,
-                processor=processor.__name__ if callable(processor) else processor,
-                queue_name=queue_name,
-                priority=priority,
-                has_callbacks=bool(on_success or on_failure))
+                                operation_id=op_id,
+                                processor=processor.__name__ if callable(processor) else processor,
+                                queue_name=queue_name,
+                                priority=priority,
+                                has_callbacks=bool(on_success or on_failure))
                         
                 # Register processor if not already registered
                 if callable(processor) and queue_name not in self.config.operations_registry:
+                    # Check if the processor is async or sync and log for info
+                    is_async = asyncio.iscoroutinefunction(processor)
                     self.config.operations_registry[queue_name] = processor
+                    self.config.logger.debug(
+                        f"Registered {'async' if is_async else 'sync'} processor: {queue_name}"
+                    )
     
                 # Register callbacks if they are callables
                 has_callbacks = bool(on_success or on_failure)
@@ -315,9 +320,15 @@ class QueueManager:
         timeout = kwargs.get('timeout')
         custom_serializer = kwargs.get('custom_serializer')
         
+        # Check if the processor is async or sync and log for info
+        is_async = asyncio.iscoroutinefunction(processor)
+        
         # Register processor if not already registered
         if callable(processor) and queue_name not in self.config.operations_registry:
             self.config.operations_registry[queue_name] = processor
+            self.config.logger.debug(
+                f"Registered {'async' if is_async else 'sync'} processor for batch: {queue_name}"
+            )
         
         # Register callbacks if they are callables
         if callable(on_success):
@@ -405,7 +416,8 @@ class QueueManager:
                 priority=priority,
                 batch_size=len(entities),
                 total_time_ms=int(total_time * 1000),
-                avg_time_per_op_ms=int(avg_time_per_op * 1000)
+                avg_time_per_op_ms=int(avg_time_per_op * 1000),
+                processor_type="async" if is_async else "sync"
             )
         except Exception as e:
             self.config.logger.error(f"Failed to enqueue batch operations: {e}")
