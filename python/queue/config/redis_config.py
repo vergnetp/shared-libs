@@ -25,11 +25,9 @@ class QueueRedisConfig:
         url: Optional[str] = None,
         client: Optional[Any] = None,
         connection_timeout: float = 5.0,
-        max_connection_retries: int = 3,
         circuit_breaker_threshold: int = 5,
         circuit_recovery_timeout: float = 30.0,
-        key_prefix: str = "queue:",
-        backup_ttl: int = 86400 * 7,  # 7 days
+        key_prefix: str = "queue:"
     ):
         """
         Initialize Redis configuration.
@@ -37,12 +35,10 @@ class QueueRedisConfig:
         Args:
             url: Redis connection URL (e.g. "redis://localhost:6379/0")
             client: Optional existing Redis client instance to use instead of creating new one
-            connection_timeout: Timeout in seconds for Redis operations (default: 5.0)
-            max_connection_retries: Maximum number of connection attempts (default: 3)
+            connection_timeout: Timeout in seconds for Redis connection (default: 5.0)           
             circuit_breaker_threshold: Number of failures before opening circuit breaker (default: 5)
             circuit_recovery_timeout: Seconds to wait before attempting recovery (default: 30.0)
             key_prefix: Prefix for all Redis keys used by the queue system (default: "queue:")
-            backup_ttl: Time-to-live in seconds for backup data (default: 7 days)
         """
         self.url = url
         self.client = client

@@ -67,11 +67,9 @@ redis_config = QueueRedisConfig(
     url="redis://localhost:6379/0",          # Redis connection URL
     client=None,                             # No existing client, create new one from url
     connection_timeout=5.0,                  # 5 second timeout for Redis operations (connection and enqueueing)
-    max_connection_retries=3,                # Retry Redis connection up to 3 times
     circuit_breaker_threshold=5,             # Open circuit after 5 failures
     circuit_recovery_timeout=30.0,           # Wait 30s before testing if Redis is back
-    key_prefix="queue:",                     # Prefix for all Redis keys
-    backup_ttl=86400 * 7                     # 7 days TTL for backup data
+    key_prefix="queue:"                      # Prefix for all Redis keys
 )
 
 # Create worker configuration with all parameters
@@ -117,7 +115,11 @@ import asyncio
 from queue_system import QueueConfig, QueueManager, QueueWorker, QueueRetryConfig
 
 # Create shared configuration
-config = QueueConfig(redis_url="redis://localhost:6379/0")
+config = QueueConfig(
+    redis=QueueRedisConfig(url="redis://localhost:6379/0"),
+    worker=QueueWorkerConfig(worker_count=3),
+    retry=QueueRetryConfig(max_attempts=3)
+)
 
 # Create queue manager and worker
 queue = QueueManager(config=config)
@@ -252,7 +254,6 @@ The system applies different timeouts and retry strategies at various levels:
 redis_config = QueueRedisConfig(
     url="redis://localhost:6379/0",
     connection_timeout=5.0,          # Timeout for individual Redis operations
-    max_connection_retries=3,        # Maximum retries for Redis operations
     circuit_breaker_threshold=5,     # Failures before circuit opens
     circuit_recovery_timeout=30.0    # Seconds before testing if Redis is back
 )
@@ -560,7 +561,7 @@ Manager for queueing operations - used in API endpoints.
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
 | `@try_catch` | `enqueue` | `entity: Dict[str, Any]`, `processor: Union[Callable, str]`, `queue_name: Optional[str] = None`, `priority: str = "normal"`, `operation_id: Optional[str] = None`, `retry_config: Optional[Dict[str, Any]] = None`, `on_success: Optional[Union[Callable, str]] = None`, `on_failure: Optional[Union[Callable, str]] = None`, `timeout: Optional[float] = None`, `deduplication_key: Optional[str] = None`, `custom_serializer: Optional[Callable] = None` | `Dict[str, Any]` | Queueing | Enqueue an operation for asynchronous processing. |
-| `@try_catch` | `enqueue_batch` | `entities: List[Dict[str, Any]]`, `processor: Callable`, `**kwargs` | `List[Dict[str, Any]]` | Queueing | Enqueue multiple operations for batch processing. |
+| `@try_catch` | `enqueue_batch` | `entities: List[Dict[str, Any]]`, `processor: Union[Callable, str]`, `**kwargs` | `List[Dict[str, Any]]` | Queueing | Enqueue multiple operations for batch processing. |
 | `@try_catch` <br> `@circuit_breaker` | `get_queue_status` | | `Dict[str, Any]` | Monitoring | Returns the status of all registered queues with counts and metrics. |
 | `@try_catch` | `purge_queue` | `queue_name: str`, `priority: str = "normal"` | `int` | Management | Remove all items from a specific queue. |
 
@@ -617,7 +618,8 @@ Worker for processing queued operations - started at app startup.
 | | `_execute_sync_processor` | `processor: Callable`, `entity: Dict[str, Any]`, `operation_id: str` | `Any` | Processing | Execute a synchronous processor in the thread pool with exhaustion handling. |
 | | `_update_thread_metrics` | `start_time: float` | | Metrics | Update metrics related to thread pool usage. |
 | | `_handle_task_failure` | `item: Optional[Dict[str, Any]]`, `entity: Optional[Dict[str, Any]]`, `operation_id: str`, `queue: bytes`, `redis_client: Any`, `worker_id: int`, `error_reason: str = "Unknown error"`, `item_data: Optional[bytes] = None` | `bool` | Error Handling | Unified error handler for all task failures regardless of cause. |
-| `@retry_with_backoff` | `_execute_callback` | `callback_name`, `callback_module`, `data` | | Callbacks | Execute a callback function, handling both async and sync callbacks. |
+| `@retry_with_backoff` | `_execute_callback` | `callback_name: str`, `callback_module: Optional[str] = None`, `data: Dict[str, Any] = None` | | Callbacks | Execute a callback function, handling both async and sync callbacks. |
+| | `_get_bytes_key` | `key_name: str` | `bytes` | Utilities | Get a queue key as bytes. |
 
 </details>
 
@@ -720,7 +722,7 @@ Configuration for Redis connection and behavior.
 
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
-| | `__init__` | `url: Optional[str] = None`, `client: Optional[Any] = None`, `connection_timeout: float = 5.0`, `max_connection_retries: int = 3`, `circuit_breaker_threshold: int = 5`, `circuit_recovery_timeout: float = 30.0`, `key_prefix: str = "queue:"`, `backup_ttl: int = 86400 * 7` | | Initialization | Initialize Redis configuration. |
+| | `__init__` | `url: Optional[str] = None`, `client: Optional[Any] = None`, `connection_timeout: float = 5.0`, `circuit_breaker_threshold: int = 5`, `circuit_recovery_timeout: float = 30.0`, `key_prefix: str = "queue:"` | | Initialization | Initialize Redis configuration. |
 | | `_validate_config` | | | Validation | Validate Redis configuration parameters. |
 | | `_mask_connection_url` | `url: str` | `str` | Utilities | Mask password in connection URL for logging safety. |
 
@@ -787,6 +789,37 @@ Configuration for managing callable functions within the queue system.
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
 | | `__init__` | `logger=None` | | Initialization | Initialize the callable registry. |
+
+</details>
+
+<br>
+
+</div>
+
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
+
+### class `QueueLoggingConfig`
+
+Configuration for logging behavior.
+
+<details>
+<summary><strong>Public Methods</strong></summary>
+
+| Decorators | Method | Args | Returns | Category | Description |
+|------------|--------|------|---------|----------|-------------|
+| | `to_dict` | | `Dict[str, Any]` | Serialization | Convert configuration to dictionary. |
+
+</details>
+
+<br>
+
+<details>
+<summary><strong>Private/Internal Methods</strong></summary>
+
+| Decorators | Method | Args | Returns | Category | Description |
+|------------|--------|------|---------|----------|-------------|
+| | `__init__` | `logger: Optional[Any] = None`, `level: str = "INFO"` | | Initialization | Initialize logging configuration. |
+| | `_create_default_logger` | | | Utilities | Create a simple default logger that outputs to console. |
 
 </details>
 
