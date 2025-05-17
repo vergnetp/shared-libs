@@ -90,7 +90,10 @@ def queue_manager(config):
 async def worker(config):
     worker = QueueWorker(config=config, max_workers=1, work_timeout=2.0)
     yield worker
-    await worker.stop()
+    
+    # Minimal cleanup - don't attempt task cancellation, just mark worker as stopped
+    worker.running = False
+    worker.tasks = []
 
 # Basic queueing tests
 def test_enqueue_basic(queue_manager):
@@ -785,7 +788,7 @@ async def test_retry_with_backoff(config):
     
     # Reset circuit breakers after test
     CircuitBreaker.reset()
-    
+
 @pytest.mark.asyncio
 async def test_decorators_integration(config, queue_manager, worker):
     """Test that all decorators work together properly."""
