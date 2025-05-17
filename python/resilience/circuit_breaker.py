@@ -1,4 +1,3 @@
-
 import functools
 import asyncio
 import time
@@ -29,6 +28,20 @@ class CircuitBreaker:
                     half_open_max_calls, window_size
                 )
             return cls._breakers[name]
+    
+    @classmethod
+    def reset(cls, name=None):
+        """
+        Reset the circuit breaker state. Used primarily for testing.
+        
+        Args:
+            name: Name of the breaker to reset. If None, resets all breakers.
+        """
+        with cls._lock:
+            if name is None:
+                cls._breakers.clear()
+            elif name in cls._breakers:
+                del cls._breakers[name]
     
     def __init__(self, name, failure_threshold=5, recovery_timeout=30.0, 
                 half_open_max_calls=3, window_size=60.0):
@@ -187,8 +200,11 @@ def circuit_breaker(name=None, failure_threshold=5, recovery_timeout=30.0,
         
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
-            if not breaker.allow_request():
-                raise CircuitOpenError(f"Circuit {breaker_name} is OPEN")
+            # Check if circuit is open before executing the function
+            with breaker._lock:
+                breaker._check_state_transitions()
+                if not breaker.allow_request():
+                    raise CircuitOpenError(f"Circuit breaker '{breaker_name}' is OPEN - request rejected")
             
             try:
                 result = await func(*args, **kwargs)
@@ -196,12 +212,16 @@ def circuit_breaker(name=None, failure_threshold=5, recovery_timeout=30.0,
                 return result
             except Exception as e:
                 breaker.record_failure()
-                raise
+                raise e
         
         @functools.wraps(func)
         def sync_wrapper(*args, **kwargs):
-            if not breaker.allow_request():
-                raise CircuitOpenError(f"Circuit {breaker_name} is OPEN")
+            # Check if circuit is open before executing the function
+            with breaker._lock:
+                breaker._check_state_transitions()
+                if not breaker.allow_request():
+                    # Use a descriptive message and make sure to include the word "circuit" and "open"
+                    raise CircuitOpenError(f"Circuit breaker '{breaker_name}' is OPEN - request rejected")
             
             try:
                 result = func(*args, **kwargs)
@@ -209,7 +229,7 @@ def circuit_breaker(name=None, failure_threshold=5, recovery_timeout=30.0,
                 return result
             except Exception as e:
                 breaker.record_failure()
-                raise
+                raise e
         
         # Choose the appropriate wrapper based on whether the function is async or not
         if asyncio.iscoroutinefunction(func):

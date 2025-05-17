@@ -1,4 +1,3 @@
-
 import functools
 import asyncio
 import time
@@ -65,21 +64,25 @@ def retry_with_backoff(max_retries=3, base_delay=0.1, max_delay=10.0,
             retries = 0
             delay = base_delay
             start_time = time.time()
+            last_exception = None
             
             while True:
                 # Check total timeout if set
                 if total_timeout is not None and time.time() - start_time > total_timeout:
                     method_name = getattr(args[0].__class__ if args else None, '__name__', 'unknown') + '.' + func.__name__
                     logger.warning(f"Total timeout of {total_timeout}s exceeded for {method_name}")
+                    if last_exception:
+                        raise last_exception
                     raise TimeoutError(f"Operation timed out after {total_timeout}s for {method_name}")
                 
                 try:
                     return await func(*args, **kwargs)
                 except exceptions as e:
+                    last_exception = e
                     retries += 1
                     if retries > max_retries:
                         logger.warning(f"Max retries ({max_retries}) exceeded for {func.__name__}: {e}")
-                        raise
+                        raise last_exception
                     
                     # Calculate delay with jitter to avoid thundering herd
                     jitter = random.uniform(0.8, 1.2)
@@ -96,7 +99,7 @@ def retry_with_backoff(max_retries=3, base_delay=0.1, max_delay=10.0,
                                 logger.debug(f"Adjusting sleep time to {sleep_time:.2f}s to respect total timeout")
                             else:
                                 logger.warning(f"Total timeout of {total_timeout}s about to exceed for {func.__name__}")
-                                raise TimeoutError(f"Operation timed out after {total_timeout}s for {func.__name__}")
+                                raise last_exception
                     
                     logger.debug(f"Retry {retries}/{max_retries} for {func.__name__} after {sleep_time:.2f}s: {str(e)[:100]}")
                     try:
@@ -113,21 +116,25 @@ def retry_with_backoff(max_retries=3, base_delay=0.1, max_delay=10.0,
             retries = 0
             delay = base_delay
             start_time = time.time()
+            last_exception = None
             
             while True:
                 # Check total timeout if set
                 if total_timeout is not None and time.time() - start_time > total_timeout:
                     method_name = getattr(args[0].__class__ if args else None, '__name__', 'unknown') + '.' + func.__name__
                     logger.warning(f"Total timeout of {total_timeout}s exceeded for {method_name}")
+                    if last_exception:
+                        raise last_exception
                     raise TimeoutError(f"Operation timed out after {total_timeout}s for {method_name}")
                 
                 try:
                     return func(*args, **kwargs)
                 except exceptions as e:
+                    last_exception = e
                     retries += 1
                     if retries > max_retries:
                         logger.warning(f"Max retries ({max_retries}) exceeded for {func.__name__}: {e}")
-                        raise
+                        raise last_exception
                     
                     # Calculate delay with jitter to avoid thundering herd
                     jitter = random.uniform(0.8, 1.2)
@@ -144,7 +151,7 @@ def retry_with_backoff(max_retries=3, base_delay=0.1, max_delay=10.0,
                                 logger.debug(f"Adjusting sleep time to {sleep_time:.2f}s to respect total timeout")
                             else:
                                 logger.warning(f"Total timeout of {total_timeout}s about to exceed for {func.__name__}")
-                                raise TimeoutError(f"Operation timed out after {total_timeout}s for {func.__name__}")
+                                raise last_exception
                     
                     logger.debug(f"Retry {retries}/{max_retries} for {func.__name__} after {sleep_time:.2f}s: {str(e)[:100]}")
                     time.sleep(sleep_time)

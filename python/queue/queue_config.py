@@ -142,8 +142,8 @@ class QueueConfig:
                     self.redis_url, 
                     socket_timeout=self.connection_timeout
                 )
-                # Test the connection
-                self.redis_client.ping()
+            # Test the connection
+            self.redis_client.ping()
             return self.redis_client
     
     def get_queue_key(self, queue_name: str, priority: str = "normal") -> str:

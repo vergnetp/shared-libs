@@ -82,7 +82,7 @@ class QueueManager:
             # Fallback to basic string representation
             return json.dumps({"__error__": "Serialization error", 
                               "string_repr": str(entity)})
-    
+
     @try_catch(
         description='Failed to enqueue operation',
         action='Check queue connectivity and entity format'
@@ -134,148 +134,148 @@ class QueueManager:
         Returns:
             Dict with operation status and metadata
         """
-        with self._enqueue_lock:
-            start_time = time.time()
-            success = False
-            error_type = None
-            try:
-                # Generate or use operation ID
-                op_id = operation_id or self._generate_operation_id()
-                
-                # Use provided deduplication key or generate from entity
-                entity_hash = deduplication_key or self._hash_entity(entity)
-                
-                # Determine queue name if not provided
-                if queue_name is None:
-                    if callable(processor):
-                        queue_name = f"{processor.__module__}.{processor.__name__}"
-                    else:
-                        # Assume processor is a string like "module.function" if not callable
-                        queue_name = processor
-                
-                self.config.logger.debug(f"Enqueueing operation {op_id} on {queue_name}", 
-                                operation_id=op_id,
-                                processor=processor.__name__ if callable(processor) else processor,
-                                queue_name=queue_name,
-                                priority=priority,
-                                has_callbacks=bool(on_success or on_failure))
-                        
-                # Register processor if not already registered
-                if callable(processor) and queue_name not in self.config.operations_registry:
-                    # Check if the processor is async or sync and log for info
-                    is_async = asyncio.iscoroutinefunction(processor)
-                    self.config.operations_registry[queue_name] = processor
-                    self.config.logger.debug(
-                        f"Registered {'async' if is_async else 'sync'} processor: {queue_name}"
-                    )
-    
-                # Register callbacks if they are callables
-                has_callbacks = bool(on_success or on_failure)
-                if callable(on_success):
-                    self.config.register_callback(on_success)
-                if callable(on_failure):
-                    self.config.register_callback(on_failure)
-                
-                # Validate callbacks if provided
-                if on_success and not callable(on_success) and not isinstance(on_success, str):
-                    raise ValueError("on_success must be a callable or string function name")
-                if on_failure and not callable(on_failure) and not isinstance(on_failure, str):
-                    raise ValueError("on_failure must be a callable or string function name")
-                
-                # Prepare the queue data
-                queue_data = {
-                    "entity": entity,
-                    "operation_id": op_id,
-                    "entity_hash": entity_hash,
-                    "timestamp": time.time(),
-                    "attempts": 0,
-                    "processor": processor.__name__ if callable(processor) else processor,
-                    "processor_module": processor.__module__ if callable(processor) else None,
-                }
-                
-                # Add timeout if provided
-                if timeout is not None:
-                    queue_data["timeout"] = float(timeout)
-                
-                # Add callback info if provided
-                if on_success:
-                    queue_data["on_success"] = on_success.__name__ if callable(on_success) else on_success
-                    queue_data["on_success_module"] = on_success.__module__ if callable(on_success) else None
-                
-                if on_failure:
-                    queue_data["on_failure"] = on_failure.__name__ if callable(on_failure) else on_failure
-                    queue_data["on_failure_module"] = on_failure.__module__ if callable(on_failure) else None
-                
-                # Add retry configuration if provided
-                if retry_config:
-                    queue_data.update({
-                        "max_attempts": retry_config.max_attempts,
-                        "delays": retry_config.delays,
-                        "timeout": retry_config.timeout,
-                        "next_retry_time": time.time()
-                    })
-                else:
-                    # Default max attempts
-                    queue_data["max_attempts"] = 5
-                
-                # Queue the operation
-                self._queue_operation(queue_data, queue_name, priority, custom_serializer)
-                
-                # Mark as successful
-                success = True
-                
-                # Update metrics
-                acquisition_time = time.time() - start_time
-                self.config.update_metric('enqueued')
-                self.config.update_metric('avg_enqueue_time', acquisition_time)
-                
-                self.config.logger.debug("Operation queued successfully", 
-                      operation_id=op_id, 
-                      queue_name=queue_name, 
-                      priority=priority,
-                      entity_id=getattr(entity, 'id', None),
-                      has_callbacks=has_callbacks)
-                
-                # Return the operation details
-                return {
-                    "operation_id": op_id,
-                    "status": "queued",
-                    "has_callbacks": has_callbacks,
-                    "enqueue_time_ms": int(acquisition_time * 1000)
-                }
+        start_time = time.time()
+        success = False
+        error_type = None
+        
+        try:
+            # Generate or use operation ID
+            op_id = operation_id or self._generate_operation_id()
             
-            except asyncio.TimeoutError:
-                # Specifically track timeouts
-                error_type = 'timeout'
-                self.config.update_metric('timeouts')
-                self.config.update_metric('last_timeout_timestamp', time.time())
-                raise
-                
-            except Exception as e:
-                # Track different types of errors
-                if isinstance(e, redis.RedisError):
-                    error_type = 'redis'
-                    self.config.update_metric('redis_errors')
-                elif isinstance(e, (TypeError, ValueError)):
-                    error_type = 'validation'
-                    self.config.update_metric('validation_errors')
+            # Use provided deduplication key or generate from entity
+            entity_hash = deduplication_key or self._hash_entity(entity)
+            
+            # Determine queue name if not provided
+            if queue_name is None:
+                if callable(processor):
+                    queue_name = f"{processor.__module__}.{processor.__name__}"
                 else:
-                    error_type = 'general'
-                    self.config.update_metric('general_errors')
-                
-                # Increment total errors
-                self.config.update_metric('errors')
-                
-                # Log with enhanced error details
-                self.config.logger.error(f"Failed to enqueue operation", 
-                        operation_id=op_id if 'op_id' in locals() else None, 
-                        entity_id=getattr(entity, 'id', None), 
-                        processor=queue_name if 'queue_name' in locals() else None,
-                        error_type=error_type,
-                        error_message=e.to_string() if hasattr(e, 'to_string') else str(e),
-                        elapsed_time=time.time() - start_time)
-                raise
-    
+                    # Assume processor is a string like "module.function" if not callable
+                    queue_name = processor
+            
+            self.config.logger.debug(f"Enqueueing operation {op_id} on {queue_name}", 
+                            operation_id=op_id,
+                            processor=processor.__name__ if callable(processor) else processor,
+                            queue_name=queue_name,
+                            priority=priority,
+                            has_callbacks=bool(on_success or on_failure))
+                    
+            # Register processor if not already registered
+            if callable(processor) and queue_name not in self.config.operations_registry:
+                # Check if the processor is async or sync and log for info
+                is_async = asyncio.iscoroutinefunction(processor)
+                self.config.operations_registry[queue_name] = processor
+                self.config.logger.debug(
+                    f"Registered {'async' if is_async else 'sync'} processor: {queue_name}"
+                )
+
+            # Register callbacks if they are callables
+            has_callbacks = bool(on_success or on_failure)
+            if callable(on_success):
+                self.config.register_callback(on_success)
+            if callable(on_failure):
+                self.config.register_callback(on_failure)
+            
+            # Validate callbacks if provided
+            if on_success and not callable(on_success) and not isinstance(on_success, str):
+                raise ValueError("on_success must be a callable or string function name")
+            if on_failure and not callable(on_failure) and not isinstance(on_failure, str):
+                raise ValueError("on_failure must be a callable or string function name")
+            
+            # Prepare the queue data
+            queue_data = {
+                "entity": entity,
+                "operation_id": op_id,
+                "entity_hash": entity_hash,
+                "timestamp": time.time(),
+                "attempts": 0,
+                "processor": processor.__name__ if callable(processor) else processor,
+                "processor_module": processor.__module__ if callable(processor) else None,
+            }
+            
+            # Add timeout if provided
+            if timeout is not None:
+                queue_data["timeout"] = float(timeout)
+            
+            # Add callback info if provided
+            if on_success:
+                queue_data["on_success"] = on_success.__name__ if callable(on_success) else on_success
+                queue_data["on_success_module"] = on_success.__module__ if callable(on_success) else None
+            
+            if on_failure:
+                queue_data["on_failure"] = on_failure.__name__ if callable(on_failure) else on_failure
+                queue_data["on_failure_module"] = on_failure.__module__ if callable(on_failure) else None
+            
+            # Add retry configuration if provided
+            if retry_config:
+                queue_data.update({
+                    "max_attempts": retry_config.max_attempts,
+                    "delays": retry_config.delays,
+                    "timeout": retry_config.timeout,
+                    "next_retry_time": time.time()
+                })
+            else:
+                # Default max attempts
+                queue_data["max_attempts"] = 5
+            
+            # Queue the operation
+            self._queue_operation(queue_data, queue_name, priority, custom_serializer)
+            
+            # Mark as successful
+            success = True
+            
+            # Update metrics
+            acquisition_time = time.time() - start_time
+            self.config.update_metric('enqueued')
+            self.config.update_metric('avg_enqueue_time', acquisition_time)
+            
+            self.config.logger.debug("Operation queued successfully", 
+                operation_id=op_id, 
+                queue_name=queue_name, 
+                priority=priority,
+                entity_id=getattr(entity, 'id', None),
+                has_callbacks=has_callbacks)
+            
+            # Return the operation details
+            return {
+                "operation_id": op_id,
+                "status": "queued",
+                "has_callbacks": has_callbacks,
+                "enqueue_time_ms": int(acquisition_time * 1000)
+            }
+        
+        except asyncio.TimeoutError:
+            # Specifically track timeouts
+            error_type = 'timeout'
+            self.config.update_metric('timeouts')
+            self.config.update_metric('last_timeout_timestamp', time.time())
+            raise
+            
+        except Exception as e:
+            # Track different types of errors
+            if isinstance(e, redis.RedisError):
+                error_type = 'redis'
+                self.config.update_metric('redis_errors')
+            elif isinstance(e, (TypeError, ValueError)):
+                error_type = 'validation'
+                self.config.update_metric('validation_errors')
+            else:
+                error_type = 'general'
+                self.config.update_metric('general_errors')
+            
+            # Increment total errors
+            self.config.update_metric('errors')
+            
+            # Log with enhanced error details
+            self.config.logger.error(f"Failed to enqueue operation", 
+                    error_id=op_id if 'op_id' in locals() else None, 
+                    entity_id=getattr(entity, 'id', None) if 'entity' in locals() else None, 
+                    processor=queue_name if 'queue_name' in locals() else None,
+                    error_type=error_type,
+                    error_message=e.to_string() if hasattr(e, 'to_string') else str(e),
+                    elapsed_time=time.time() - start_time)
+            raise
+
     @try_catch
     def enqueue_batch(self, 
                     entities: List[Dict[str, Any]], 
