@@ -9,8 +9,7 @@ from typing import Any, Dict, List, Optional, Union, Callable, Tuple
 import redis
 import asyncio
 
-from .queue_config import QueueConfig
-from .queue_retry_config import QueueRetryConfig
+from .config import QueueConfig
 from ..errors.try_catch import try_catch
 from ..resilience import circuit_breaker
 
@@ -96,7 +95,7 @@ class QueueManager:
                 operation_id: Optional[str] = None,
                 
                 # Retry configuration
-                retry_config: Optional[QueueRetryConfig] = None,
+                retry_config: Optional[Dict[str, Any]] = None,
                 
                 # Callback parameters
                 on_success: Optional[Union[Callable, str]] = None,
@@ -120,7 +119,7 @@ class QueueManager:
             operation_id: Optional ID for the operation (auto-generated if not provided)
             
             # Retry configuration
-            retry_config: Configuration for retry behavior (QueueRetryConfig instance)
+            retry_config: Configuration for retry behavior (dict with retry options)
             
             # Callback parameters
             on_success: Callback function or name to call on successful completion
@@ -145,42 +144,93 @@ class QueueManager:
             # Use provided deduplication key or generate from entity
             entity_hash = deduplication_key or self._hash_entity(entity)
             
-            # Determine queue name if not provided
-            if queue_name is None:
-                if callable(processor):
-                    queue_name = f"{processor.__module__}.{processor.__name__}"
+            # Determine processor information based on type
+            processor_name = None
+            processor_module = None
+            
+            if callable(processor):
+                # If processor is a callable, register it and get its name/module
+                self.config.callables.register(processor)
+                processor_name = processor.__name__
+                processor_module = processor.__module__
+                
+                # Use processor module/name for queue name if not provided
+                if queue_name is None:
+                    queue_name = f"{processor_module}.{processor_name}"
+                    
+                # Log processor type for debugging
+                is_async = asyncio.iscoroutinefunction(processor)
+                self.config.logger.debug(
+                    f"Using {'async' if is_async else 'sync'} processor: {queue_name}"
+                )
+            else:
+                # If processor is a string, parse it to get module/name
+                if "." in processor:
+                    # String contains module path (e.g., "module.submodule.function")
+                    parts = processor.split(".")
+                    processor_name = parts[-1]
+                    processor_module = ".".join(parts[:-1])
+                    
+                    # Use processor string for queue name if not provided
+                    if queue_name is None:
+                        queue_name = processor
                 else:
-                    # Assume processor is a string like "module.function" if not callable
-                    queue_name = processor
+                    # String is just a function name
+                    processor_name = processor
+                    
+                    # Use processor name for queue name if not provided
+                    if queue_name is None:
+                        queue_name = processor
             
             self.config.logger.debug(f"Enqueueing operation {op_id} on {queue_name}", 
                             operation_id=op_id,
-                            processor=processor.__name__ if callable(processor) else processor,
+                            processor=processor_name,
                             queue_name=queue_name,
                             priority=priority,
                             has_callbacks=bool(on_success or on_failure))
-                    
-            # Register processor if not already registered
-            if callable(processor) and queue_name not in self.config.operations_registry:
-                # Check if the processor is async or sync and log for info
-                is_async = asyncio.iscoroutinefunction(processor)
-                self.config.operations_registry[queue_name] = processor
-                self.config.logger.debug(
-                    f"Registered {'async' if is_async else 'sync'} processor: {queue_name}"
-                )
-
-            # Register callbacks if they are callables
-            has_callbacks = bool(on_success or on_failure)
-            if callable(on_success):
-                self.config.register_callback(on_success)
-            if callable(on_failure):
-                self.config.register_callback(on_failure)
             
-            # Validate callbacks if provided
-            if on_success and not callable(on_success) and not isinstance(on_success, str):
-                raise ValueError("on_success must be a callable or string function name")
-            if on_failure and not callable(on_failure) and not isinstance(on_failure, str):
-                raise ValueError("on_failure must be a callable or string function name")
+            # Process callbacks
+            has_callbacks = bool(on_success or on_failure)
+            success_callback_name = None
+            success_callback_module = None
+            failure_callback_name = None
+            failure_callback_module = None
+            
+            # Handle success callback
+            if on_success:
+                if callable(on_success):
+                    # Register the callback function
+                    self.config.callables.register(on_success)
+                    success_callback_name = on_success.__name__
+                    success_callback_module = on_success.__module__
+                elif isinstance(on_success, str):
+                    # Parse string callback
+                    if "." in on_success:
+                        parts = on_success.split(".")
+                        success_callback_name = parts[-1]
+                        success_callback_module = ".".join(parts[:-1])
+                    else:
+                        success_callback_name = on_success
+                else:
+                    raise ValueError("on_success must be a callable or string function name")
+            
+            # Handle failure callback
+            if on_failure:
+                if callable(on_failure):
+                    # Register the callback function
+                    self.config.callables.register(on_failure)
+                    failure_callback_name = on_failure.__name__
+                    failure_callback_module = on_failure.__module__
+                elif isinstance(on_failure, str):
+                    # Parse string callback
+                    if "." in on_failure:
+                        parts = on_failure.split(".")
+                        failure_callback_name = parts[-1]
+                        failure_callback_module = ".".join(parts[:-1])
+                    else:
+                        failure_callback_name = on_failure
+                else:
+                    raise ValueError("on_failure must be a callable or string function name")
             
             # Prepare the queue data
             queue_data = {
@@ -189,8 +239,8 @@ class QueueManager:
                 "entity_hash": entity_hash,
                 "timestamp": time.time(),
                 "attempts": 0,
-                "processor": processor.__name__ if callable(processor) else processor,
-                "processor_module": processor.__module__ if callable(processor) else None,
+                "processor": processor_name,
+                "processor_module": processor_module,
             }
             
             # Add timeout if provided
@@ -198,25 +248,25 @@ class QueueManager:
                 queue_data["timeout"] = float(timeout)
             
             # Add callback info if provided
-            if on_success:
-                queue_data["on_success"] = on_success.__name__ if callable(on_success) else on_success
-                queue_data["on_success_module"] = on_success.__module__ if callable(on_success) else None
+            if success_callback_name:
+                queue_data["on_success"] = success_callback_name
+                queue_data["on_success_module"] = success_callback_module
             
-            if on_failure:
-                queue_data["on_failure"] = on_failure.__name__ if callable(on_failure) else on_failure
-                queue_data["on_failure_module"] = on_failure.__module__ if callable(on_failure) else None
+            if failure_callback_name:
+                queue_data["on_failure"] = failure_callback_name
+                queue_data["on_failure_module"] = failure_callback_module
             
             # Add retry configuration if provided
             if retry_config:
+                queue_data.update(retry_config)
+            else:
+                # Default retry config from main configuration
                 queue_data.update({
-                    "max_attempts": retry_config.max_attempts,
-                    "delays": retry_config.delays,
-                    "timeout": retry_config.timeout,
+                    "max_attempts": self.config.retry.max_attempts,
+                    "delays": self.config.retry.delays,
+                    "timeout": self.config.retry.timeout,
                     "next_retry_time": time.time()
                 })
-            else:
-                # Default max attempts
-                queue_data["max_attempts"] = 5
             
             # Queue the operation
             self._queue_operation(queue_data, queue_name, priority, custom_serializer)
@@ -226,8 +276,8 @@ class QueueManager:
             
             # Update metrics
             acquisition_time = time.time() - start_time
-            self.config.update_metric('enqueued')
-            self.config.update_metric('avg_enqueue_time', acquisition_time)
+            self.config.metrics.update_metric('enqueued')
+            self.config.metrics.update_metric('avg_enqueue_time', acquisition_time)
             
             self.config.logger.debug("Operation queued successfully", 
                 operation_id=op_id, 
@@ -247,24 +297,24 @@ class QueueManager:
         except asyncio.TimeoutError:
             # Specifically track timeouts
             error_type = 'timeout'
-            self.config.update_metric('timeouts')
-            self.config.update_metric('last_timeout_timestamp', time.time())
+            self.config.metrics.update_metric('timeouts')
+            self.config.metrics.update_metric('last_timeout_timestamp', time.time())
             raise
             
         except Exception as e:
             # Track different types of errors
             if isinstance(e, redis.RedisError):
                 error_type = 'redis'
-                self.config.update_metric('redis_errors')
+                self.config.metrics.update_metric('redis_errors')
             elif isinstance(e, (TypeError, ValueError)):
                 error_type = 'validation'
-                self.config.update_metric('validation_errors')
+                self.config.metrics.update_metric('validation_errors')
             else:
                 error_type = 'general'
-                self.config.update_metric('general_errors')
+                self.config.metrics.update_metric('general_errors')
             
             # Increment total errors
-            self.config.update_metric('errors')
+            self.config.metrics.update_metric('errors')
             
             # Log with enhanced error details
             self.config.logger.error(f"Failed to enqueue operation", 
@@ -279,14 +329,14 @@ class QueueManager:
     @try_catch
     def enqueue_batch(self, 
                     entities: List[Dict[str, Any]], 
-                    processor: Callable,
+                    processor: Union[Callable, str],
                     **kwargs) -> List[Dict[str, Any]]:
         """
         Enqueue multiple operations at once for batch processing.
         
         Args:
             entities: List of data entities to process
-            processor: Function that processes the entities
+            processor: Function that processes the entities or string name
             **kwargs: Same parameters as enqueue() method
                 
         Returns:
@@ -299,46 +349,102 @@ class QueueManager:
         if not entities:
             return []
         
-        results = []
+        # Determine processor information based on type
+        processor_name = None
+        processor_module = None
+        
+        if callable(processor):
+            # If processor is a callable, register it and get its name/module
+            self.config.callables.register(processor)
+            processor_name = processor.__name__
+            processor_module = processor.__module__
+            
+            # Check if the processor is async or sync and log for info
+            is_async = asyncio.iscoroutinefunction(processor)
+            
+            self.config.logger.debug(
+                f"Batch using {'async' if is_async else 'sync'} processor: {processor_name}"
+            )
+        else:
+            # If processor is a string, parse it to get module/name
+            if "." in processor:
+                # String contains module path (e.g., "module.submodule.function")
+                parts = processor.split(".")
+                processor_name = parts[-1]
+                processor_module = ".".join(parts[:-1])
+            else:
+                # String is just a function name
+                processor_name = processor
+        
+        # Get common parameters
+        queue_name = kwargs.get('queue_name')
+        if queue_name is None and processor_module:
+            queue_name = f"{processor_module}.{processor_name}"
+        elif queue_name is None:
+            queue_name = processor_name
+        
+        priority = kwargs.get('priority', 'normal')
+        retry_config = kwargs.get('retry_config')
+        timeout = kwargs.get('timeout')
+        custom_serializer = kwargs.get('custom_serializer')
+        
+        # Process callbacks
+        on_success = kwargs.get('on_success')
+        on_failure = kwargs.get('on_failure')
+        
+        success_callback_name = None
+        success_callback_module = None
+        failure_callback_name = None
+        failure_callback_module = None
+        
+        # Handle success callback
+        if on_success:
+            if callable(on_success):
+                # Register the callback function
+                self.config.callables.register(on_success)
+                success_callback_name = on_success.__name__
+                success_callback_module = on_success.__module__
+            elif isinstance(on_success, str):
+                # Parse string callback
+                if "." in on_success:
+                    parts = on_success.split(".")
+                    success_callback_name = parts[-1]
+                    success_callback_module = ".".join(parts[:-1])
+                else:
+                    success_callback_name = on_success
+            else:
+                raise ValueError("on_success must be a callable or string function name")
+        
+        # Handle failure callback
+        if on_failure:
+            if callable(on_failure):
+                # Register the callback function
+                self.config.callables.register(on_failure)
+                failure_callback_name = on_failure.__name__
+                failure_callback_module = on_failure.__module__
+            elif isinstance(on_failure, str):
+                # Parse string callback
+                if "." in on_failure:
+                    parts = on_failure.split(".")
+                    failure_callback_name = parts[-1]
+                    failure_callback_module = ".".join(parts[:-1])
+                else:
+                    failure_callback_name = on_failure
+            else:
+                raise ValueError("on_failure must be a callable or string function name")
+        
+        # Create a pipeline for batching Redis operations
+        redis_client = self.config.redis.get_client()
+        pipeline = redis_client.pipeline()
         
         # Pre-generate operation IDs
         operation_ids = [self._generate_operation_id() for _ in range(len(entities))]
         
-        # Create a pipeline for batching Redis operations
-        redis = self.config._ensure_redis_sync()
-        pipeline = redis.pipeline()
-        
-        # Get common parameters
-        queue_name = kwargs.get('queue_name')
-        if queue_name is None and callable(processor):
-            queue_name = f"{processor.__module__}.{processor.__name__}"
-        
-        priority = kwargs.get('priority', 'normal')
-        retry_config = kwargs.get('retry_config')
-        on_success = kwargs.get('on_success')
-        on_failure = kwargs.get('on_failure')
-        timeout = kwargs.get('timeout')
-        custom_serializer = kwargs.get('custom_serializer')
-        
-        # Check if the processor is async or sync and log for info
-        is_async = asyncio.iscoroutinefunction(processor)
-        
-        # Register processor if not already registered
-        if callable(processor) and queue_name not in self.config.operations_registry:
-            self.config.operations_registry[queue_name] = processor
-            self.config.logger.debug(
-                f"Registered {'async' if is_async else 'sync'} processor for batch: {queue_name}"
-            )
-        
-        # Register callbacks if they are callables
-        if callable(on_success):
-            self.config.register_callback(on_success)
-        if callable(on_failure):
-            self.config.register_callback(on_failure)
+        results = []
         
         # Process each entity
         for i, entity in enumerate(entities):
-            # Reuse enqueue logic but with pipeline
+            # Generate operation ID
             op_id = operation_ids[i]
             entity_hash = self._hash_entity(entity)
             
@@ -349,8 +455,8 @@ class QueueManager:
                 "entity_hash": entity_hash,
                 "timestamp": time.time(),
                 "attempts": 0,
-                "processor": processor.__name__ if callable(processor) else processor,
-                "processor_module": processor.__module__ if callable(processor) else None,
+                "processor": processor_name,
+                "processor_module": processor_module,
             }
             
             # Add timeout if provided
@@ -358,35 +464,35 @@ class QueueManager:
                 queue_data["timeout"] = float(timeout)
             
             # Add callback info if provided
-            if on_success:
-                queue_data["on_success"] = on_success.__name__ if callable(on_success) else on_success
-                queue_data["on_success_module"] = on_success.__module__ if callable(on_success) else None
+            if success_callback_name:
+                queue_data["on_success"] = success_callback_name
+                queue_data["on_success_module"] = success_callback_module
             
-            if on_failure:
-                queue_data["on_failure"] = on_failure.__name__ if callable(on_failure) else on_failure
-                queue_data["on_failure_module"] = on_failure.__module__ if callable(on_failure) else None
+            if failure_callback_name:
+                queue_data["on_failure"] = failure_callback_name
+                queue_data["on_failure_module"] = failure_callback_module
             
             # Add retry configuration if provided
             if retry_config:
+                queue_data.update(retry_config)
+            else:
+                # Use default retry config
                 queue_data.update({
-                    "max_attempts": retry_config.max_attempts,
-                    "delays": retry_config.delays,
-                    "timeout": retry_config.timeout,
+                    "max_attempts": self.config.retry.max_attempts,
+                    "delays": self.config.retry.delays,
+                    "timeout": self.config.retry.timeout,
                     "next_retry_time": time.time()
                 })
-            else:
-                # Default max attempts
-                queue_data["max_attempts"] = 5
             
             # Determine queue key
-            queue_key = self.config.get_queue_key(queue_name, priority)
+            queue_key = self.config.redis.get_queue_key(queue_name, priority)
             
             # Serialize the queue data
             serialized_data = self._serialize_entity(queue_data, custom_serializer)
             
             # Add to pipeline instead of immediate execution
             pipeline.lpush(queue_key, serialized_data)
-            pipeline.sadd(self.config.registry_key, queue_key)
+            pipeline.sadd(self.config.redis.get_registry_key(), queue_key)
             
             # Track the result
             results.append({
@@ -403,12 +509,12 @@ class QueueManager:
             avg_time_per_op = total_time / len(entities)
             
             # Update metrics with batch data
-            self.config.update_metric('enqueued', len(entities), force_log=True)
-            self.config.update_metric('avg_enqueue_time', avg_time_per_op)
-            self.config.update_metric(f'enqueued_batch_{priority}', len(entities))
+            self.config.metrics.update_metric('enqueued', len(entities), force_log=True)
+            self.config.metrics.update_metric('avg_enqueue_time', avg_time_per_op)
+            self.config.metrics.update_metric(f'enqueued_batch_{priority}', len(entities))
             
             # Update queue-specific metrics
-            self.config.update_metric(f'queue_{queue_name.replace(".", "_")}_total', len(entities))
+            self.config.metrics.update_metric(f'queue_{queue_name.replace(".", "_")}_total', len(entities))
             
             self.config.logger.info(
                 f"Batch enqueued {len(entities)} operations successfully",
@@ -416,12 +522,11 @@ class QueueManager:
                 priority=priority,
                 batch_size=len(entities),
                 total_time_ms=int(total_time * 1000),
-                avg_time_per_op_ms=int(avg_time_per_op * 1000),
-                processor_type="async" if is_async else "sync"
+                avg_time_per_op_ms=int(avg_time_per_op * 1000)
             )
         except Exception as e:
             self.config.logger.error(f"Failed to enqueue batch operations: {e}")
-            self.config.update_metric('batch_errors')
+            self.config.metrics.update_metric('batch_errors')
             raise
                 
         return results
@@ -442,19 +547,19 @@ class QueueManager:
             custom_serializer: Optional function for custom serialization
         """
         # Get the full queue key
-        queue_key = self.config.get_queue_key(queue_name, priority)
+        queue_key = self.config.redis.get_queue_key(queue_name, priority)
         
-        # Initialize Redis client synchronously
-        redis = self.config._ensure_redis_sync()
+        # Initialize Redis client
+        redis_client = self.config.redis.get_client()
         
         # Serialize queue data
         serialized_data = self._serialize_entity(queue_data, custom_serializer)
             
         # Add to the queue
-        redis.lpush(queue_key, serialized_data)
+        redis_client.lpush(queue_key, serialized_data)
         
         # Register the queue
-        redis.sadd(self.config.registry_key, queue_key)
+        redis_client.sadd(self.config.redis.get_registry_key(), queue_key)
     
     @try_catch
     @circuit_breaker(name="queue_status", failure_threshold=3, recovery_timeout=5.0)
@@ -466,9 +571,10 @@ class QueueManager:
                 and additional metadata.
         """
         status = {}
+        redis_client = self.config.redis.get_client()
         
         # Get all registered queues
-        registered_queues = self.config._ensure_redis_sync().smembers(self.config.registry_key)
+        registered_queues = redis_client.smembers(self.config.redis.get_registry_key())
         string_queues = set()
         for queue in registered_queues:
             if isinstance(queue, bytes):
@@ -478,22 +584,22 @@ class QueueManager:
         
         # Get item counts for each queue
         for queue_name in string_queues:
-            count = self.config._ensure_redis_sync().llen(queue_name)
+            count = redis_client.llen(queue_name)
             status[queue_name] = count
         
         # Add failure queue count
-        failures_key = "queue:failures"
-        status[failures_key] = self.config._ensure_redis_sync().llen(failures_key)
+        failures_key = f"{self.config.redis.key_prefix}failures"
+        status[failures_key] = redis_client.llen(failures_key)
         
         # Add system errors count
-        system_errors_key = "queue:system_errors"
-        status[system_errors_key] = self.config._ensure_redis_sync().llen(system_errors_key)
+        system_errors_key = f"{self.config.redis.key_prefix}system_errors"
+        status[system_errors_key] = redis_client.llen(system_errors_key)
         
         # Calculate total items
         total_items = sum(count for queue_name, count in status.items())
         
         # Get metrics
-        metrics = self.config.get_metrics()
+        metrics = self.config.metrics.get_metrics()
         
         # Add metadata as a separate dictionary
         metadata = {
@@ -518,14 +624,14 @@ class QueueManager:
         Returns:
             Number of items purged
         """
-        redis = self.config._ensure_redis_sync()
-        queue_key = self.config.get_queue_key(queue_name, priority)
+        redis_client = self.config.redis.get_client()
+        queue_key = self.config.redis.get_queue_key(queue_name, priority)
         
         # Get the current length
-        count = redis.llen(queue_key)
+        count = redis_client.llen(queue_key)
         
         # Delete the queue
-        redis.delete(queue_key)
+        redis_client.delete(queue_key)
         
         # Report the purge
         self.config.logger.info(f"Purged {count} items from queue {queue_name} with priority {priority}")
