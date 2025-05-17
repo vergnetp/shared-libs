@@ -12,9 +12,7 @@ class QueueWorkerConfig:
         self,
         worker_count: int = 5,
         thread_pool_size: int = 20,
-        work_timeout: float = 30.0,
-        grace_shutdown_period: float = 5.0,
-        max_requeue_attempts: int = 3
+        work_timeout: float = 30.0
     ):
         """
         Initialize worker configuration.
@@ -23,14 +21,11 @@ class QueueWorkerConfig:
             worker_count: Number of concurrent worker tasks to run (default: 5)
             thread_pool_size: Size of the thread pool for executing sync processors (default: 20)
             work_timeout: Default timeout in seconds for processing operations (default: 30.0)
-            grace_shutdown_period: Time in seconds to wait for clean shutdown (default: 5.0)
-            max_requeue_attempts: Maximum number of times to requeue on thread pool exhaustion (default: 3)
+            grace_shutdown_period: Time in seconds to wait for clean shutdown (default: 5.0)  
         """
         self.worker_count = worker_count
         self.thread_pool_size = thread_pool_size
-        self.work_timeout = work_timeout
-        self.grace_shutdown_period = grace_shutdown_period
-        self.max_requeue_attempts = max_requeue_attempts
+        self.work_timeout = work_timeout    
         
         # Validate configuration
         self._validate_config()
@@ -61,8 +56,6 @@ class QueueWorkerConfig:
         return {
             "worker_count": self.worker_count,
             "thread_pool_size": self.thread_pool_size,
-            "work_timeout": self.work_timeout,
-            "grace_shutdown_period": self.grace_shutdown_period,
-            "max_requeue_attempts": self.max_requeue_attempts
+            "work_timeout": self.work_timeout 
         }
 

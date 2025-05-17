@@ -10,6 +10,9 @@ from typing import Any, Dict, List, Optional, Union, Callable
 from .config import QueueConfig
 from ..resilience import with_timeout, circuit_breaker, retry_with_backoff
 
+# Constant for shutdown grace period
+GRACE_SHUTDOWN_PERIOD = 5.0
+
 class ThreadPoolExhaustionError(Exception):
     """Error raised when the thread pool is exhausted and cannot accept new tasks."""
     pass
@@ -109,7 +112,7 @@ class QueueWorker:
                 self.tasks = []
             
             # Allow a grace period for cleanup before shutting down thread pool
-            await asyncio.sleep(self.config.worker.grace_shutdown_period)
+            await asyncio.sleep(GRACE_SHUTDOWN_PERIOD)
             
             # Shutdown thread pool
             if hasattr(self, '_thread_pool'):
@@ -358,7 +361,10 @@ class QueueWorker:
             if "timeout" in item and item["timeout"] is not None and "first_attempt_time" in item:
                 elapsed = time.time() - item["first_attempt_time"]
                 if elapsed > item["timeout"]:  # Only check if timeout is not None
-                    return await self._handle_timeout_exceeded(item, entity, operation_id, redis_client)
+                    return await self._handle_task_failure(
+                        item, entity, operation_id, queue, redis_client, worker_id,
+                        error_reason="Total timeout exceeded"
+                    )
             
             # Calculate effective timeout for async processors
             effective_timeout = self._calculate_effective_timeout(item)
@@ -375,22 +381,24 @@ class QueueWorker:
                         timeout=effective_timeout
                     )
                 else:
-                    # Sync processor - run in thread pool without timeout
+                    # Sync processor - run in thread pool
                     self.config.logger.debug(f"Running sync processor in thread pool")
                     try:
+                        # Try to submit to thread pool
                         result = await self._execute_sync_processor(
                             processor, entity, operation_id
                         )
-                    except ThreadPoolExhaustionError:
-                        # Thread pool exhausted - handle specially
-                        return await self._handle_pool_exhaustion(
-                            item, entity, operation_id, queue, redis_client, worker_id
+                    except ThreadPoolExhaustionError as e:
+                        # Thread pool exhaustion - handle as a normal failure with specific error
+                        return await self._handle_task_failure(
+                            item, entity, operation_id, queue, redis_client, worker_id,
+                            error_reason="Thread pool exhaustion"
                         )
                 
                 # Process was successful
                 self.config.logger.debug(f"Processor execution successful: {operation_id}")
                 
-                # CRITICAL: Update processed metric
+                # Update processed metric
                 self.config.metrics.update_metric('processed', logger=self.config.logger)
                 
                 # Execute success callback if present
@@ -422,19 +430,22 @@ class QueueWorker:
                 return True
                     
             except asyncio.TimeoutError:
-                # Only async processors can time out
-                self.config.logger.warning(f"Timeout in async processor (timeout={effective_timeout}s)")
-                return await self._handle_execution_timeout(
-                    item, entity, operation_id, effective_timeout, queue, redis_client, worker_id
+                # Async processor timeout - handle as a normal failure
+                return await self._handle_task_failure(
+                    item, entity, operation_id, queue, redis_client, worker_id,
+                    error_reason=f"Execution timed out after {effective_timeout}s"
                 )
                 
         except Exception as e:
             # Handle general processing error
             self.config.logger.error(f"Error in item handling: {e}", error_type=type(e).__name__)
-            return await self._handle_processing_exception(
-                e, item if 'item' in locals() else None,
+            return await self._handle_task_failure(
+                item if 'item' in locals() else None,
                 entity if 'entity' in locals() else None,
-                operation_id, worker_id, queue, redis_client, item_data
+                operation_id, queue, redis_client, 
+                worker_id,
+                error_reason=str(e),
+                item_data=item_data
             )
                 
         finally:
@@ -664,6 +675,168 @@ class QueueWorker:
         if not isinstance(queue_key, bytes):
             queue_key = queue_key.encode()
         return queue_key
+
+    async def _handle_task_failure(self, 
+                                 item: Optional[Dict[str, Any]], 
+                                 entity: Optional[Dict[str, Any]],
+                                 operation_id: str, 
+                                 queue: bytes, 
+                                 redis_client: Any,
+                                 worker_id: int,
+                                 error_reason: str = "Unknown error",
+                                 item_data: Optional[bytes] = None) -> bool:
+        """
+        Handle any task processing failure with unified retry logic.
+        
+        This replaces multiple separate handling methods with a single approach.
+        
+        Args:
+            item: Queue item that failed (if available)
+            entity: Entity that was being processed (if available)
+            operation_id: Operation ID for tracking
+            queue: Queue name
+            redis_client: Redis client
+            worker_id: Worker ID
+            error_reason: Reason for the failure
+            item_data: Raw item data (used if item parsing failed)
+            
+        Returns:
+            True if handling is complete
+        """
+        if not item:
+            # Handle case where item parsing failed
+            self.config.logger.error(
+                f"Error processing item from queue: {error_reason}",
+                worker_id=worker_id
+            )
+            
+            # Move to system errors queue if we have raw data
+            if item_data:
+                system_errors_queue = self._get_bytes_key('system_errors')
+                redis_client.lpush(system_errors_queue, item_data)
+                
+            return True
+            
+        # Increment attempt count
+        item["attempts"] = item.get("attempts", 0) + 1
+        
+        # If this is the first attempt with a timeout, record the start time
+        if "timeout" in item and item["timeout"] is not None and "first_attempt_time" not in item:
+            item["first_attempt_time"] = time.time()
+            
+        # Add failure details
+        item["last_error"] = error_reason
+        item["last_error_time"] = time.time()
+            
+        # Check if max attempts reached
+        max_attempts = item.get("max_attempts", self.config.retry.max_attempts)
+            
+        self.config.logger.debug(
+            f"Handling failure - attempt {item['attempts']} of {max_attempts}: {error_reason}",
+            operation_id=operation_id
+        )
+            
+        if item["attempts"] >= max_attempts:
+            # Maximum attempts reached - move to failures queue
+            item["failure_reason"] = error_reason
+                
+            # Update failure metrics
+            self.config.metrics.update_metric('failed', logger=self.config.logger)
+                
+            # Move to failures queue
+            failures_queue = self._get_bytes_key('failures')
+                
+            self.config.logger.debug(
+                f"Moving failed item to failures queue: {failures_queue}",
+                operation_id=operation_id
+            )
+                
+            redis_client.lpush(failures_queue, json.dumps(item, default=str).encode())
+                
+            # Execute failure callback if present
+            if "on_failure" in item and item["on_failure"]:
+                self.config.logger.debug(f"Executing failure callback {item.get('on_failure')}")
+                await self._execute_callback(
+                    item["on_failure"],
+                    item.get("on_failure_module"),
+                    {
+                        "entity": entity,
+                        "error": error_reason,
+                        "operation_id": operation_id
+                    }
+                )
+                
+            self.config.logger.error(
+                "Item moved to failures queue after max retries", 
+                operation_id=operation_id, 
+                worker_id=worker_id,
+                error=error_reason
+            )
+        else:
+            # Calculate next retry time using delays array or exponential backoff
+            if "delays" in item and isinstance(item["delays"], list) and len(item["delays"]) > 0:
+                # Use the stored delays array with bounds checking
+                index = min(item["attempts"] - 1, len(item["delays"]) - 1)
+                delay = item["delays"][index]
+                    
+                # Add jitter (±10%)
+                jitter = random.uniform(0.9, 1.1)
+                retry_delay = delay * jitter
+            else:
+                # Use exponential backoff from retry config
+                retry_delay = self.config.retry.get_delay_for_attempt(item["attempts"])
+                
+            # Set next retry time
+            item["next_retry_time"] = time.time() + retry_delay
+                
+            # Update retry metrics
+            self.config.metrics.update_metric('retried', logger=self.config.logger)
+                
+            # Check if total timeout would be exceeded
+            if ("timeout" in item and item["timeout"] is not None and 
+                "first_attempt_time" in item and 
+                item["next_retry_time"] - item["first_attempt_time"] > item["timeout"]):
+                
+                # Total timeout would be exceeded
+                item["failure_reason"] = "Total timeout would be exceeded by next retry"
+                    
+                # Update timeout metrics
+                self.config.metrics.update_metric('timeouts', logger=self.config.logger)
+                    
+                # Execute failure callback
+                if "on_failure" in item and item["on_failure"]:
+                    await self._execute_callback(
+                        item["on_failure"],
+                        item.get("on_failure_module"),
+                        {
+                            "entity": entity,
+                            "error": "Operation timed out after total retry period",
+                            "operation_id": operation_id
+                        }
+                    )
+                    
+                # Move to failures queue
+                failures_queue = self._get_bytes_key('failures')
+                redis_client.lpush(failures_queue, json.dumps(item, default=str).encode())
+                    
+                self.config.logger.error(
+                    "Item would exceed timeout, moved to failures queue", 
+                    operation_id=operation_id
+                )
+            else:
+                # Requeue with the updated next retry time
+                self.config.logger.warning(
+                    f"Item requeued after error: {error_reason}", 
+                    operation_id=operation_id, 
+                    worker_id=worker_id, 
+                    attempt=item['attempts'],
+                    next_retry=time.strftime('%H:%M:%S', time.localtime(item["next_retry_time"]))
+                )
+                    
+                # Add back to queue
+                redis_client.lpush(queue, json.dumps(item, default=str).encode())
+                
+        return True
     
     @retry_with_backoff(max_retries=3, base_delay=0.1, exceptions=(ImportError, AttributeError))
     async def _execute_callback(self, callback_name: str, callback_module: Optional[str] = None, data: Dict[str, Any] = None):
@@ -801,475 +974,3 @@ class QueueWorker:
                           callback_name=callback_name, 
                           error=e.to_string() if hasattr(e, "to_string") else str(e))
             return None
-            
-    # The following methods handle different error scenarios during processing
-            
-    async def _handle_timeout_exceeded(self, item: Dict[str, Any], entity: Dict[str, Any],
-                                     operation_id: str, redis_client: Any) -> bool:
-        """
-        Handle case where total timeout has been exceeded.
-        
-        Args:
-            item: Queue item
-            entity: Entity to process
-            operation_id: Operation ID
-            redis_client: Redis client
-            
-        Returns:
-            True if handling is complete
-        """
-        self.config.metrics.update_metric('timeouts', logger=self.config.logger)
-
-        # Add failure reason
-        item["failure_reason"] = "Total timeout reached"
-        
-        # Execute failure callback if present
-        if "on_failure" in item and item["on_failure"]:
-            await self._execute_callback(
-                item["on_failure"],
-                item.get("on_failure_module"),
-                {
-                    "entity": entity,
-                    "error": "Operation timed out after total retry period",
-                    "operation_id": operation_id
-                }
-            )
-        
-        # Move to failures queue
-        failures_queue = self._get_bytes_key('failures')
-        redis_client.lpush(failures_queue, json.dumps(item, default=str).encode())
-        
-        self.config.logger.debug(
-            "Moved item to failures queue due to total timeout", 
-            operation_id=operation_id
-        )
-        
-        return True
-    
-    async def _handle_execution_timeout(self, item: Dict[str, Any], entity: Dict[str, Any],
-                                      operation_id: str, effective_timeout: float,
-                                      queue: bytes, redis_client: Any, worker_id: int) -> bool:
-        """
-        Handle timeout during async processor execution.
-        
-        Args:
-            item: Queue item
-            entity: Entity to process
-            operation_id: Operation ID
-            effective_timeout: Timeout that was applied
-            queue: Queue name as bytes
-            redis_client: Redis client
-            worker_id: Worker ID
-            
-        Returns:
-            True if handling is complete
-        """
-        self.config.logger.warning(
-            "Async processor execution timed out", 
-            work_timeout=effective_timeout, 
-            operation_id=operation_id, 
-            worker_id=worker_id
-        )
-        
-        # Update timeout metrics
-        self.config.metrics.update_metric('timeouts', logger=self.config.logger)
-        
-        # Increment attempts count
-        item["attempts"] = item.get("attempts", 0) + 1
-        
-        # Check if max attempts reached
-        max_attempts = item.get("max_attempts", self.config.retry.max_attempts)
-        
-        self.config.logger.debug(
-            f"Timeout handling - attempt {item['attempts']} of {max_attempts}",
-            operation_id=operation_id
-        )
-        
-        if item["attempts"] >= max_attempts:
-            # Add failure reason
-            item["failure_reason"] = f"Execution timed out after {effective_timeout}s"
-            
-            # Move to failures queue and execute failure callback
-            failures_queue = self._get_bytes_key('failures')
-            item_json = json.dumps(item, default=str)
-            
-            self.config.logger.debug(
-                f"Moving timed out item to failures queue: {failures_queue}",
-                operation_id=operation_id
-            )
-            
-            redis_client.lpush(failures_queue, item_json.encode())
-            
-            # Execute failure callback if present
-            if "on_failure" in item and item["on_failure"]:
-                self.config.logger.debug(f"Executing failure callback {item.get('on_failure')}")
-                await self._execute_callback(
-                    item["on_failure"],
-                    item.get("on_failure_module"),
-                    {
-                        "entity": entity,
-                        "error": "Operation timed out after reaching max attempts",
-                        "operation_id": operation_id
-                    }
-                )
-            
-            return True
-        
-        # Calculate next retry time using delays array or exponential backoff
-        if "delays" in item and isinstance(item["delays"], list) and len(item["delays"]) > 0:
-            # Use the stored delays array with bounds checking
-            index = min(item["attempts"] - 1, len(item["delays"]) - 1)
-            delay = item["delays"][index]
-            
-            # Add jitter (±10%)
-            jitter = random.uniform(0.9, 1.1)
-            retry_delay = delay * jitter
-        else:
-            # Use exponential backoff from retry config
-            retry_delay = self.config.retry.get_delay_for_attempt(item["attempts"])
-        
-        # Set next retry time
-        item["next_retry_time"] = time.time() + retry_delay
-        
-        # Update retry metrics
-        self.config.metrics.update_metric('retried', logger=self.config.logger)
-        
-        # Check if next retry would exceed total timeout
-        if "timeout" in item and item["timeout"] is not None and "first_attempt_time" in item:
-            if item["next_retry_time"] - item["first_attempt_time"] > item["timeout"]:
-                return await self._handle_would_exceed_timeout(item, entity, operation_id, redis_client)
-        
-        # Requeue with the updated next retry time
-        self.config.logger.warning(
-            "Item requeued after timeout", 
-            operation_id=operation_id, 
-            worker_id=worker_id, 
-            attempt=item['attempts']
-        )
-        
-        # Add back to queue
-        redis_client.lpush(queue, json.dumps(item, default=str).encode())
-        return True
-    
-    async def _handle_pool_exhaustion(self, item: Dict[str, Any], entity: Dict[str, Any],
-                                   operation_id: str, queue: bytes, redis_client: Any,
-                                   worker_id: int) -> bool:
-        """
-        Handle thread pool exhaustion for a sync processor.
-        
-        Args:
-            item: Queue item
-            entity: Entity to process
-            operation_id: Operation ID for logging
-            queue: Queue name as bytes
-            redis_client: Redis client
-            worker_id: Worker ID
-            
-        Returns:
-            True if handling is complete
-        """
-        # Increment attempt count
-        item["attempts"] = item.get("attempts", 0) + 1
-        
-        # Check if max attempts reached
-        max_attempts = item.get("max_attempts", self.config.worker.max_requeue_attempts)
-        if item["attempts"] >= max_attempts:
-            # Add failure reason
-            item["failure_reason"] = "Thread pool exhaustion after max retries"
-            
-            # Move to failures queue
-            failures_queue = self._get_bytes_key('failures')
-            redis_client.lpush(failures_queue, json.dumps(item, default=str).encode())
-            
-            # Execute failure callback if present
-            if "on_failure" in item and item["on_failure"]:
-                await self._execute_callback(
-                    item["on_failure"],
-                    item.get("on_failure_module"),
-                    {
-                        "entity": entity,
-                        "error": "Thread pool exhaustion after max retries",
-                        "operation_id": operation_id
-                    }
-                )
-            
-            self.config.logger.error(
-                "Item moved to failures queue due to thread pool exhaustion", 
-                operation_id=operation_id, 
-                worker_id=worker_id,
-                attempts=item["attempts"]
-            )
-        else:
-            # Calculate next retry time using delays array or exponential backoff
-            if "delays" in item and item["delays"]:
-                # Use the stored delays array with bounds checking
-                index = min(item["attempts"] - 1, len(item["delays"]) - 1)
-                delay = item["delays"][index]
-                
-                # Add jitter (±10%)
-                jitter = random.uniform(0.9, 1.1)
-                retry_delay = delay * jitter
-            else:
-                # Use exponential backoff from retry config
-                retry_delay = self.config.retry.get_delay_for_attempt(item["attempts"])
-            
-            # Set next retry time
-            item["next_retry_time"] = time.time() + retry_delay
-            
-            # Update retry metrics
-            self.config.metrics.update_metric('retried', logger=self.config.logger)
-            
-            # Check if total timeout would be exceeded
-            if "timeout" in item and item["timeout"] is not None and "first_attempt_time" in item:
-                if item["next_retry_time"] - item["first_attempt_time"] > item["timeout"]:
-                    # Total timeout would be exceeded
-                    return await self._handle_would_exceed_timeout(item, entity, operation_id, redis_client)
-            
-            # Requeue with the updated next retry time
-            self.config.logger.warning(
-                "Thread pool exhausted, requeuing item", 
-                operation_id=operation_id, 
-                worker_id=worker_id, 
-                attempt=item["attempts"],
-                next_retry=time.strftime('%H:%M:%S', time.localtime(item["next_retry_time"]))
-            )
-            
-            # Add back to queue
-            redis_client.lpush(queue, json.dumps(item, default=str).encode())
-        
-        return True
-    
-    async def _handle_would_exceed_timeout(self, item: Dict[str, Any], entity: Dict[str, Any],
-                                         operation_id: str, redis_client: Any) -> bool:
-        """
-        Handle case where next retry would exceed total timeout.
-        
-        Args:
-            item: Queue item
-            entity: Entity to process
-            operation_id: Operation ID
-            redis_client: Redis client
-            
-        Returns:
-            True if handling is complete
-        """
-        # Add failure reason
-        item["failure_reason"] = "Total timeout would be exceeded by next retry"
-        
-        # Update timeout metrics
-        self.config.metrics.update_metric('timeouts', logger=self.config.logger)
-        
-        # Execute failure callback if present
-        if "on_failure" in item and item["on_failure"]:
-            await self._execute_callback(
-                item["on_failure"],
-                item.get("on_failure_module"),
-                {
-                    "entity": entity,
-                    "error": "Operation timed out after total retry period",
-                    "operation_id": operation_id
-                }
-            )
-        
-        # Move to failures queue
-        failures_queue = self._get_bytes_key('failures')
-        redis_client.lpush(failures_queue, json.dumps(item, default=str).encode())
-        
-        self.config.logger.error(
-            "Item would exceed timeout, moved to failures queue", 
-            operation_id=operation_id
-        )
-        
-        return True
-    
-    async def _handle_processing_exception(self, exception: Exception, 
-                                   item: Optional[Dict[str, Any]], 
-                                   entity: Optional[Dict[str, Any]],
-                                   operation_id: str, worker_id: int, 
-                                   queue: bytes, redis_client: Any,
-                                   item_data: Optional[bytes] = None) -> bool:
-        """
-        Handle general processing exception.
-        
-        Args:
-            exception: The exception that occurred
-            item: Queue item if available
-            entity: Entity to process if available
-            operation_id: Operation ID
-            worker_id: Worker ID
-            queue: Queue name as bytes
-            redis_client: Redis client
-            item_data: Raw item data (used if item parsing failed)
-            
-        Returns:
-            True if handling is complete
-        """
-        self.config.logger.error(
-            f"Processing exception: {exception}",
-            operation_id=operation_id,
-            worker_id=worker_id,
-            error_type=type(exception).__name__
-        )
-        
-        if item:
-            # Increment attempt count
-            item["attempts"] = item.get("attempts", 0) + 1
-            
-            # If this is the first attempt with a timeout, record the start time
-            if "timeout" in item and item["timeout"] is not None and "first_attempt_time" not in item:
-                item["first_attempt_time"] = time.time()
-            
-            # Check if max attempts reached
-            max_attempts = item.get("max_attempts", self.config.retry.max_attempts)
-            
-            self.config.logger.debug(
-                f"Handling exception - attempt {item['attempts']} of {max_attempts}",
-                operation_id=operation_id
-            )
-            
-            if item["attempts"] >= max_attempts:
-                # Add failure reason
-                item["failure_reason"] = exception.to_string() if hasattr(exception, "to_string") else str(exception)
-                
-                # Update failure metrics
-                self.config.metrics.update_metric('failed', logger=self.config.logger)
-                
-                # Move to failures queue
-                failures_queue = self._get_bytes_key('failures')
-                
-                self.config.logger.debug(
-                    f"Moving failed item to failures queue: {failures_queue}",
-                    operation_id=operation_id
-                )
-                
-                redis_client.lpush(failures_queue, json.dumps(item, default=str).encode())
-                
-                # Execute failure callback if present
-                if "on_failure" in item and item["on_failure"]:
-                    self.config.logger.debug(f"Executing failure callback {item.get('on_failure')}")
-                    await self._execute_callback(
-                        item["on_failure"],
-                        item.get("on_failure_module"),
-                        {
-                            "entity": entity,
-                            "error": item["failure_reason"],
-                            "operation_id": operation_id
-                        }
-                    )
-                
-                self.config.logger.error(
-                    "Item moved to failures queue after max retries", 
-                    operation_id=operation_id, 
-                    worker_id=worker_id,
-                    error=item["failure_reason"]
-                )
-            else:
-                # Calculate next retry time using delays array or exponential backoff
-                if "delays" in item and isinstance(item["delays"], list) and len(item["delays"]) > 0:
-                    # Use the stored delays array with bounds checking
-                    index = min(item["attempts"] - 1, len(item["delays"]) - 1)
-                    delay = item["delays"][index]
-                    
-                    # Add jitter (±10%)
-                    jitter = random.uniform(0.9, 1.1)
-                    retry_delay = delay * jitter
-                else:
-                    # Use exponential backoff from retry config
-                    retry_delay = self.config.retry.get_delay_for_attempt(item["attempts"])
-                
-                # Set next retry time
-                item["next_retry_time"] = time.time() + retry_delay
-                
-                # Update retry metrics
-                self.config.metrics.update_metric('retried', logger=self.config.logger)
-                
-                # Check if total timeout would be exceeded
-                if ("timeout" in item and item["timeout"] is not None and 
-                    "first_attempt_time" in item and 
-                    item["next_retry_time"] - item["first_attempt_time"] > item["timeout"]):
-                    
-                    return await self._handle_would_exceed_timeout(item, entity, operation_id, redis_client)
-                
-                # Requeue with the updated next retry time
-                self.config.logger.warning(
-                    "Item requeued after error", 
-                    operation_id=operation_id, 
-                    worker_id=worker_id, 
-                    attempt=item['attempts'],
-                    error=str(exception)
-                )
-                
-                # Add back to queue
-                redis_client.lpush(queue, json.dumps(item, default=str).encode())
-                
-            return True
-        else:
-            # Handle case where item is not available (e.g., JSON parse error)
-            self.config.logger.error(
-                "Error processing item from queue", 
-                error=str(exception), 
-                worker_id=worker_id
-            )
-            
-            # Move to system errors queue if we have item data
-            if item_data:
-                system_errors_queue = self._get_bytes_key('system_errors')
-                redis_client.lpush(system_errors_queue, item_data)
-                
-            return True
-            
-    def _find_test_callback(self, callback_name: str) -> Optional[Callable]:
-        """
-        Special method to find a callback function in test modules.
-        This is particularly helpful for test functions defined locally in test files.
-        
-        Args:
-            callback_name: Name of the callback function to find
-            
-        Returns:
-            Callback function or None if not found
-        """
-        self.config.logger.debug(f"Looking for test callback: {callback_name}")
-        
-        # Try common test module names
-        test_modules = [
-            "python.queue.tests.test_queue_system",
-            "test_queue_system",
-            "python.queue.tests"
-        ]
-        
-        for module_name in test_modules:
-            try:
-                # Try importing the module
-                module = importlib.import_module(module_name)
-                
-                # Check if the callback is in the module
-                if hasattr(module, callback_name):
-                    callback = getattr(module, callback_name)
-                    if callable(callback):
-                        self.config.logger.debug(f"Found callback in test module: {module_name}")
-                        return callback
-            except ImportError:
-                continue
-        
-        # Check global scope
-        if callback_name in globals():
-            callback = globals()[callback_name]
-            if callable(callback):
-                self.config.logger.debug(f"Found callback in globals: {callback_name}")
-                return callback
-        
-        # Check current frame and parent frames
-        import inspect
-        frame = inspect.currentframe()
-        while frame:
-            if callback_name in frame.f_locals:
-                callback = frame.f_locals[callback_name]
-                if callable(callback):
-                    self.config.logger.debug(f"Found callback in local frame: {callback_name}")
-                    return callback
-            frame = frame.f_back
-        
-        # Not found
-        self.config.logger.warning(f"Test callback not found: {callback_name}")
-        return None

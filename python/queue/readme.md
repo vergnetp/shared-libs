@@ -29,37 +29,28 @@ pip install asyncio concurrent.futures
 
 ## Main API
 
-You will create a `QueueManager` that takes some config, and you can then `enqueue` some tasks (i.e. a processing functon and some data to process).
-You wil also create a `QueueWorker` that will take teh same config and that you will `start` and `stop` in the background, to actualy perform the tasks and empty the queue.
+You will create a `QueueManager` that takes some config, and you can then `enqueue` some tasks (i.e. a processing function and some data to process).
+You will also create a `QueueWorker` that will take the same config and that you will `start` and `stop` in the background, to actually perform the tasks and empty the queue.
 
 ## Configuration
 
-The configuration encompass the queueing system itself (redis) with a `QueueRedisConfig`, the worker  with `QueueWorkerConfig` and the way to handle retries in the processing of the task (`QueueRetryConfig`).
+The configuration encompasses the queueing system itself (redis) with a `QueueRedisConfig`, the worker with `QueueWorkerConfig` and the way to handle retries in the processing of the task (`QueueRetryConfig`).
 
-There are also some logging and diagnostic metrics configuraion (`QueueLoggingConfig` and `QueueMetricsConfig`).
+There are also some logging and diagnostic metrics configuration (`QueueLoggingConfig` and `QueueMetricsConfig`).
 
+| What | Configuration | Description |
+|------|--------------|-------------|
+| **Redis Connection** | `QueueRedisConfig.connection_timeout`<br>`QueueRedisConfig.max_connection_retries` | Controls connection timeouts and retries when interacting with Redis. Applies to all Redis operations. |
+| **Per-attempt Processing Timeout** | `QueueWorkerConfig.work_timeout` | Maximum time allowed for a single processing attempt. Applied to async processors using `asyncio.wait_for()`. Sync processors run without timeout in thread pool. |
+| **Retry Policy** | `QueueRetryConfig` passed during enqueue<br>- `max_attempts`<br>- `delays`<br>- `timeout` | Controls how many times processing is attempted after failures, the delay between attempts, and optional maximum total time for all retries. When not specified during enqueue, falls back to system defaults. |
+| **Thread Pool** | `QueueWorkerConfig.thread_pool_size` | Controls how many sync processors can run concurrently. |
 
+### Key Points:
 
-
-
-
-|Operation|Per-attempt Timeout|Total/Overall Timeout|Retry strategy|
-|--|--|--|--|
-|Redis connection|`QueueRedisConfig.connection_timeout` (per operation)|None - only individual operations have timeouts|Uses `retry_with_backoff` decorator with `max_retries=QueueRedisConfig.max_connection_retries`. After that, uses circuit breaker pattern with `circuit_breaker_threshold` failures before opening.|
-|Single task enqueuing|`QueueRedisConfig.connection_timeout` (per enqueue operation)|None - only the individual enqueue operation has a timeout|Uses `try_catch` decorator, which doesn't implement retries. Redis errors here may be handled by the Redis client's internal retry mechanism.|
-|Batch tasks enqueuing|`QueueRedisConfig.connection_timeout` (per batch operation)|None - only the batch operation itself has a timeout|Similar to single task, uses `try_catch` decorator without explicit retries.|
-|Task processing (async)|`QueueWorkerConfig.work_timeout` or remaining time from task's total timeout, whichever is smaller (applied per attempt using `asyncio.wait_for`)|`QueueRetryConfig.timeout` from enqueue - if not specified, no overall timeout is enforced across attempts|1. System tries up to `QueueRetryConfig.max_attempts` times (from enqueue) or if not specified, uses default from QueueConfig initialization.<br>2. Between retries, waits for delay specified in `QueueRetryConfig.delays` array (from enqueue) or if not specified, generates exponential delays.<br>3. Will stop retrying if total elapsed time exceeds `timeout` value (if specified).|
-|Task processing (sync)|No direct per-attempt timeout - runs in thread pool which doesn't support interruption.|Same overall `QueueRetryConfig.timeout` behavior as async tasks|Same retry configuration as async processors, plus additional handling for thread pool exhaustion where operation is requeued up to `QueueWorkerConfig.max_requeue_attempts` times with exponential backoff.|
-|Callback|No default timeout. If callback has `@with_timeout` decorator, that applies independently.|None - callbacks don't have an overall timeout mechanism|No default retry. If callback has `@retry_with_backoff` decorator, that applies independently up to its max_retries limit.|
-|Thread pool exhaustion|N/A - not a timeout situation|N/A - separate mechanism|When thread pool is full, operation is requeued with up to `QueueWorkerConfig.max_requeue_attempts` attempts (default 3), using exponential backoff.|
-
-
-
-
-
-
-Best not to add `@with_timeout` or `@retry_with_backoff` decorator to the processing functions and let the Queue module handle them.
-They are however welcome on callbacks.
+* All processor failures (including thread pool exhaustion) use the same retry policy
+* Tasks are retried with the specified delays between attempts
+* If `timeout` is specified, retries stop once elapsed time exceeds this value
+* For optimal resource usage, use queue-level retries (not processor-level decorators) for delays > 1 second
 
 ```python
 from queue import (
@@ -87,9 +78,7 @@ redis_config = QueueRedisConfig(
 worker_config = QueueWorkerConfig(
     worker_count=5,                          # 5 concurrent worker tasks
     thread_pool_size=20,                     # 20 threads for sync processors
-    work_timeout=30.0,                       # 30 second default timeout (per processing attempt)
-    grace_shutdown_period=5.0,               # 5 second wait during shutdown
-    max_requeue_attempts=3                   # Max attempts on thread pool exhaustion
+    work_timeout=30.0,                       # 30 second default timeout
 )
 
 # Create retry configuration with all parameters
@@ -148,12 +137,21 @@ def sync_processor(data):
 async def on_success(data):
     print(f"Successfully processed: {data['result']}")
 
+# Create retry configuration
+retry_config = QueueRetryConfig.exponential(
+    max_attempts=3,
+    min_delay=1.0,
+    max_delay=30.0,
+    timeout=120
+)
+
 # Enqueue operations
 queue.enqueue(
     entity={"user_id": "123", "action": "update"},
     processor=async_processor,
     priority="high",
-    on_success=on_success
+    on_success=on_success,
+    retry_config=retry_config.to_dict()  # Convert to dict for enqueueing
 )
 
 # Start the worker
@@ -170,6 +168,71 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
+## ⚠️ Important: Processor Function Design
+
+### Avoid Using Decorators on Processor Functions
+
+We recommend **not** using `@with_timeout` or `@retry_with_backoff` decorators directly on processor functions for the following reasons:
+
+1. **Conflicting Timeout Mechanisms**: 
+   - The queue worker already applies timeouts to async processor functions
+   - Additional timeout decorators can cause confusing behavior or race conditions
+
+2. **Redundant Retry Mechanisms**:
+   - The queue system has a robust retry system with backoff, custom delays, and failure tracking
+   - Function-level retries can interfere with the queue's retry mechanism and metrics
+
+3. **Worker Efficiency**:
+   - When using processor-level retries with long delays, worker tasks remain allocated but idle
+   - This blocks the worker from processing other tasks, reducing system throughput
+   - With queue-level retries, workers remain available during retry delays
+
+### Best Practices for Resilient Processors
+
+Instead of decorating processor functions, use these approaches:
+
+1. **Use Queue-Level Retry Configuration**:
+   ```python
+   # Configure retries when enqueueing
+   retry_config = QueueRetryConfig.exponential(
+       max_attempts=5,
+       min_delay=1.0,
+       max_delay=30.0
+   )
+   
+   queue.enqueue(
+       entity=data,
+       processor=my_processor,
+       retry_config=retry_config.to_dict()
+   )
+   ```
+
+2. **For Internal Resilience**: If you need internal retries for specific operations within your processor, keep them short and focused:
+
+   ```python
+   async def my_processor(data):
+       # Use decorators on internal functions, not the processor itself
+       result = await call_external_service_with_retry(data)
+       return process_result(result)
+       
+   @retry_with_backoff(max_retries=2, base_delay=0.1)  # Short, quick retries
+   async def call_external_service_with_retry(data):
+       # API calls or other operations that might need quick retries
+       return await api.call(data)
+   ```
+
+3. **Design Processors to Fail Fast**: Make processors detect permanent failures quickly and let the queue system handle retrying:
+
+   ```python
+   async def well_designed_processor(data):
+       # Validate inputs first to fail fast on invalid data
+       if not validate_data(data):
+           raise ValueError("Invalid data - will not retry")
+           
+       # Proceed with processing for valid data
+       # ...
+   ```
 
 ## Architecture Overview
 
@@ -202,8 +265,6 @@ worker_config = QueueWorkerConfig(
     worker_count=5,                  # Number of concurrent worker tasks
     thread_pool_size=20,             # Maximum threads for sync processors
     work_timeout=30.0,               # Default timeout for processing operations
-    grace_shutdown_period=5.0,       # Time to wait for clean shutdown
-    max_requeue_attempts=3           # Max retries on thread pool exhaustion
 )
 ```
 
@@ -215,19 +276,6 @@ retry_config = QueueRetryConfig(
     delays=[1, 2, 4, 8, 16],         # Retry delays in seconds
     timeout=300                      # Total timeout for all retries
 )
-```
-
-### 4. Processor Timeouts
-
-When defining a processor, you can add a timeout decorator:
-
-```python
-from resilience import with_timeout
-
-@with_timeout(default_timeout=60.0)  # Processor-specific timeout
-async def long_running_processor(data):
-    # Process data
-    return result
 ```
 
 ## Thread Pool for Synchronous Processors
@@ -242,21 +290,8 @@ The system handles different types of processors differently:
 
 ### Sync Processors
 - Executed in a dedicated thread pool
-- Thread pool manages concurrency and prevents worker exhaustion
-- Thread pool metrics are tracked for monitoring
-- If thread pool is exhausted, tasks are requeued with backoff
-
-## Thread Pool Exhaustion Handling
-
-When the thread pool is exhausted (all threads busy):
-
-1. Task requeued with exponential backoff
-2. Metrics updated to track thread pool exhaustion
-3. After max retries, task moved to failures queue
-
-This approach ensures:
-- Predictable resource usage (fixed thread pool size)
-- Clear failure modes (thread pool exhaustion is tracked and handled)
+- Thread pool manages concurrency
+- If thread pool is exhausted, task is treated as a failure and retried with normal retry policy
 
 ## Retry Configuration
 
@@ -381,26 +416,18 @@ The system processes queues in strict priority order:
 
 ## Exception Handling and Retry Flow
 
-1. **Redis Connection Errors**:
-   - Retry with exponential backoff via `retry_with_backoff`
-   - Circuit breaker prevents repeated attempts when Redis is down
-   - After max retries, exception propagates to caller
+All failures, regardless of cause, follow the same pattern:
 
-2. **Operation Execution Errors**:
-   - Processor exceptions are caught and retry is attempted
-   - Retry delay follows configured schedule (exponential, fixed, or custom)
-   - After max retries, operation moved to failures queue
-   - Failure callback executed if configured
+1. Increment attempt count
+2. Check if max attempts reached:
+   - If yes, move to failures queue and execute failure callback
+   - If no, calculate next retry time and requeue with appropriate delay
 
-3. **Timeouts**:
-   - Async processor timeouts trigger retry with backoff
-   - Timeout counter incremented in metrics
-   - After max retries or total timeout exceeded, operation moved to failures queue
-
-4. **Thread Pool Exhaustion**:
-   - Operation requeued with backoff
-   - Thread pool exhaustion counter incremented
-   - After max requeue attempts, operation moved to failures queue
+The system handles these failure types consistently:
+- Processor exceptions
+- Async processor timeouts
+- Thread pool exhaustion
+- Total timeout exceeded
 
 ## Scaling Guidelines
 
@@ -485,7 +512,7 @@ Configure workers based on your workload:
 
 Set up alerts for critical metrics:
 
-- Thread pool exhaustion rate > 5%
+- Thread pool utilization > 80%
 - Worker task failures
 - Growing failure queue size
 - Increasing retry counts
@@ -589,11 +616,7 @@ Worker for processing queued operations - started at app startup.
 | | `_calculate_effective_timeout` | `item: Dict[str, Any]` | `float` | Processing | Calculate the effective timeout for an async processor execution. |
 | | `_execute_sync_processor` | `processor: Callable`, `entity: Dict[str, Any]`, `operation_id: str` | `Any` | Processing | Execute a synchronous processor in the thread pool with exhaustion handling. |
 | | `_update_thread_metrics` | `start_time: float` | | Metrics | Update metrics related to thread pool usage. |
-| | `_handle_pool_exhaustion` | `item: Dict[str, Any]`, `entity: Dict[str, Any]`, `operation_id: str`, `queue: bytes`, `redis: Any`, `worker_id: int` | `bool` | Error Handling | Handle thread pool exhaustion for a sync processor. |
-| | `_handle_timeout_exceeded` | `item: Dict[str, Any]`, `entity: Dict[str, Any]`, `operation_id: str`, `redis: Any` | `bool` | Error Handling | Handle case where total timeout has been exceeded. |
-| | `_handle_execution_timeout` | `item: Dict[str, Any]`, `entity: Dict[str, Any]`, `operation_id: str`, `effective_timeout: float`, `queue: bytes`, `redis: Any`, `worker_id: int` | `bool` | Error Handling | Handle timeout during async processor execution. |
-| | `_handle_would_exceed_timeout` | `item: Dict[str, Any]`, `entity: Dict[str, Any]`, `operation_id: str`, `redis: Any` | `bool` | Error Handling | Handle case where next retry would exceed total timeout. |
-| | `_handle_processing_exception` | `exception: Exception`, `item: Optional[Dict[str, Any]]`, `entity: Optional[Dict[str, Any]]`, `operation_id: str`, `worker_id: int`, `queue: bytes`, `redis: Any`, `item_data: Optional[bytes] = None` | `bool` | Error Handling | Handle general processing exception. |
+| | `_handle_task_failure` | `item: Optional[Dict[str, Any]]`, `entity: Optional[Dict[str, Any]]`, `operation_id: str`, `queue: bytes`, `redis_client: Any`, `worker_id: int`, `error_reason: str = "Unknown error"`, `item_data: Optional[bytes] = None` | `bool` | Error Handling | Unified error handler for all task failures regardless of cause. |
 | `@retry_with_backoff` | `_execute_callback` | `callback_name`, `callback_module`, `data` | | Callbacks | Execute a callback function, handling both async and sync callbacks. |
 
 </details>
@@ -633,6 +656,37 @@ Configuration for retry behavior in queue operations.
 | | `__init__` | `max_attempts: int = 5`, `delays: Optional[List[float]] = None`, `timeout: Optional[float] = None` | | Initialization | Initialize retry configuration. |
 | | `_generate_exponential_delays` | | `List[float]` | Utilities | Generate exponential backoff delays with fixed parameters. |
 | | `_validate_config` | | | Validation | Validate retry configuration parameters. |
+
+</details>
+
+<br>
+
+</div>
+
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
+
+### class `QueueWorkerConfig`
+
+Configuration for worker execution and thread pool.
+
+<details>
+<summary><strong>Public Methods</strong></summary>
+
+| Decorators | Method | Args | Returns | Category | Description |
+|------------|--------|------|---------|----------|-------------|
+| | `to_dict` | | `Dict[str, Any]` | Serialization | Convert configuration to dictionary. |
+
+</details>
+
+<br>
+
+<details>
+<summary><strong>Private/Internal Methods</strong></summary>
+
+| Decorators | Method | Args | Returns | Category | Description |
+|------------|--------|------|---------|----------|-------------|
+| | `__init__` | `worker_count: int = 5`, `thread_pool_size: int = 20`, `work_timeout: float = 30.0` | | Initialization | Initialize worker configuration. |
+| | `_validate_config` | | | Validation | Validate worker configuration parameters. |
 
 </details>
 
@@ -701,37 +755,6 @@ Configuration for metrics collection and reporting.
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
 | | `__init__` | `enabled: bool = True`, `log_threshold: float = 0.1` | | Initialization | Initialize metrics configuration. |
-
-</details>
-
-<br>
-
-</div>
-
-<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
-
-### class `QueueWorkerConfig`
-
-Configuration for worker execution and thread pool.
-
-<details>
-<summary><strong>Public Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `to_dict` | | `Dict[str, Any]` | Serialization | Convert configuration to dictionary. |
-
-</details>
-
-<br>
-
-<details>
-<summary><strong>Private/Internal Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `__init__` | `worker_count: int = 5`, `thread_pool_size: int = 20`, `work_timeout: float = 30.0`, `grace_shutdown_period: float = 5.0`, `max_requeue_attempts: int = 3` | | Initialization | Initialize worker configuration. |
-| | `_validate_config` | | | Validation | Validate worker configuration parameters. |
 
 </details>
 

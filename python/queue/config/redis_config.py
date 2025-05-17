@@ -47,11 +47,9 @@ class QueueRedisConfig:
         self.url = url
         self.client = client
         self.connection_timeout = connection_timeout
-        self.max_connection_retries = max_connection_retries
         self.circuit_breaker_threshold = circuit_breaker_threshold
         self.circuit_recovery_timeout = circuit_recovery_timeout
-        self.key_prefix = key_prefix
-        self.backup_ttl = backup_ttl
+        self.key_prefix = key_prefix   
         
         # Define queue priority prefixes
         self.queue_prefixes = {
@@ -174,8 +172,7 @@ class QueueRedisConfig:
             "max_connection_retries": self.max_connection_retries,
             "circuit_breaker_threshold": self.circuit_breaker_threshold,
             "circuit_recovery_timeout": self.circuit_recovery_timeout,
-            "key_prefix": self.key_prefix,
-            "backup_ttl": self.backup_ttl
+            "key_prefix": self.key_prefix        
         }
     
     def _mask_connection_url(self, url: str) -> str:
