@@ -2,6 +2,7 @@ import threading
 import math
 import redis
 from typing import Optional, Dict, Any, Callable, List
+from ..resilience import circuit_breaker, retry_with_backoff
 
 class SimpleLogger:
     @staticmethod
@@ -107,6 +108,8 @@ class QueueConfig:
             'failures': f"{self.queue_prefix}failures",  # Queue for ops that consistently failed to execute
         }
     
+    @circuit_breaker(name="redis_connection", failure_threshold=3, recovery_timeout=10.0)
+    @retry_with_backoff(max_retries=3, base_delay=0.5, exceptions=(redis.RedisError, ConnectionError))
     def _ensure_redis_sync(self, retry_count=None):
         """
         Ensure Redis client is initialized with retry logic.
@@ -125,28 +128,13 @@ class QueueConfig:
             
         with self._redis_lock:
             if self.redis_client is None:
-                last_error = None
-                for attempt in range(retry_count):
-                    try:
-                        # Use synchronous Redis client with timeout
-                        self.redis_client = redis.Redis.from_url(
-                            self.redis_url, 
-                            socket_timeout=self.connection_timeout
-                        )
-                        # Test the connection
-                        self.redis_client.ping()
-                        return self.redis_client
-                    except (redis.RedisError, ConnectionError) as e:
-                        last_error = e
-                        if attempt < retry_count - 1:
-                            # Exponential backoff: 0.5s, 1s, 2s, ...
-                            import time
-                            time.sleep(0.5 * (2 ** attempt))
-                
-                # If we get here, all retries failed
-                error_msg = f"Could not connect to Redis after {retry_count} attempts: {last_error}"
-                self.logger.error(error_msg)
-                raise ConnectionError(error_msg)
+                # Use synchronous Redis client with timeout
+                self.redis_client = redis.Redis.from_url(
+                    self.redis_url, 
+                    socket_timeout=self.connection_timeout
+                )
+                # Test the connection
+                self.redis_client.ping()
             return self.redis_client
     
     def get_queue_key(self, queue_name: str, priority: str = "normal") -> str:
@@ -347,27 +335,23 @@ class QueueConfig:
                     self._logging_lock.release()
 
     def get_metrics(self) -> Dict[str, Any]:
-        """
-        Get current metrics with enhanced details.
-        
-        Returns:
-            Dict of metric names and values, including computed fields
-        """
         with self._metrics_lock:
             # Create a copy of the metrics
             metrics = self._metrics.copy()
             
             # Add some computed metrics
-            if metrics['enqueued'] > 0:
-                metrics['success_rate'] = (metrics['processed'] - metrics['failed']) / metrics['enqueued'] * 100
+            if 'enqueued' in metrics and metrics['enqueued'] > 0:
+                processed = metrics.get('processed', 0)
+                failed = metrics.get('failed', 0)
+                metrics['success_rate'] = (processed - failed) / metrics['enqueued'] * 100
             else:
                 metrics['success_rate'] = 0
                 
             # Add error breakdown percentage
-            total_errors = metrics['errors'] if 'errors' in metrics else 0
+            total_errors = metrics.get('errors', 0)
             if total_errors > 0:
                 metrics['error_breakdown'] = {
-                    'timeouts': (metrics['timeouts'] / total_errors) * 100,
+                    'timeouts': (metrics.get('timeouts', 0) / total_errors) * 100,
                     'redis': (metrics.get('redis_errors', 0) / total_errors) * 100,
                     'validation': (metrics.get('validation_errors', 0) / total_errors) * 100,
                     'general': (metrics.get('general_errors', 0) / total_errors) * 100

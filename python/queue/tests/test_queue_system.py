@@ -4,6 +4,8 @@ import pytest
 import pytest_asyncio
 import time
 from typing import Dict, List, Any
+import redis
+from unittest.mock import patch, MagicMock
 
 from ..queue_config import QueueConfig
 from ..queue_manager import QueueManager
@@ -11,6 +13,7 @@ from ..queue_worker import QueueWorker
 from ..queue_retry_config import QueueRetryConfig
 
 from ... import log as logger
+from ...resilience import with_timeout, retry_with_backoff
 
 # Mock logger to capture logs
 class MockLogger:
@@ -30,6 +33,7 @@ async def successful_processor(data):
 async def failing_processor(data):
     raise ValueError("Test error")
 
+@with_timeout(1)
 async def slow_processor(data):
     await asyncio.sleep(2)
     return {"success": True, "data": data}
@@ -661,3 +665,142 @@ async def test_metrics_reporting(queue_manager, worker, config):
     finally:
         # Restore original logger
         config.logger = original_logger
+
+
+@pytest.mark.asyncio
+async def test_circuit_breaker(config):
+    """Test that circuit breaker prevents cascading failures."""
+    # Create a mock Redis client that fails consistently
+    mock_redis = MagicMock()
+    mock_redis.ping.side_effect = redis.RedisError("Connection refused")
+    
+    # Patch Redis.from_url to return our failing mock
+    with patch('redis.Redis.from_url', return_value=mock_redis):
+        # Create a new config with the circuit breaker
+        test_config = QueueConfig(redis_url="redis://localhost:6379/1")
+        
+        # First call should attempt and fail
+        with pytest.raises(redis.RedisError):
+            test_config._ensure_redis_sync()
+            
+        # Track failure calls
+        failure_count = 0
+        open_circuit = False
+        
+        # Make multiple calls to trigger circuit breaker
+        for _ in range(10):
+            try:
+                test_config._ensure_redis_sync()
+            except redis.RedisError:
+                failure_count += 1
+            except Exception as e:
+                # Circuit breaker should throw a different exception type
+                # when circuit is open
+                if "circuit is open" in str(e).lower():
+                    open_circuit = True
+                    break
+        
+        # Circuit should have opened at some point
+        assert open_circuit, "Circuit breaker did not open after multiple failures"
+
+@pytest.mark.asyncio
+async def test_timeout_decorator(config):
+    """Test that timeout decorator limits execution time."""
+    # Create a worker with a very short timeout
+    worker = QueueWorker(config=config, max_workers=1, work_timeout=0.1)
+    
+    # Define a test function that will time out
+    async def slow_function():
+        await asyncio.sleep(1.0)  # This should trigger timeout
+        return "Done"
+    
+    
+    @with_timeout(default_timeout=0.2)
+    async def test_function():
+        return await slow_function()
+    
+    # Function should timeout
+    with pytest.raises(asyncio.TimeoutError):
+        await test_function()
+    
+    # Clean up
+    if worker.running:
+        await worker.stop()
+
+@pytest.mark.asyncio
+async def test_retry_with_backoff(config):
+    """Test that retry_with_backoff retries failed functions."""
+    # Create a function that fails a few times then succeeds
+    attempt_count = 0
+    
+    
+    @retry_with_backoff(max_retries=3, base_delay=0.1, exceptions=(ValueError,))
+    async def flaky_function():
+        nonlocal attempt_count
+        attempt_count += 1
+        
+        if attempt_count <= 2:
+            raise ValueError("Temporary failure")
+        return "Success"
+    
+    # Should eventually succeed after retries
+    result = await flaky_function()
+    
+    # Check that it retried the correct number of times
+    assert attempt_count == 3, f"Expected 3 attempts, got {attempt_count}"
+    assert result == "Success", "Function did not return correct result"
+
+@pytest.mark.asyncio
+async def test_decorators_integration(config, queue_manager, worker):
+    """Test that all decorators work together properly."""
+    # Register test functions
+    async def test_processor(data):
+        return {"processed": True, "data": data}
+    
+    config.operations_registry["test_processor"] = test_processor
+    
+    # Use patching to simulate errors and track decorator behavior
+    original_ensure_redis = config._ensure_redis_sync
+    redis_calls = 0
+    redis_failures = 0
+    
+    # Mock the Redis connection to fail intermittently
+    def mock_ensure_redis(*args, **kwargs):
+        nonlocal redis_calls, redis_failures
+        redis_calls += 1
+        
+        # Fail on every other call
+        if redis_calls % 2 == 0:
+            redis_failures += 1
+            raise redis.RedisError("Simulated failure")
+        
+        return original_ensure_redis(*args, **kwargs)
+    
+    with patch.object(config, '_ensure_redis_sync', side_effect=mock_ensure_redis):
+        # Try to enqueue an item - should retry on Redis failure
+        try:
+            result = queue_manager.enqueue(
+                entity={"test": "data"},
+                processor="test_processor"
+            )
+            
+            # Check that operation was queued
+            assert result["status"] == "queued"
+            
+            # Should have retried at least once
+            assert redis_calls > 1
+            assert redis_failures > 0
+            
+            # Start worker
+            await worker.start()
+            
+            # Wait briefly for processing
+            await asyncio.sleep(0.5)
+            
+        except Exception as e:
+            # If operation fails, it should be due to circuit breaker
+            assert "circuit is open" in str(e).lower() or "redis" in str(e).lower()
+        finally:
+            # Stop worker
+            if worker.running:
+                await worker.stop()

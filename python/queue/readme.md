@@ -1,12 +1,14 @@
 # Queue System
 
-A flexible, Redis-based queue system for asynchronous processing with configurable retry capabilities and comprehensive metrics tracking.
+A flexible, Redis-based queue system for asynchronous processing with configurable retry capabilities, resilience features, and comprehensive metrics tracking.
 
 ## Features
 
 - **Priority Queues**: High, normal, and low priority processing
 - **Flexible Retry Strategies**: Exponential backoff, fixed delays, or custom retry schedules
-- **Timeout Control**: Set maximum time limits for retry attempts
+- **Circuit Breaker Pattern**: Prevents cascading failures during Redis outages
+- **Timeout Control**: Enforced timeouts at both operation and function levels
+- **Automatic Retries**: Smart backoff for transient failures
 - **Callbacks**: Execute functions on success or failure
 - **Graceful Error Handling**: Failed operations moved to dedicated queues
 - **Concurrent Processing**: Multiple worker tasks process queue items in parallel
@@ -24,6 +26,7 @@ pip install redis
 ```python
 import asyncio
 from queue_system import QueueConfig, QueueManager, QueueWorker, QueueRetryConfig
+from utils import with_timeout, circuit_breaker, retry_with_backoff
 
 # Create shared configuration
 config = QueueConfig(redis_url="redis://localhost:6379/0")
@@ -64,7 +67,45 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
+## Resilience Patterns
+
+### Timeout Control
+
+The `with_timeout` decorator ensures functions complete within expected timeframes:
+
+```python
+@with_timeout(default_timeout=30.0)
+async def critical_operation():
+    # This function will raise TimeoutError if it exceeds 30 seconds
+    ...
+```
+
+### Circuit Breaker
+
+The `circuit_breaker` decorator prevents cascading failures by stopping repeated calls to failing services:
+
+```python
+@circuit_breaker(name="redis_operations", failure_threshold=5, recovery_timeout=30.0)
+def redis_operation():
+    # If this fails 5 times, circuit opens and immediately rejects further calls
+    # After 30 seconds, it will allow a trial call to see if service recovered
+    ...
+```
+
+### Retry With Backoff
+
+The `retry_with_backoff` decorator handles transient failures with exponential backoff:
+
+```python
+@retry_with_backoff(max_retries=3, base_delay=0.5, exceptions=(ConnectionError,))
+def network_operation():
+    # If ConnectionError occurs, retry up to 3 times with increasing delays
+    ...
+```
+
 ## Retry Configuration
+
+For business logic retries (distinct from connection retries), use QueueRetryConfig:
 
 ### Default Exponential Backoff
 
@@ -342,6 +383,22 @@ Queue items are stored in Redis lists with priority-based prefixes:
 - `queue:normal:*`: Normal priority operations
 - `queue:low:*`: Low priority operations
 
+## Graceful Shutdown and Cleanup
+
+To properly shut down workers and clean up resources:
+
+```python
+# 1. Signal that workers should stop processing new items
+await worker.stop()
+
+# 2. Optionally flush any metrics or logs
+config.logger.info("Shutting down queue system")
+
+# 3. Close Redis connections explicitly if needed
+if hasattr(config, 'redis_client') and config.redis_client:
+    config.redis_client.close()
+```
+
 ## Troubleshooting
 
 ### Queue items not being processed
@@ -351,18 +408,30 @@ Queue items are stored in Redis lists with priority-based prefixes:
 3. Inspect the queue status with `queue.get_queue_status()`
 4. Check processor functions are callable and properly registered
 
-### Retry behavior not working as expected
+### Circuit breaker opening unexpectedly
 
-1. Ensure `retry_config` is properly configured and passed to `enqueue()`
-2. Check the Redis queue for pending items and their next retry times
-3. Verify timeout values are appropriate for the operation
+1. Check Redis connectivity and performance
+2. Consider adjusting circuit breaker parameters:
+   ```python
+   @circuit_breaker(failure_threshold=10, recovery_timeout=60.0)
+   ```
 
-### Worker crashes
+### Timeouts occurring too frequently
 
-1. Check for exceptions in worker logs
-2. Ensure processor functions handle exceptions properly
-3. Verify Redis connection stability
-4. Check the system resources (memory, CPU)
+1. Review operation complexity and expected duration
+2. Adjust timeout values for specific operations:
+   ```python
+   @with_timeout(default_timeout=120.0)  # Increase for longer operations
+   ```
+
+### Redis connection failing
+
+1. Check Redis server is running and accessible
+2. Verify network connectivity and firewall settings
+3. Consider adjusting retry parameters:
+   ```python
+   @retry_with_backoff(max_retries=5, base_delay=1.0, max_delay=30.0)
+   ```
 
 ## Performance Considerations
 
@@ -371,12 +440,6 @@ Queue items are stored in Redis lists with priority-based prefixes:
 - **Timeouts**: Set appropriate work timeouts to prevent worker stalling
 - **Connection Pooling**: Redis connection is reused for better performance
 - **Serialization**: Custom serializers can be used for complex data types
-
-## Worker vs Client API
-
-- **Synchronous API**: Adding items to queues (`enqueue()`) is synchronous for simplicity and ease of use
-- **Asynchronous Processing**: The worker that processes queue items runs asynchronously for efficiency
-- **Worker Methods**: `start()`, `stop()` are asynchronous since they deal with ongoing processing
 
 <div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
 
@@ -407,7 +470,7 @@ Configuration for queue operations, managing Redis connections and queue naming.
 |------------|--------|------|---------|----------|-------------|
 | | `__init__` | `redis_client=None`, `redis_url=None`, `queue_prefix="queue:"`, `backup_ttl=86400*7`, `logger=None`, `connection_timeout=5.0`, `max_connection_retries=3` | | Initialization | Initializes configuration with Redis connection parameters. |
 | | `_define_queue_keys` | | | Initialization | Defines keys for processing queues and failure queues. |
-| | `_ensure_redis_sync` | `retry_count=None` | `Redis` | Connection | Ensures Redis client is initialized with retry logic. |
+| `@circuit_breaker` <br> `@retry_with_backoff` | `_ensure_redis_sync` | `retry_count=None` | `Redis` | Connection | Ensures Redis client is initialized with retry logic. |
 
 </details>
 
@@ -427,7 +490,7 @@ Manager for queueing operations with a synchronous API.
 |------------|--------|------|---------|----------|-------------|
 | `@try_catch` | `enqueue` | `entity: Dict[str, Any]`, `processor: Union[Callable, str]`, `queue_name: Optional[str] = None`, `priority: str = "normal"`, `operation_id: Optional[str] = None`, `retry_config: Optional[QueueRetryConfig] = None`, `on_success: Optional[Union[Callable, str]] = None`, `on_failure: Optional[Union[Callable, str]] = None`, `timeout: Optional[float] = None`, `deduplication_key: Optional[str] = None`, `custom_serializer: Optional[Callable] = None` | `Dict[str, Any]` | Queueing | Enqueues an operation for asynchronous processing. |
 | `@try_catch` | `enqueue_batch` | `entities: List[Dict[str, Any]]`, `processor: Callable`, `**kwargs` | `List[Dict[str, Any]]` | Queueing | Enqueues multiple operations for batch processing with efficient metrics tracking. |
-| `@try_catch` | `get_queue_status` | | `Dict[str, Any]` | Monitoring | Returns the status of all registered queues with counts. |
+| `@try_catch` <br> `@circuit_breaker` | `get_queue_status` | | `Dict[str, Any]` | Monitoring | Returns the status of all registered queues with counts. |
 | `@try_catch` | `purge_queue` | `queue_name: str`, `priority: str = "normal"` | `int` | Management | Removes all items from a specific queue. |
 
 </details>
@@ -474,10 +537,10 @@ Worker for processing queued operations asynchronously.
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
 | | `__init__` | `config: QueueConfig`, `max_workers=5`, `work_timeout=30.0` | | Initialization | Initializes the queue worker with configuration and concurrency settings. |
-| | `_worker_loop` | `worker_id: int` | | Processing | Main worker loop for processing queue items. |
-| | `_process_queue_item` | `worker_id: int` | `bool` | Processing | Processes a single item from the queue. |
-| | `_handle_queue_item` | `worker_id: int`, `queue: bytes`, `item_data: bytes` | `bool` | Processing | Handles processing of a queue item. |
-| | `_execute_callback` | `callback_name`, `callback_module`, `data` | | Processing | Executes a callback function. |
+| `@with_timeout` | `_worker_loop` | `worker_id: int` | | Processing | Main worker loop for processing queue items. |
+| `@circuit_breaker` <br> `@with_timeout` | `_process_queue_item` | `worker_id: int` | `bool` | Processing | Processes a single item from the queue. |
+| `@with_timeout` | `_handle_queue_item` | `worker_id: int`, `queue: bytes`, `item_data: bytes` | `bool` | Processing | Handles processing of a queue item. |
+| `@retry_with_backoff` | `_execute_callback` | `callback_name`, `callback_module`, `data` | | Processing | Executes a callback function. |
 
 </details>
 
@@ -514,6 +577,27 @@ Configuration for retry behavior in queue operations.
 |------------|--------|------|---------|----------|-------------|
 | | `__init__` | `max_attempts: int = 5`, `delays: Optional[List[float]] = None`, `timeout: Optional[float] = None` | | Initialization | Initializes retry configuration. |
 | | `_generate_exponential_delays` | | `List[float]` | Utilities | Generates exponential backoff delays with fixed parameters. |
+
+</details>
+
+<br>
+
+</div>
+
+<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
+
+### Decorator Functions
+
+Utility decorators for improving resilience and error handling.
+
+<details>
+<summary><strong>Public Decorators</strong></summary>
+
+| Decorator | Args | Description |
+|-----------|------|-------------|
+| `with_timeout` | `default_timeout: float = 60.0` | Adds timeout functionality to both async and sync methods. |
+| `circuit_breaker` | `name=None`, `failure_threshold=5`, `recovery_timeout=30.0`, `half_open_max_calls=3`, `window_size=60.0` | Applies circuit breaker pattern to prevent cascading failures. |
+| `retry_with_backoff` | `max_retries=3`, `base_delay=0.1`, `max_delay=10.0`, `exceptions=None`, `total_timeout=30.0` | Retries functions with exponential backoff on specified exceptions. |
 
 </details>
 

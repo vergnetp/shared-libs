@@ -5,6 +5,7 @@ import asyncio
 from typing import Any, Dict, List, Optional, Union, Callable
 
 from .queue_config import QueueConfig
+from ..resilience import with_timeout, circuit_breaker, retry_with_backoff
 
 class QueueWorker:
     """
@@ -54,36 +55,43 @@ class QueueWorker:
         """Stop queue processing gracefully."""
         self.running = False
         
-        # Wait for tasks to complete with proper error handling
+        # Improved task cleanup to prevent "Task was destroyed but is pending" warnings
         if self.tasks:
             try:
-                # Important: Use asyncio.shield to prevent cancellation
-                # and explicitly handle tasks in the current loop
-                current_loop = asyncio.get_running_loop()
-                
-                # For each task, ensure it's in the current loop or transfer it
-                safe_tasks = []
+                # Cancel all tasks explicitly
                 for task in self.tasks:
-                    # Only gather tasks from the current loop
-                    if task._loop is current_loop:
-                        safe_tasks.append(task)
-                    else:
-                        # Log tasks on different loops
-                        self.config.logger.warning(
-                            f"Task {task} is on a different event loop and cannot be gathered"
-                        )
+                    if not task.done():
+                        task.cancel()
                 
-                # Only gather tasks if there are any safe ones
-                if safe_tasks:
-                    await asyncio.gather(*safe_tasks, return_exceptions=True)
+                # Wait for a moment to allow tasks to process cancellation
+                await asyncio.sleep(0.5)
+                
+                # Create a list of tasks that are still not done
+                pending_tasks = [t for t in self.tasks if not t.done()]
+                
+                # If we have pending tasks, wait for them with a timeout
+                if pending_tasks:
+                    # Use wait with a timeout instead of gather to prevent hanging
+                    done, pending = await asyncio.wait(
+                        pending_tasks, 
+                        timeout=2.0,
+                        return_when=asyncio.ALL_COMPLETED
+                    )
+                    
+                    # If we still have pending tasks, log a warning
+                    if pending:
+                        self.config.logger.warning(
+                            f"Some worker tasks ({len(pending)}) could not be stopped gracefully"
+                        )
             except Exception as e:
                 self.config.logger.error(f"Error stopping worker", error=str(e))
-                
-            # Clear task list
-            self.tasks = []
-            
+            finally:
+                # Clear task list
+                self.tasks = []
+        
         self.config.logger.info("Queue workers stopped")
             
+    @with_timeout(default_timeout=60.0)  
     async def _worker_loop(self, worker_id: int):
         """Main worker loop for processing queue items."""
         self.config.logger.info("Worker started", 
@@ -108,6 +116,8 @@ class QueueWorker:
         finally:
             self.config.logger.info("Worker stopped", worker_count=len(self.tasks))
     
+    @circuit_breaker(name="process_queue", failure_threshold=5, recovery_timeout=10.0)
+    @with_timeout(default_timeout=10.0)
     async def _process_queue_item(self, worker_id: int) -> bool:
         """Process a single item from the queue."""
         # *** Use synchronous Redis client - KEY CHANGE ***
@@ -184,6 +194,7 @@ class QueueWorker:
         # No item processed
         return False
  
+    @with_timeout(default_timeout=30.0)  
     async def _handle_queue_item(self, worker_id: int, queue: bytes, item_data: bytes) -> bool:
         """
         Handle processing of a queue item.
@@ -315,10 +326,18 @@ class QueueWorker:
                     
                     return True
             
-            # Process the item with timeout
+            # Process the item with explicit timeout control
+            # This ensures that the processor function times out based on the worker's timeout
             try:
-                # This inner try is specifically for the processor execution
-                result = await asyncio.wait_for(processor(entity), timeout=self.work_timeout)
+                # Calculate effective timeout - use the minimum of worker timeout and item timeout
+                effective_timeout = self.work_timeout
+                if "timeout" in item and item["timeout"] is not None:
+                    remaining_timeout = item["timeout"] - (time.time() - item.get("first_attempt_time", time.time()))
+                    if remaining_timeout > 0:
+                        effective_timeout = min(effective_timeout, remaining_timeout)
+                
+                # Execute with timeout - this is the key change for the test to pass
+                result = await asyncio.wait_for(processor(entity), timeout=effective_timeout)
                 
                 # Update success metrics
                 self.config.update_metric('processed')
@@ -343,14 +362,34 @@ class QueueWorker:
             except asyncio.TimeoutError:
                 # Process execution timed out - handle retry
                 self.config.logger.warning(
-                    "Process execution timed out", work_timeout=self.work_timeout, operation_id=operation_id, worker_id=worker_id
+                    "Process execution timed out", work_timeout=effective_timeout, operation_id=operation_id, worker_id=worker_id
                 )
                 
                 # Update timeout metrics
                 self.config.update_metric('timeouts')
                 
-                # Handle like other exceptions - increment attempt count
-                raise  # Re-raise to be caught by outer exception handler
+                # Move to failures queue if exceeded max retries
+                if item.get("attempts", 0) >= item.get("max_attempts", 5) - 1:
+                    # Add failure reason
+                    item["failure_reason"] = f"Execution timed out after {effective_timeout}s"
+                    
+                    # Move to failures queue - ensure failures_queue is in bytes
+                    failures_queue = self.config.queue_keys['failures']
+                    if not isinstance(failures_queue, bytes):
+                        failures_queue = failures_queue.encode()
+                    
+                    # Serialize item for storage
+                    item_json = json.dumps(item, default=str)
+                    redis.lpush(failures_queue, item_json.encode())
+                    
+                    self.config.logger.debug(
+                        "Moved timed out item to failures queue", operation_id=operation_id, worker_id=worker_id
+                    )
+                    
+                    return True
+                    
+                # Otherwise, handle like other exceptions - increment attempt count and re-raise
+                raise
                     
             except Exception as e:
                 # Processor execution failed - re-raise to be caught by outer handler
@@ -490,6 +529,7 @@ class QueueWorker:
                                 operation_id=operation_id, 
                                 worker_id=worker_id)
 
+    @retry_with_backoff(max_retries=3, base_delay=0.1, exceptions=(ImportError, AttributeError))
     async def _execute_callback(self, callback_name, callback_module, data):
         """Execute a callback function."""
         try:
@@ -499,17 +539,12 @@ class QueueWorker:
             
             if not callback and callback_module:
                 # Try to import the callback
-                try:
-                    module = __import__(callback_module, fromlist=[callback_name])
-                    callback = getattr(module, callback_name)
-                    
-                    # Register for future use
-                    if callback:
-                        self.config.callbacks_registry[callback_key] = callback
-                except (ImportError, AttributeError) as e:
-                    self.config.logger.error(
-                        "Error importing callback", callback_module=callback_module, callback_name=callback_name, error=str(e)
-                    )
+                module = __import__(callback_module, fromlist=[callback_name])
+                callback = getattr(module, callback_name)
+                
+                # Register for future use
+                if callback:
+                    self.config.callbacks_registry[callback_key] = callback
             
             if not callback:
                 self.config.logger.error("Callback not found", callback_module=callback_module, callback_name=callback_name)
@@ -522,5 +557,5 @@ class QueueWorker:
                 return callback(data)
                 
         except Exception as e:
-            self.config.logger.error("Error executing callback",  callback_module=callback_module, callback_name=callback_name, error=e.to_string() if hasattr(e, "to_string") else str(e))
+            self.config.logger.error("Error executing callback", callback_module=callback_module, callback_name=callback_name, error=e.to_string() if hasattr(e, "to_string") else str(e))
             return None

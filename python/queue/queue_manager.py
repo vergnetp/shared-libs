@@ -12,6 +12,7 @@ import asyncio
 from .queue_config import QueueConfig
 from .queue_retry_config import QueueRetryConfig
 from ..errors.try_catch import try_catch
+from ..resilience import circuit_breaker
 
 class QueueManager:
     """
@@ -83,8 +84,9 @@ class QueueManager:
                               "string_repr": str(entity)})
     
     @try_catch(
-    description='Failed to enqueue operation',
-    action='Check queue connectivity and entity format')
+        description='Failed to enqueue operation',
+        action='Check queue connectivity and entity format'
+    )
     def enqueue(self, 
                 entity: Dict[str, Any], 
                 processor: Union[Callable, str],
@@ -443,6 +445,7 @@ class QueueManager:
         redis.sadd(self.config.registry_key, queue_key)
     
     @try_catch
+    @circuit_breaker(name="queue_status", failure_threshold=3, recovery_timeout=5.0)
     def get_queue_status(self):
         """Get the current status of all registered queues.
         
