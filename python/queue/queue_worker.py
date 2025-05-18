@@ -7,6 +7,7 @@ import concurrent.futures
 import importlib
 from typing import Any, Dict, List, Optional, Union, Callable
 
+from ..errors import try_catch
 from .config import QueueConfig
 from ..resilience import with_timeout, circuit_breaker, retry_with_backoff
 
@@ -53,7 +54,11 @@ class QueueWorker:
         # Thread pool metrics
         self._thread_pool_size = config.worker.thread_pool_size
         self._thread_metrics_lock = threading.Lock()
-        
+
+    @try_catch(
+    description="Failed to start queue worker",
+    action="Check queue configuration and Redis connection"
+    )  
     async def start(self):
         """Start processing the queue with worker tasks."""
         if self.running:
@@ -71,6 +76,10 @@ class QueueWorker:
         
         self.config.logger.info("Queue workers started", worker_count=self.max_workers)
         
+    @try_catch(
+    description="Failed to stop queue worker gracefully",
+    action="Check for running tasks and force shutdown if necessary"
+    )
     async def stop(self):
         """Stop queue processing gracefully."""
         if not self.running:
@@ -125,7 +134,6 @@ class QueueWorker:
             # Ensure we're marked as stopped even if cleanup fails
             self.running = False
             
-    @with_timeout(default_timeout=60.0)  
     async def _worker_loop(self, worker_id: int):
         """Main worker loop for processing queue items."""
         self.config.logger.info(f"Worker {worker_id} started", 
@@ -302,6 +310,10 @@ class QueueWorker:
         # No item processed
         return False
  
+    @try_catch(
+    description="Failed to handle queue item",
+    action="Check processor implementation and item format"
+    )
     async def _handle_queue_item(self, worker_id: int, queue: bytes, item_data: bytes) -> bool:
         """
         Handle processing of a queue item.
@@ -462,6 +474,7 @@ class QueueWorker:
                            operation_id=operation_id, 
                            worker_id=worker_id)
 
+    @try_catch
     def _find_processor(self, processor_name: str, processor_module: Optional[str] = None) -> Optional[Callable]:
         """
         Find the processor function by name and module.
@@ -530,6 +543,10 @@ class QueueWorker:
         self.config.logger.warning(f"Processor not found: {processor_name}")
         return None
     
+    @try_catch(
+    description="Failed to execute synchronous processor in thread pool",
+    action="Check thread pool configuration and processor implementation"
+    )
     async def _execute_sync_processor(self, processor: Callable, entity: Dict[str, Any], 
                                     operation_id: str) -> Any:
         """
@@ -838,7 +855,6 @@ class QueueWorker:
                 
         return True
     
-    @retry_with_backoff(max_retries=3, base_delay=0.1, exceptions=(ImportError, AttributeError))
     async def _execute_callback(self, callback_name: str, callback_module: Optional[str] = None, data: Dict[str, Any] = None):
         """
         Execute a callback function.
