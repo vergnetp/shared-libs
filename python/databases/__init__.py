@@ -8,8 +8,7 @@ from .connections import *
 from .entity import *
 from .factory import *
 
-
-
+from ..utils import patcher
 from typing import TYPE_CHECKING
 
 patcher.patch_class(PostgresAsyncConnection, EntityAsyncMixin)

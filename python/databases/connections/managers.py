@@ -10,7 +10,8 @@ from ...errors import try_catch
 from ... import log as logger
 from ...utils import async_method
 from ..config import DatabaseConfig
-from ..connections import SyncConnection, AsyncConnection, PoolManager
+from .base import SyncConnection, AsyncConnection
+from .pools import PoolManager
 
 
 class ConnectionManager():

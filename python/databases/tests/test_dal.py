@@ -9,12 +9,16 @@ import time
 from ... import log as logger
 
 # Import the database abstraction layer
-from ..base2 import (
+""" from ..all import (
     DatabaseConfig, 
     DatabaseFactory,
     PoolManager
-)
-
+) """
+from ...databases import (
+    DatabaseConfig, 
+    DatabaseFactory,
+    PoolManager
+) 
 
 # Fixture for PostgreSQL database connection
 @pytest.fixture
@@ -174,7 +178,7 @@ async def test_postgres(postgres_db_async):
         await conn.execute(f"create table [{entity_name}] (name TEXT)")
         await conn.execute(f"insert into [{entity_name}] values (?)", ('Phil',))
         rows = await conn.execute(f"select * from [{entity_name}]")
-        assert (rows[0][0]=='Phil2')
+        assert (rows[0][0]=='Phil')
 
 
 
