@@ -40,17 +40,12 @@ There are also some logging and diagnostic metrics configuration (`QueueLoggingC
 
 | What | Configuration | Description |
 |------|--------------|-------------|
-| **Redis Connection** | `QueueRedisConfig.connection_timeout`<br>`QueueRedisConfig.max_connection_retries` | Controls connection timeouts and retries when interacting with Redis. Applies to all Redis operations. |
-| **Per-attempt Processing Timeout** | `QueueWorkerConfig.work_timeout` | Maximum time allowed for a single processing attempt. Applied to async processors using `asyncio.wait_for()`. Sync processors run without timeout in thread pool. |
-| **Retry Policy** | `QueueRetryConfig` passed during enqueue<br>- `max_attempts`<br>- `delays`<br>- `timeout` | Controls how many times processing is attempted after failures, the delay between attempts, and optional maximum total time for all retries. When not specified during enqueue, falls back to system defaults. |
-| **Thread Pool** | `QueueWorkerConfig.thread_pool_size` | Controls how many sync processors can run concurrently. |
+| **Redis Connection** | `QueueRedisConfig.connection_timeout` | Controls connection timeout (default to 5s). |
+| **Per-attempt Processing Timeout** | `QueueWorkerConfig.work_timeout` | Maximum time allowed for a single processing attempt (default to 30s). Applied to async processors using `asyncio.wait_for()`. Sync processors run without timeout in thread pool. |
+| **Retry Policy** | `QueueRetryConfig` passed during enqueue<br>- `max_attempts`<br>- `delays`<br>- `timeout` | Controls how many times processing is attempted after failures, the delay between attempts, and optional maximum total time for all retries. When not specified during enqueue, falls back to system default (5 retries with exponential backoff - within 5 mns max). |
+| **Thread Pool** | `QueueWorkerConfig.thread_pool_size` | Controls how many sync processors can run concurrently (default to 20). |
 
-### Key Points:
 
-* All processor failures (including thread pool exhaustion) use the same retry policy
-* Tasks are retried with the specified delays between attempts
-* If `timeout` is specified, retries stop once elapsed time exceeds this value
-* For optimal resource usage, use queue-level retries (not processor-level decorators) for delays > 1 second
 
 ```python
 from queue import (
@@ -66,7 +61,7 @@ from queue import (
 redis_config = QueueRedisConfig(
     url="redis://localhost:6379/0",          # Redis connection URL
     client=None,                             # No existing client, create new one from url
-    connection_timeout=5.0,                  # 5 second timeout for Redis operations (connection and enqueueing)
+    connection_timeout=5.0,                  # 5 second timeout for Redis connection
     circuit_breaker_threshold=5,             # Open circuit after 5 failures
     circuit_recovery_timeout=30.0,           # Wait 30s before testing if Redis is back
     key_prefix="queue:"                      # Prefix for all Redis keys
@@ -76,7 +71,7 @@ redis_config = QueueRedisConfig(
 worker_config = QueueWorkerConfig(
     worker_count=5,                          # 5 concurrent worker tasks
     thread_pool_size=20,                     # 20 threads for sync processors
-    work_timeout=30.0,                       # 30 second default timeout
+    work_timeout=30.0,                       # 30 second default timeout for processing tasks - per attempt
 )
 
 # Create retry configuration with all parameters
@@ -140,7 +135,7 @@ async def on_success(data):
     print(f"Successfully processed: {data['result']}")
 
 # Create retry configuration
-retry_config = QueueRetryConfig.exponential(
+custom_retry_strategy = QueueRetryConfig.exponential(
     max_attempts=3,
     min_delay=1.0,
     max_delay=30.0,
@@ -153,7 +148,7 @@ queue.enqueue(
     processor=async_processor,
     priority="high",
     on_success=on_success,
-    retry_config=retry_config.to_dict()  # Convert to dict for enqueueing
+    retry_config=custom_retry_strategy.to_dict()  # Convert to dict for enqueueing
 )
 
 # Start the worker
@@ -171,7 +166,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## ⚠️ Important: Processor Function Design
+## Processor Function Design
 
 ### Avoid Using Decorators on Processor Functions
 
@@ -209,6 +204,7 @@ Instead of decorating processor functions, use these approaches:
        retry_config=retry_config.to_dict()
    )
    ```
+The retry strategy and current state is persisted in the task, even if the process shut down. When it is back up and running, retries woudl resume from where they were.
 
 2. **For Internal Resilience**: If you need internal retries for specific operations within your processor, keep them short and focused:
 
@@ -236,48 +232,6 @@ Instead of decorating processor functions, use these approaches:
        # ...
    ```
 
-## Architecture Overview
-
-The system consists of three main components:
-
-1. **QueueConfig**: Configuration for Redis connection, queue keys, and shared registries
-2. **QueueManager**: Client for enqueueing operations with priority, retries, and callbacks
-3. **QueueWorker**: Service that processes queued operations with proper timeout and error handling
-
-## Timeout and Resilience Configuration
-
-The system applies different timeouts and retry strategies at various levels:
-
-### 1. Redis Connection (QueueRedisConfig)
-
-```python
-redis_config = QueueRedisConfig(
-    url="redis://localhost:6379/0",
-    connection_timeout=5.0,          # Timeout for individual Redis operations
-    circuit_breaker_threshold=5,     # Failures before circuit opens
-    circuit_recovery_timeout=30.0    # Seconds before testing if Redis is back
-)
-```
-
-### 2. Operation Processing (QueueWorker)
-
-```python
-worker_config = QueueWorkerConfig(
-    worker_count=5,                  # Number of concurrent worker tasks
-    thread_pool_size=20,             # Maximum threads for sync processors
-    work_timeout=30.0,               # Default timeout for processing operations
-)
-```
-
-### 3. Business Logic Retries (QueueRetryConfig)
-
-```python
-retry_config = QueueRetryConfig(
-    max_attempts=5,                  # Maximum retry attempts
-    delays=[1, 2, 4, 8, 16],         # Retry delays in seconds
-    timeout=300                      # Total timeout for all retries
-)
-```
 
 ## Thread Pool for Synchronous Processors
 
