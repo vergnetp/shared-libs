@@ -1,123 +1,186 @@
-import smtplib
 import os
 import io
-import ssl
 import zipfile
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
-from typing import List, Optional
+import mimetypes
+from typing import List, Optional, Union, Dict, Any
+
+from .email_config import EmailConfig
+from .adapters.smtp_adapter import SMTPAdapter
+from .adapters import EmailAdapter
 
 from .. import log as logger
-from ..errors import TrackError, try_catch
+from ..errors import TrackError, Error, try_catch
 
-MAX_FILE_SIZE_MB = 25  # MB file size limit
-
-@try_catch
-def compress_file(data: str | bytes) -> bytes:
+class Emailer:
     """
-    Compresses a file or bytes into a ZIP archive.
-
-    Args:
-        data (str | bytes): Path to the file or raw bytes to compress.
-
-    Returns:
-        bytes: The compressed ZIP file content.
+    Main class for sending emails.
+    
+    Provides a unified interface for sending emails with
+    different providers, handling attachments, and managing
+    configuration.
     """
-    try:
-        if isinstance(data, str):
-            with open(data, 'rb') as f:
-                data = f.read()
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            zipf.writestr('compressed_file', data)  # Use a placeholder filename
-        return zip_buffer.getvalue()
-    except Exception as e:
-        raise TrackError(f"Error compressing file: {e}")
-
-@try_catch
-def send_email(subject: str, recipients: List[str], text: Optional[str] = None, html: Optional[str] = None,
-               use_gmail: bool = True, attached_file: Optional[str | bytes] = None, 
-               compress: Optional[bool] = False, attached_file_name: Optional[str] = None):
-    """
-    Sends an email with optional text, HTML content, and an attached file.
-
-    Args:
-        subject (str): Subject of the email.
-        recipients (List[str]): List of recipient email addresses.
-        text (Optional[str]): Plain text version of the email content.
-        html (Optional[str]): HTML version of the email content.
-        use_gmail (bool): Use Gmail SMTP server. Default is True.
-        attached_file (Optional[str | bytes]): File path or bytes to attach.
-        compress (Optional[bool]): Compress the file before attaching. Default is False.
-        attached_file_name (Optional[str]): Name of the file attachment.
-
-    Raises:
-        Exception: For email-sending failures.
-    """
-    try:
-        # Prepare the file for attachment
+    
+    def __init__(self, config: EmailConfig):
+        """
+        Initialize the emailer with configuration.
+        
+        Args:
+            config: Email configuration
+        """
+        self.config = config
+        
+        # Initialize the appropriate adapter based on provider
+        if config.provider == "smtp":
+            self.adapter = SMTPAdapter(config)
+        else:
+            raise ValueError(f"Unsupported provider: {config.provider}")
+            
+    @try_catch
+    def compress_file(self, data: Union[str, bytes]) -> bytes:
+        """
+        Compresses a file or bytes into a ZIP archive.
+    
+        Args:
+            data (str | bytes): Path to the file or raw bytes to compress.
+    
+        Returns:
+            bytes: The compressed ZIP file content.
+        """
+        try:
+            if isinstance(data, str):
+                with open(data, 'rb') as f:
+                    data = f.read()
+                    
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                zipf.writestr('compressed_file', data)  # Use a placeholder filename
+                
+            return zip_buffer.getvalue()
+            
+        except Exception as e:
+            # Using Error instead of TrackError with named parameters
+            raise Error(e, description="Error compressing file")
+    
+    @try_catch
+    def send_email(
+        self,
+        subject: str,
+        recipients: List[str],
+        text: Optional[str] = None,
+        html: Optional[str] = None,
+        attached_file: Optional[Union[str, bytes]] = None, 
+        compress: Optional[bool] = False,
+        attached_file_name: Optional[str] = None,
+        from_address: Optional[str] = None,
+        reply_to: Optional[str] = None,
+        cc: Optional[List[str]] = None,
+        bcc: Optional[List[str]] = None,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Send an email with optional text, HTML content, and attachments.
+    
+        Args:
+            subject (str): Subject of the email.
+            recipients (List[str]): List of recipient email addresses.
+            text (Optional[str]): Plain text version of the email content.
+            html (Optional[str]): HTML version of the email content.
+            attached_file (Optional[str | bytes]): File path or bytes to attach.
+            compress (Optional[bool]): Compress the file before attaching.
+            attached_file_name (Optional[str]): Name of the file attachment.
+            from_address (Optional[str]): Sender email address (overrides default).
+            reply_to (Optional[str]): Reply-to address (overrides default).
+            cc (Optional[List[str]]): List of CC recipients.
+            bcc (Optional[List[str]]): List of BCC recipients.
+            headers (Optional[Dict[str, str]]): Additional email headers.
+    
+        Returns:
+            Dict[str, Any]: Email sending status and details.
+        """
+        # Process attachment if provided
+        attachments = None
         if attached_file:
+            attachments = []
+            
+            # Process file path or raw bytes
             if isinstance(attached_file, str):
+                # It's a file path
                 if not os.path.exists(attached_file):
-                    raise TrackError(f"File does not exist: {attached_file}")
+                    # Using Error with TrackError's expected constructor
+                    raise Error(None, f"File does not exist: {attached_file}")
+                    
+                # Get filename if not provided
                 if not attached_file_name:
                     attached_file_name = os.path.basename(attached_file)
+                    
+                # Read file if it's a path
                 with open(attached_file, 'rb') as f:
                     attached_file = f.read()
-            
+                    
+            # Calculate file size
+            file_size_mb = len(attached_file) / (1024 * 1024)
+                
+            # Compress if requested
             if compress:
-                attached_file = compress_file(attached_file)
+                attached_file = self.compress_file(attached_file)
+                
+                # Update filename for compressed file
                 if attached_file_name:
                     base_name, _ = os.path.splitext(attached_file_name)
                     attached_file_name = f"{base_name}.zip"
                 else:
                     attached_file_name = "compressed_file.zip"
-
-            if len(attached_file) > MAX_FILE_SIZE_MB * 1024 * 1024:
-                raise TrackError(f"File size exceeds {MAX_FILE_SIZE_MB} MB limit.")
-
-        # Set SMTP server and credentials
-        smtp_server, sender, password = (
-            ('smtp.gmail.com', 'info@digitalpixo.com', os.environ.get("APP_GMAIL_PWD"))
-            if use_gmail else 
-            ('mail.privateemail.com', 'contact@digitalpixo.com', os.environ.get("APP_ADMIN_TOKEN"))
+                    
+            # Check size limit
+            if file_size_mb > self.config.max_file_size_mb:
+                # Using Error with the correct arguments
+                msg = f"File size exceeds {self.config.max_file_size_mb} MB limit"
+                raise Error(None, msg, "Compress the file or use a smaller attachment")
+                
+            # Determine content type
+            content_type = "application/octet-stream"
+            if attached_file_name:
+                guessed_type, _ = mimetypes.guess_type(attached_file_name)
+                if guessed_type:
+                    content_type = guessed_type
+                    
+            # Add attachment to list
+            attachments.append({
+                "filename": attached_file_name or "attachment.bin",
+                "content": attached_file,
+                "content_type": content_type
+            })
+            
+        # Send email using the adapter
+        result = self.adapter.send_email(
+            subject=subject,
+            recipients=recipients,
+            text=text,
+            html=html,
+            from_address=from_address,
+            reply_to=reply_to,
+            cc=cc,
+            bcc=bcc,
+            attachments=attachments,
+            headers=headers
         )
-        if not password:
-            raise TrackError("SMTP credentials are missing.")
-
-        # Build the email
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = sender
-        msg['To'] = ', '.join(recipients)
-
-        if text is None and html:
-            text = html  # Fallback to HTML if text is missing
-
-        if text:
-            msg.attach(MIMEText(text, 'plain'))
-        if html:
-            msg.attach(MIMEText(html, 'html'))
-
-        # Add the attachment
-        if attached_file:
-            if not attached_file_name:
-                raise TrackError("Attachment filename is required.")
-            part = MIMEBase('application', 'octet-stream')
-            part.set_payload(attached_file)
-            encoders.encode_base64(part)
-            part.add_header('Content-Disposition', f'attachment; filename="{attached_file_name}"')
-            msg.attach(part)
-
-        # Send the email
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(smtp_server, 465, context=context) as server:
-            server.login(sender, password)
-            server.sendmail(sender, recipients, msg.as_string())
-        logger.info(f"Email sent successfully to {recipients} with subject: {subject}")
-
-    except Exception as e:
-        logger.error(f"Error sending email to {recipients} with subject: {subject}. Error: {e}")
-        raise
+        
+        # Log success
+        logger.info(
+            f"Email sent successfully",
+            recipients=len(recipients),
+            subject=subject,
+            has_attachments=bool(attachments)
+        )
+        
+        return result
+        
+    def close(self):
+        """
+        Close adapter connections and perform cleanup.
+        
+        Returns:
+            None
+        """
+        if hasattr(self, 'adapter') and self.adapter:
+            self.adapter.close()

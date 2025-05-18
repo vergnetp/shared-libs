@@ -1,6 +1,16 @@
 """
-emailing package: expose send_email(subject: str, recipients: List[str], text: Optional[str] = None, html: Optional[str] = None,
-               use_gmail: bool = True, attached_file: Optional[str | bytes] = None, 
-               compress: Optional[bool] = False, attached_file_name: Optional[str] = None)
+emailing package: Flexible email system with provider adapters.
+
+Main class:
+- Emailer: Main class for sending emails
+
+Configuration classes:
+- EmailConfig: Configuration for email operations
+
+Provider adapters:
+- SMTPAdapter: SMTP email provider adapter (including Gmail)
 """
-from .emailer import *
+
+from .email_config import EmailConfig
+from .emailer import Emailer
+from .adapters.smtp_adapter import SMTPAdapter
