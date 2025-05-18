@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Union, Callable, Tuple
 import redis
 import asyncio
 
-from .config import QueueConfig
+from .config import QueueConfig, QueueRetryConfig
 from ..errors.try_catch import try_catch
 from ..resilience import circuit_breaker
 
@@ -82,6 +82,7 @@ class QueueManager:
             return json.dumps({"__error__": "Serialization error", 
                               "string_repr": str(entity)})
 
+    @circuit_breaker(name="queue_enqueue", failure_threshold=5, recovery_timeout=10.0)
     @try_catch(
         description='Failed to enqueue operation',
         action='Check queue connectivity and entity format'
@@ -329,6 +330,7 @@ class QueueManager:
                     elapsed_time=time.time() - start_time)
             raise
 
+    @circuit_breaker(name="queue_bacth", failure_threshold=5, recovery_timeout=30.0)
     @try_catch
     def enqueue_batch(self, 
                     entities: List[Dict[str, Any]], 
@@ -614,7 +616,8 @@ class QueueManager:
         # Return a combined dict with both queue statuses and metadata
         result = {**status, **metadata}
         return result
-        
+    
+    @circuit_breaker(name="queue_purge", failure_threshold=5, recovery_timeout=30.0)
     @try_catch
     def purge_queue(self, queue_name: str, priority: str = "normal") -> int:
         """

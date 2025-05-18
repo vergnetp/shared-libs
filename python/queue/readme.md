@@ -101,10 +101,7 @@ from queue import (
 # Create Redis configuration with all parameters
 redis_config = QueueRedisConfig(
     url="redis://localhost:6379/0",          # Redis connection URL
-    client=None,                             # No existing client, create new one from url
     connection_timeout=5.0,                  # 5 second timeout for Redis connection
-    circuit_breaker_threshold=5,             # Open circuit after 5 failures
-    circuit_recovery_timeout=30.0,           # Wait 30s before testing if Redis is back
     key_prefix="queue:"                      # Prefix for all Redis keys
 )
 

@@ -20,13 +20,11 @@ class QueueRedisConfig:
     Manages all Redis-specific settings including connection details,
     timeouts, retries, and circuit breaker behavior.
     """
+
     def __init__(
         self,
-        url: Optional[str] = None,
-        client: Optional[Any] = None,
+        url: str,
         connection_timeout: float = 5.0,
-        circuit_breaker_threshold: int = 5,
-        circuit_recovery_timeout: float = 30.0,
         key_prefix: str = "queue:"
     ):
         """
@@ -34,19 +32,14 @@ class QueueRedisConfig:
         
         Args:
             url: Redis connection URL (e.g. "redis://localhost:6379/0")
-            client: Optional existing Redis client instance to use instead of creating new one
-            connection_timeout: Timeout in seconds for Redis connection (default: 5.0)           
-            circuit_breaker_threshold: Number of failures before opening circuit breaker (default: 5)
-            circuit_recovery_timeout: Seconds to wait before attempting recovery (default: 30.0)
+            connection_timeout: Timeout in seconds for Redis connection (default: 5.0)
             key_prefix: Prefix for all Redis keys used by the queue system (default: "queue:")
         """
-        self.url = url
-        self.client = client
-        self.connection_timeout = connection_timeout
-        self.circuit_breaker_threshold = circuit_breaker_threshold
-        self.circuit_recovery_timeout = circuit_recovery_timeout
+        self.url = url      
+        self.connection_timeout = connection_timeout        
         self.key_prefix = key_prefix   
-        
+        self.client = None
+
         # Define queue priority prefixes
         self.queue_prefixes = {
             'high': 'high:',
@@ -62,10 +55,7 @@ class QueueRedisConfig:
     
     def _validate_config(self):
         """Validate Redis configuration parameters."""
-        errors = []
-        
-        if not self.url and not self.client:
-            errors.append("Either url or client must be provided")
+        errors = [] 
             
         if self.connection_timeout <= 0:
             errors.append(f"connection_timeout must be positive, got {self.connection_timeout}") 
@@ -73,7 +63,7 @@ class QueueRedisConfig:
         if errors:
             raise ValueError(f"Redis configuration validation failed: {'; '.join(errors)}")
     
-    @circuit_breaker(name="redis_connection", failure_threshold=5, recovery_timeout=30.0)
+    @circuit_breaker(name="redis_connection", failure_threshold=5, recovery_timeout=30)
     @retry_with_backoff(max_retries=3, base_delay=0.5, exceptions=(redis.RedisError, ConnectionError))
     def get_client(self):
         """
@@ -161,9 +151,7 @@ class QueueRedisConfig:
         """
         return {
             "url": self._mask_connection_url(self.url) if self.url else None,
-            "connection_timeout": self.connection_timeout,           
-            "circuit_breaker_threshold": self.circuit_breaker_threshold,
-            "circuit_recovery_timeout": self.circuit_recovery_timeout,
+            "connection_timeout": self.connection_timeout, 
             "key_prefix": self.key_prefix        
         }
     

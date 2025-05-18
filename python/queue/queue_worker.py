@@ -182,7 +182,7 @@ class QueueWorker:
         finally:
             self.config.logger.info(f"Worker {worker_id} stopped, processed {processed_count} items")
  
-    @circuit_breaker(name="process_queue", failure_threshold=5, recovery_timeout=10.0)
+    @circuit_breaker(name="worker_process_queue", failure_threshold=5, recovery_timeout=10.0)
     async def _process_queue_item(self, worker_id: int) -> bool:
         """Process a single item from the queue."""
         try:
