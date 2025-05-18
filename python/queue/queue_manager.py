@@ -95,7 +95,7 @@ class QueueManager:
                 operation_id: Optional[str] = None,
                 
                 # Retry configuration
-                retry_config: Optional[Dict[str, Any]] = None,
+                retry_config: Optional[Union[Dict[str, Any], QueueRetryConfig]] = None,
                 
                 # Callback parameters
                 on_success: Optional[Union[Callable, str]] = None,
@@ -119,7 +119,7 @@ class QueueManager:
             operation_id: Optional ID for the operation (auto-generated if not provided)
             
             # Retry configuration
-            retry_config: Configuration for retry behavior (dict with retry options)
+            retry_config: Configuration for retry behavior (either QueueRetryConfig object or dict with retry options). Default to self.config.retry.
             
             # Callback parameters
             on_success: Callback function or name to call on successful completion
@@ -258,6 +258,9 @@ class QueueManager:
             
             # Add retry configuration if provided
             if retry_config:
+                # Convert QueueRetryConfig object to dictionary if needed
+                if hasattr(retry_config, 'to_dict') and callable(getattr(retry_config, 'to_dict')):
+                    retry_config = retry_config.to_dict()
                 queue_data.update(retry_config)
             else:
                 # Default retry config from main configuration

@@ -9,42 +9,83 @@ A flexible, Redis-based queue system for asynchronous processing with configurab
 - **Circuit Breaker Pattern**: Prevents cascading failures during Redis outages
 - **Smart Timeout Management**: Enforced timeouts for async processors with graceful handling
 - **Thread Pool for Sync Processors**: Efficient execution of synchronous processors with thread reuse
-- **Automatic Retries**: Smart backoff for transient failures
-- **Callbacks**: Execute functions on success or failure
-- **Graceful Error Handling**: Failed operations moved to dedicated queues
-- **Concurrent Processing**: Multiple worker tasks process queue items in parallel
-- **Automatic Import**: Dynamically import processors and callbacks by name
-- **Comprehensive Metrics**: Detailed metrics on operation processing, thread pool usage, and system health
+- **Comprehensive Metrics**: Detailed metrics on operation processing and thread pool usage
 
 ## Installation
 
 ```bash
-pip install redis
-```
-
-Additional dependencies required by the system:
-```bash
-pip install asyncio concurrent.futures
+pip install redis asyncio
 ```
 
 ## Main API
 
-You will create a `QueueManager` that takes some config, and you can then `enqueue` some tasks (i.e. a processing function and some data to process).
-You will also create a `QueueWorker` that will take the same config and that you will `start` and `stop` in the background, to actually perform the tasks and empty the queue.
+The system is built around two main classes:
+
+- **QueueManager**: Enqueues tasks for processing (using the `enqueue` method - the processor of the task is specified at this point)
+- **QueueWorker**: Background processor that executes the queued tasks (you only needs to `start` it in teh background - and `stop` before shutdown)
+
+
+## Basic Usage
+
+```python
+import asyncio
+from queue_system import QueueConfig, QueueManager, QueueWorker, QueueRetryConfig
+
+# Create shared configuration
+config = QueueConfig(
+    redis=QueueRedisConfig(url="redis://localhost:6379/0"),
+    worker=QueueWorkerConfig(worker_count=3)
+)
+
+# Create queue manager and worker
+queue = QueueManager(config=config)
+worker = QueueWorker(config=config)
+
+# Define async processor
+async def async_processor(data):
+    # Process the data asynchronously
+    return {"status": "success", "result": data}
+
+# Create retry configuration
+custom_retry_strategy = QueueRetryConfig.exponential(
+    max_attempts=3,
+    min_delay=1.0,
+    max_delay=30.0,
+    timeout=120
+)
+
+# Enqueue operations
+queue.enqueue(
+    entity={"user_id": "123", "action": "update"},
+    processor=async_processor, # the task processor is injected here
+    priority="high",
+    retry_config=custom_retry_strategy  # if the porcessor fail, this specified how and when to retry
+)
+
+# Start the worker
+async def main():
+    await worker.start()
+    try:
+        # Keep the worker running
+        while True:
+            await asyncio.sleep(1)
+    except KeyboardInterrupt:
+        await worker.stop()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
 
 ## Configuration
 
-The configuration encompasses the queueing system itself (redis) with a `QueueRedisConfig`, the worker with `QueueWorkerConfig` and the way to handle retries in the processing of the task (`QueueRetryConfig`).
-
-There are also some logging and diagnostic metrics configuration (`QueueLoggingConfig` and `QueueMetricsConfig`).
+The system is configured using specialized configuration classes:
 
 | What | Configuration | Description |
 |------|--------------|-------------|
 | **Redis Connection** | `QueueRedisConfig.connection_timeout` | Controls connection timeout (default to 5s). |
-| **Per-attempt Processing Timeout** | `QueueWorkerConfig.work_timeout` | Maximum time allowed for a single processing attempt (default to 30s). Applied to async processors using `asyncio.wait_for()`. Sync processors run without timeout in thread pool. |
-| **Retry Policy** | `QueueRetryConfig` passed during enqueue<br>- `max_attempts`<br>- `delays`<br>- `timeout` | Controls how many times processing is attempted after failures, the delay between attempts, and optional maximum total time for all retries. When not specified during enqueue, falls back to system default (5 retries with exponential backoff - within 5 mns max). |
+| **Per-attempt Processing Timeout** | `QueueWorkerConfig.work_timeout` | Maximum time allowed for a single processing attempt (default to 30s). Applied to async processors using `asyncio.wait_for()`. |
+| **Retry Policy** | `QueueRetryConfig` | Controls how many times processing is attempted after failures, the delay between attempts, and optional maximum total time for all retries. |
 | **Thread Pool** | `QueueWorkerConfig.thread_pool_size` | Controls how many sync processors can run concurrently (default to 20). |
-
 
 
 ```python
@@ -103,154 +144,27 @@ default_config = QueueConfig(
 )
 ```
 
-## Basic Usage
-
-```python
-import asyncio
-from queue_system import QueueConfig, QueueManager, QueueWorker, QueueRetryConfig
-
-# Create shared configuration
-config = QueueConfig(
-    redis=QueueRedisConfig(url="redis://localhost:6379/0"),
-    worker=QueueWorkerConfig(worker_count=3),
-    retry=QueueRetryConfig(max_attempts=3)
-)
-
-# Create queue manager and worker
-queue = QueueManager(config=config)
-worker = QueueWorker(config=config)
-
-# Define async processor
-async def async_processor(data):
-    # Process the data asynchronously
-    return {"status": "success", "result": data}
-
-# Define sync processor (runs in thread pool)
-def sync_processor(data):
-    # Process the data synchronously
-    return {"status": "success", "result": data}
-
-# Define callback function
-async def on_success(data):
-    print(f"Successfully processed: {data['result']}")
-
-# Create retry configuration
-custom_retry_strategy = QueueRetryConfig.exponential(
-    max_attempts=3,
-    min_delay=1.0,
-    max_delay=30.0,
-    timeout=120
-)
-
-# Enqueue operations
-queue.enqueue(
-    entity={"user_id": "123", "action": "update"},
-    processor=async_processor,
-    priority="high",
-    on_success=on_success,
-    retry_config=custom_retry_strategy.to_dict()  # Convert to dict for enqueueing
-)
-
-# Start the worker
-async def main():
-    await worker.start()
-    try:
-        # Keep the worker running
-        while True:
-            await asyncio.sleep(1)
-    except KeyboardInterrupt:
-        # Stop the worker on Ctrl+C
-        await worker.stop()
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
 
 ## Processor Function Design
 
-### Avoid Using Decorators on Processor Functions
-
-We recommend **not** using `@with_timeout` or `@retry_with_backoff` decorators directly on processor functions for the following reasons:
-
-1. **Conflicting Timeout Mechanisms**: 
-   - The queue worker already applies timeouts to async processor functions
-   - Additional timeout decorators can cause confusing behavior or race conditions
-
-2. **Redundant Retry Mechanisms**:
-   - The queue system has a robust retry system with backoff, custom delays, and failure tracking
-   - Function-level retries can interfere with the queue's retry mechanism and metrics
-
-3. **Worker Efficiency**:
-   - When using processor-level retries with long delays, worker tasks remain allocated but idle
-   - This blocks the worker from processing other tasks, reducing system throughput
-   - With queue-level retries, workers remain available during retry delays
-
-### Best Practices for Resilient Processors
-
-Instead of decorating processor functions, use these approaches:
+We recommend **not** using `@with_timeout` or `@retry_with_backoff` decorators directly on processor functions. Instead:
 
 1. **Use Queue-Level Retry Configuration**:
    ```python
-   # Configure retries when enqueueing
-   retry_config = QueueRetryConfig.exponential(
-       max_attempts=5,
-       min_delay=1.0,
-       max_delay=30.0
-   )
+   retry_config = QueueRetryConfig.exponential(max_attempts=5)
    
    queue.enqueue(
        entity=data,
        processor=my_processor,
-       retry_config=retry_config.to_dict()
+       retry_config=retry_config  # QueueRetryConfig object can be used directly
    )
    ```
-The retry strategy and current state is persisted in the task, even if the process shut down. When it is back up and running, retries woudl resume from where they were.
 
-2. **For Internal Resilience**: If you need internal retries for specific operations within your processor, keep them short and focused:
+2. **For Internal Resilience**: Use decorators on internal functions, not on the processor itself.
 
-   ```python
-   async def my_processor(data):
-       # Use decorators on internal functions, not the processor itself
-       result = await call_external_service_with_retry(data)
-       return process_result(result)
-       
-   @retry_with_backoff(max_retries=2, base_delay=0.1)  # Short, quick retries
-   async def call_external_service_with_retry(data):
-       # API calls or other operations that might need quick retries
-       return await api.call(data)
-   ```
-
-3. **Design Processors to Fail Fast**: Make processors detect permanent failures quickly and let the queue system handle retrying:
-
-   ```python
-   async def well_designed_processor(data):
-       # Validate inputs first to fail fast on invalid data
-       if not validate_data(data):
-           raise ValueError("Invalid data - will not retry")
-           
-       # Proceed with processing for valid data
-       # ...
-   ```
-
-
-## Thread Pool for Synchronous Processors
-
-The system handles different types of processors differently:
-
-### Async Processors
-- Executed directly in the asyncio event loop
-- Timeout is applied using `asyncio.wait_for()`
-- If timeout occurs, processor is cancelled at the next await point
-- Proper cancellation handling ensures resources are cleaned up
-
-### Sync Processors
-- Executed in a dedicated thread pool
-- Thread pool manages concurrency
-- If thread pool is exhausted, task is treated as a failure and retried with normal retry policy
+3. **Design Processors to Fail Fast**: Make processors detect permanent failures quickly.
 
 ## Retry Configuration
-
-For business logic retries (distinct from connection retries), use QueueRetryConfig:
 
 ### Default Exponential Backoff
 
@@ -275,8 +189,7 @@ retry_config = QueueRetryConfig.exponential(
     base=2.0,            # Multiply delay by 2 each retry
     min_delay=1.0,       # Start with 1 second delay
     max_delay=60.0,      # Maximum 60 second delay
-    max_attempts=5,      # Maximum 5 retry attempts
-    timeout=3600         # Stop retrying after 1 hour
+    max_attempts=5       # Maximum 5 retry attempts
 )
 ```
 
@@ -284,34 +197,8 @@ retry_config = QueueRetryConfig.exponential(
 
 ```python
 retry_config = QueueRetryConfig.custom(
-    delays=[60, 300, 1800, 7200],  # Custom delay schedule
-    timeout=86400                  # Stop retrying after 1 day
+    delays=[60, 300, 1800, 7200]  # Custom delay schedule
 )
-```
-
-## Monitoring Queue Status
-
-```python
-status = queue.get_queue_status()
-print(status)
-# {
-#   'queue:high:async_processor': 5,
-#   'queue:normal:sync_processor': 10,
-#   'queue:failures': 2,
-#   'queue:system_errors': 0,
-#   'total_items': 17,
-#   'metrics': {
-#     'enqueued': 115,
-#     'processed': 98,
-#     'failed': 2,
-#     'retried': 5,
-#     'timeouts': 1,
-#     'thread_pool_exhaustion': 3,
-#     'thread_pool_utilization': 85.0,
-#     'success_rate': 83.5
-#   },
-#   'status_time': 1621345678.123
-# }
 ```
 
 ## Callback Execution
@@ -335,13 +222,9 @@ queue.enqueue(
 )
 ```
 
-Callbacks will be executed with appropriate data:
-- Success callbacks receive: `{"entity": original_entity, "result": processor_result, "operation_id": id}`
-- Failure callbacks receive: `{"entity": original_entity, "error": error_message, "operation_id": id}`
-
 ## Batch Processing
 
-For higher throughput, use batch operations:
+The `enqueue_batch` method provides an efficient way to submit multiple tasks at once:
 
 ```python
 # Process multiple items in a single call
@@ -361,43 +244,19 @@ results = queue.enqueue_batch(
 print(f"Enqueued {len(results)} items")
 ```
 
-## Priority Processing
+**Key behavior to understand:**
 
-The system processes queues in strict priority order:
+1. **Enqueue Optimization Only**: Batch processing is an optimization for the enqueue operation only. It uses Redis pipelining to submit all tasks in a single network round-trip, reducing overhead.
 
-1. **High Priority**: Processed first, ideal for urgent operations
-2. **Normal Priority**: Processed after all high priority items
-3. **Low Priority**: Processed only when no high or normal priority items remain
+2. **Individual Task Processing**: The worker processes each task individually. From the worker's perspective, there's no difference between tasks submitted individually or as part of a batch.
 
-## Exception Handling and Retry Flow
+3. **Individual Retry Tracking**: Each task in the batch gets its own operation ID and retry state. If one task fails, only that specific task is retried according to the retry configuration.
 
-All failures, regardless of cause, follow the same pattern:
+4. **Non-Atomic**: Batch processing is not an atomic transaction. If the worker is stopped mid-batch, some tasks may be processed while others remain in the queue.
 
-1. Increment attempt count
-2. Check if max attempts reached:
-   - If yes, move to failures queue and execute failure callback
-   - If no, calculate next retry time and requeue with appropriate delay
+5. **Shared Configuration**: All tasks in a batch share the same processor, priority, and retry configuration.
 
-The system handles these failure types consistently:
-- Processor exceptions
-- Async processor timeouts
-- Thread pool exhaustion
-- Total timeout exceeded
-
-## Scaling Guidelines
-
-When scaling the queue system:
-
-1. **Monitor Thread Pool Utilization**:
-   - Below 50%: Consider reducing thread pool size
-   - Above 80%: Consider horizontal scaling (adding more workers)
-
-2. **Monitor Worker Task Count**:
-   - If all workers busy > 90% of time: Add more worker tasks
-
-3. **Prefer Horizontal Scaling**:
-   - Add more worker instances rather than increasing threads per instance
-   - Use container orchestration (Kubernetes, ECS) for auto-scaling
+This approach optimizes throughput while maintaining the flexibility of individual task tracking and error handling.
 
 ## Best Practices
 
@@ -409,51 +268,12 @@ Async processors should:
 - Yield control frequently (await points)
 - Properly clean up resources in finally blocks
 
-```python
-async def well_designed_async_processor(entity):
-    try:
-        # Use async database driver
-        async with database.connection() as conn:
-            async with conn.transaction():
-                # Process data...
-                result = await conn.fetch("SELECT * FROM items WHERE id = $1", entity["id"])
-                
-                # Allow cancellation point
-                await asyncio.sleep(0)
-                
-                # More processing...
-                processed = await some_other_async_operation(result)
-                
-                return {"success": True, "data": processed}
-    except asyncio.CancelledError:
-        # Clean up any resources not handled by context managers
-        logger.info(f"Processing cancelled for entity {entity.get('id')}")
-        raise  # Re-raise to propagate cancellation
-```
-
 ### 2. Sync Processor Design
 
 Sync processors should:
 - Use proper resource management (context managers, try/finally)
 - Avoid very long-running operations
 - Be idempotent when possible (can be retried safely)
-
-```python
-def well_designed_sync_processor(entity):
-    # Use context managers for resource cleanup
-    with open(entity["filepath"], "r") as file:
-        data = file.read()
-    
-    # Process data...
-    processed = compute_results(data)
-    
-    # Use another context manager for database
-    with database.connection() as conn:
-        with conn.transaction():
-            conn.execute("INSERT INTO results VALUES (?)", [processed])
-    
-    return {"status": "success", "result": processed}
-```
 
 ### 3. Worker Configuration
 
@@ -463,45 +283,7 @@ Configure workers based on your workload:
 - **Mostly sync processors**: Fewer worker tasks, larger thread pool
 - **Mixed workload**: Balance worker tasks and thread pool size
 
-### 4. Monitoring and Alerting
-
-Set up alerts for critical metrics:
-
-- Thread pool utilization > 80%
-- Worker task failures
-- Growing failure queue size
-- Increasing retry counts
-
-## Implementation Details
-
-<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
-
-### class `QueueConfig`
-
-Central configuration for the entire queue system.
-
-<details>
-<summary><strong>Public Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `to_dict` | | `Dict[str, Any]` | Configuration | Convert the complete configuration to a dictionary. |
-
-</details>
-
-<br>
-
-<details>
-<summary><strong>Private/Internal Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `__init__` | `redis: Optional[QueueRedisConfig] = None`, `worker: Optional[QueueWorkerConfig] = None`, `retry: Optional[QueueRetryConfig] = None`, `metrics: Optional[QueueMetricsConfig] = None`, `logging: Optional[QueueLoggingConfig] = None` | | Initialization | Initialize queue system configuration. |
-</details>
-
-<br>
-
-</div>
+## Class API
 
 <div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
 
@@ -512,32 +294,14 @@ Manager for queueing operations - used in API endpoints.
 <details>
 <summary><strong>Public Methods</strong></summary>
 
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| `@try_catch` | `enqueue` | `entity: Dict[str, Any]`, `processor: Union[Callable, str]`, `queue_name: Optional[str] = None`, `priority: str = "normal"`, `operation_id: Optional[str] = None`, `retry_config: Optional[Dict[str, Any]] = None`, `on_success: Optional[Union[Callable, str]] = None`, `on_failure: Optional[Union[Callable, str]] = None`, `timeout: Optional[float] = None`, `deduplication_key: Optional[str] = None`, `custom_serializer: Optional[Callable] = None` | `Dict[str, Any]` | Queueing | Enqueue an operation for asynchronous processing. |
-| `@try_catch` | `enqueue_batch` | `entities: List[Dict[str, Any]]`, `processor: Union[Callable, str]`, `**kwargs` | `List[Dict[str, Any]]` | Queueing | Enqueue multiple operations for batch processing. |
-| `@try_catch` <br> `@circuit_breaker` | `get_queue_status` | | `Dict[str, Any]` | Monitoring | Returns the status of all registered queues with counts and metrics. |
-| `@try_catch` | `purge_queue` | `queue_name: str`, `priority: str = "normal"` | `int` | Management | Remove all items from a specific queue. |
+| Method | Description |
+|--------|-------------|
+| `enqueue(entity, processor, ...)` | Enqueue an operation for asynchronous processing. |
+| `enqueue_batch(entities, processor, ...)` | Enqueue multiple operations for batch processing. |
+| `get_queue_status()` | Returns the status of all registered queues with counts and metrics. |
+| `purge_queue(queue_name, priority)` | Remove all items from a specific queue. |
 
 </details>
-
-<br>
-
-<details>
-<summary><strong>Private/Internal Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `__init__` | `config: QueueConfig` | | Initialization | Initialize the queue manager with a configuration. |
-| | `_generate_operation_id` | | `str` | Utilities | Generate a unique operation ID. |
-| | `_hash_entity` | `entity: Dict[str, Any]` | `str` | Utilities | Generate a hash for an entity for deduplication. |
-| | `_serialize_entity` | `entity`, `default_serializer=None` | `str` | Utilities | Serialize entity to JSON with custom handling for complex types. |
-| `@try_catch` | `_queue_operation` | `queue_data: Dict[str, Any]`, `queue_name: str`, `priority: str = "normal"`, `custom_serializer: Optional[Callable] = None` | | Queueing | Queue an operation for later processing. |
-
-</details>
-
-<br>
-
 </div>
 
 <div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
@@ -549,36 +313,12 @@ Worker for processing queued operations - started at app startup.
 <details>
 <summary><strong>Public Methods</strong></summary>
 
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `start` | | `None` | Lifecycle | Start processing the queue with worker tasks. |
-| | `stop` | | `None` | Lifecycle | Stop queue processing gracefully, including thread pool shutdown. |
+| Method | Description |
+|--------|-------------|
+| `start()` | Start processing the queue with worker tasks. |
+| `stop()` | Stop queue processing gracefully. |
 
 </details>
-
-<br>
-
-<details>
-<summary><strong>Private/Internal Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `__init__` | `config: QueueConfig` | | Initialization | Initialize the queue worker. |
-| `@with_timeout` | `_worker_loop` | `worker_id: int` | | Processing | Main worker loop for processing queue items. |
-| `@circuit_breaker` | `_process_queue_item` | `worker_id: int` | `bool` | Processing | Process a single item from the queue. |
-| | `_handle_queue_item` | `worker_id: int`, `queue: bytes`, `item_data: bytes` | `bool` | Processing | Handle processing of a queue item, dispatching to the appropriate processor type. |
-| | `_find_processor` | `processor_name: str`, `processor_module: Optional[str] = None` | `Optional[Callable]` | Processing | Find the processor function by name and module. |
-| | `_calculate_effective_timeout` | `item: Dict[str, Any]` | `float` | Processing | Calculate the effective timeout for an async processor execution. |
-| | `_execute_sync_processor` | `processor: Callable`, `entity: Dict[str, Any]`, `operation_id: str` | `Any` | Processing | Execute a synchronous processor in the thread pool with exhaustion handling. |
-| | `_update_thread_metrics` | `start_time: float` | | Metrics | Update metrics related to thread pool usage. |
-| | `_handle_task_failure` | `item: Optional[Dict[str, Any]]`, `entity: Optional[Dict[str, Any]]`, `operation_id: str`, `queue: bytes`, `redis_client: Any`, `worker_id: int`, `error_reason: str = "Unknown error"`, `item_data: Optional[bytes] = None` | `bool` | Error Handling | Unified error handler for all task failures regardless of cause. |
-| `@retry_with_backoff` | `_execute_callback` | `callback_name: str`, `callback_module: Optional[str] = None`, `data: Dict[str, Any] = None` | | Callbacks | Execute a callback function, handling both async and sync callbacks. |
-| | `_get_bytes_key` | `key_name: str` | `bytes` | Utilities | Get a queue key as bytes. |
-
-</details>
-
-<br>
-
 </div>
 
 <div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
@@ -590,193 +330,12 @@ Configuration for retry behavior in queue operations.
 <details>
 <summary><strong>Public Methods</strong></summary>
 
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `get_delay_for_attempt` | `attempt: int` | `float` | Configuration | Get the delay for a specific attempt with jitter. |
-| | `to_dict` | | `Dict[str, Any]` | Serialization | Convert configuration to dictionary for queue storage. |
-| | `would_exceed_timeout` | `first_attempt_time: float`, `current_time: float` | `bool` | Utilities | Check if the next retry would exceed the total timeout. |
-| `@classmethod` | `from_dict` | `data: Dict[str, Any]` | `QueueRetryConfig` | Factory | Create instance from dictionary. |
-| `@classmethod` | `fixed` | `delay: float`, `max_attempts: int = 5`, `timeout: Optional[float] = None` | `QueueRetryConfig` | Factory | Create a fixed delay retry configuration. |
-| `@classmethod` | `exponential` | `base: float = 2.0`, `min_delay: float = 1.0`, `max_delay: float = 60.0`, `max_attempts: int = 5`, `timeout: Optional[float] = None` | `QueueRetryConfig` | Factory | Create an exponential backoff retry configuration. |
-| `@classmethod` | `custom` | `delays: List[float]`, `max_attempts: Optional[int] = None`, `timeout: Optional[float] = None` | `QueueRetryConfig` | Factory | Create a custom delay retry configuration. |
+| Method | Description |
+|--------|-------------|
+| `fixed(delay, max_attempts, timeout)` | Create a fixed delay retry configuration. |
+| `exponential(base, min_delay, max_delay, max_attempts, timeout)` | Create an exponential backoff retry configuration. |
+| `custom(delays, max_attempts, timeout)` | Create a custom delay retry configuration. |
+| `to_dict()` | Convert configuration to dictionary. |
 
 </details>
-
-<br>
-
-<details>
-<summary><strong>Private/Internal Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `__init__` | `max_attempts: int = 5`, `delays: Optional[List[float]] = None`, `timeout: Optional[float] = None` | | Initialization | Initialize retry configuration. |
-| | `_generate_exponential_delays` | | `List[float]` | Utilities | Generate exponential backoff delays with fixed parameters. |
-| | `_validate_config` | | | Validation | Validate retry configuration parameters. |
-
-</details>
-
-<br>
-
-</div>
-
-<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
-
-### class `QueueWorkerConfig`
-
-Configuration for worker execution and thread pool.
-
-<details>
-<summary><strong>Public Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `to_dict` | | `Dict[str, Any]` | Serialization | Convert configuration to dictionary. |
-
-</details>
-
-<br>
-
-<details>
-<summary><strong>Private/Internal Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `__init__` | `worker_count: int = 5`, `thread_pool_size: int = 20`, `work_timeout: float = 30.0` | | Initialization | Initialize worker configuration. |
-| | `_validate_config` | | | Validation | Validate worker configuration parameters. |
-
-</details>
-
-<br>
-
-</div>
-
-<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
-
-### class `QueueRedisConfig`
-
-Configuration for Redis connection and behavior.
-
-<details>
-<summary><strong>Public Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| `@circuit_breaker` <br> `@retry_with_backoff` | `get_client` | | `Redis` | Connection | Get or create Redis client with retries and circuit breaker. |
-| | `get_queue_key` | `name: str`, `priority: Union[str, QueuePriority]` | `str` | Keys | Get full Redis key for a queue with the given name and priority. |
-| | `get_special_queue_key` | `name: str` | `str` | Keys | Get full Redis key for a special queue like failures or errors. |
-| | `get_registry_key` | | `str` | Keys | Get the Redis key for the queue registry. |
-| | `to_dict` | | `Dict[str, Any]` | Serialization | Convert configuration to dictionary with sensitive data masked. |
-
-</details>
-
-<br>
-
-<details>
-<summary><strong>Private/Internal Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `__init__` | `url: Optional[str] = None`, `client: Optional[Any] = None`, `connection_timeout: float = 5.0`, `circuit_breaker_threshold: int = 5`, `circuit_recovery_timeout: float = 30.0`, `key_prefix: str = "queue:"` | | Initialization | Initialize Redis configuration. |
-| | `_validate_config` | | | Validation | Validate Redis configuration parameters. |
-| | `_mask_connection_url` | `url: str` | `str` | Utilities | Mask password in connection URL for logging safety. |
-
-</details>
-
-<br>
-
-</div>
-
-<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
-
-### class `QueueMetricsConfig`
-
-Configuration for metrics collection and reporting.
-
-<details>
-<summary><strong>Public Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `update_metric` | `metric_name: str`, `value: Any = 1`, `force_log: bool = False`, `logger=None` | | Metrics | Update a metric counter or value and log significant changes. |
-| | `get_metrics` | | `Dict[str, Any]` | Metrics | Get current metrics with computed fields. |
-| | `to_dict` | | `Dict[str, Any]` | Serialization | Convert configuration to dictionary. |
-
-</details>
-
-<br>
-
-<details>
-<summary><strong>Private/Internal Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `__init__` | `enabled: bool = True`, `log_threshold: float = 0.1` | | Initialization | Initialize metrics configuration. |
-
-</details>
-
-<br>
-
-</div>
-
-<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
-
-### class `QueueCallableConfig`
-
-Configuration for managing callable functions within the queue system.
-
-<details>
-<summary><strong>Public Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `register` | `callable_func: Callable` | `str` | Registration | Register a callable function for later use. |
-| | `get` | `name: str`, `module: str` | `Optional[Callable]` | Access | Get a callable by name and module, attempting to import it if not found. |
-| | `to_dict` | | `Dict[str, Dict[str, str]]` | Serialization | Convert configuration to dictionary. |
-
-</details>
-
-<br>
-
-<details>
-<summary><strong>Private/Internal Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `__init__` | `logger=None` | | Initialization | Initialize the callable registry. |
-
-</details>
-
-<br>
-
-</div>
-
-<div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
-
-### class `QueueLoggingConfig`
-
-Configuration for logging behavior.
-
-<details>
-<summary><strong>Public Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `to_dict` | | `Dict[str, Any]` | Serialization | Convert configuration to dictionary. |
-
-</details>
-
-<br>
-
-<details>
-<summary><strong>Private/Internal Methods</strong></summary>
-
-| Decorators | Method | Args | Returns | Category | Description |
-|------------|--------|------|---------|----------|-------------|
-| | `__init__` | `logger: Optional[Any] = None`, `level: str = "INFO"` | | Initialization | Initialize logging configuration. |
-| | `_create_default_logger` | | | Utilities | Create a simple default logger that outputs to console. |
-
-</details>
-
-<br>
-
 </div>

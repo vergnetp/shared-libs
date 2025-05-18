@@ -68,10 +68,7 @@ class QueueRedisConfig:
             errors.append("Either url or client must be provided")
             
         if self.connection_timeout <= 0:
-            errors.append(f"connection_timeout must be positive, got {self.connection_timeout}")
-            
-        if self.max_connection_retries < 0:
-            errors.append(f"max_connection_retries cannot be negative, got {self.max_connection_retries}")
+            errors.append(f"connection_timeout must be positive, got {self.connection_timeout}") 
             
         if errors:
             raise ValueError(f"Redis configuration validation failed: {'; '.join(errors)}")
@@ -164,8 +161,7 @@ class QueueRedisConfig:
         """
         return {
             "url": self._mask_connection_url(self.url) if self.url else None,
-            "connection_timeout": self.connection_timeout,
-            "max_connection_retries": self.max_connection_retries,
+            "connection_timeout": self.connection_timeout,           
             "circuit_breaker_threshold": self.circuit_breaker_threshold,
             "circuit_recovery_timeout": self.circuit_recovery_timeout,
             "key_prefix": self.key_prefix        

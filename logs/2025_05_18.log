@@ -4,3 +4,15 @@
 2025-05-18 00:51:00.541 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-16800 environment=dev
 2025-05-18 00:51:00.546 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-16800 environment=dev
 2025-05-18 00:51:00.547 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-16800 environment=dev
+2025-05-18 10:16:00.694 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-9984 environment=dev
+2025-05-18 10:16:01.465 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-9984 environment=dev
+2025-05-18 10:16:01.498 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-9984 environment=dev
+2025-05-18 10:16:01.500 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-9984 environment=dev
+2025-05-18 10:16:01.505 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-9984 environment=dev
+2025-05-18 10:16:01.507 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-9984 environment=dev
+2025-05-18 10:21:19.741 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-10520 environment=dev
+2025-05-18 10:21:20.189 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-10520 environment=dev
+2025-05-18 10:21:20.195 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-10520 environment=dev
+2025-05-18 10:21:20.197 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-10520 environment=dev
+2025-05-18 10:21:20.203 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ Creating EntityUtils | component=TempMixin subcomponent=__init__ service_name=service-10520 environment=dev
+2025-05-18 10:21:20.205 [INFO] [INFO] TempMixin - __init__ -  ++++++++++ EntityUtils custom_serializers: {} | component=TempMixin subcomponent=__init__ service_name=service-10520 environment=dev
