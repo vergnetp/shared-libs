@@ -291,7 +291,7 @@ class EntityUtilsMixin:
         Returns:
             Entity with added/updated system fields
         """
-        now = datetime.datetime.utcnow().isoformat()
+        now = datetime.datetime.now(datetime.UTC).isoformat()
         result = entity.copy()
         
         # Add ID if missing

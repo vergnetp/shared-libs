@@ -3875,7 +3875,7 @@ class EntityUtils:
         Returns:
             Entity with added/updated system fields
         """
-        now = datetime.datetime.utcnow().isoformat()
+        now = datetime.datetime.now(datetime.UTC).isoformat()
         result = entity.copy()
         
         # Add ID if missing
@@ -4239,7 +4239,7 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
                 versions = {row[0]: row[1] for row in version_results if row[1] is not None}
             
             # Prepare history entries
-            now = datetime.datetime.utcnow().isoformat()
+            now = datetime.datetime.now(datetime.UTC).isoformat()
             history_fields = list(all_fields) + ['version', 'history_timestamp', 'history_user_id', 'history_comment']
             history_sql = f"INSERT INTO [{entity_name}_history] ({', '.join(['['+f+']' for f in history_fields])}) VALUES ({', '.join(['?'] * len(history_fields))})"
             
@@ -4308,7 +4308,7 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
             return True
 
         # For soft deletion, use an UPDATE
-        now = datetime.datetime.utcnow().isoformat()
+        now = datetime.datetime.now(datetime.UTC).isoformat()
         sql = self.sql_generator.get_soft_delete_sql(entity_name)
         result = await self.execute(sql, (now, now, user_id, entity_id))
         
@@ -4349,7 +4349,7 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
             return False
             
         # Update timestamps
-        now = datetime.datetime.utcnow().isoformat()
+        now = datetime.datetime.now(datetime.UTC).isoformat()
         
         # Generate restore SQL
         sql = self.sql_generator.get_restore_entity_sql(entity_name)
@@ -4837,7 +4837,7 @@ class EntityAsyncMixin(EntityUtils):#, ConnectionInterface):
             
         # Prepare history entry
         history_entry = entity.copy()
-        now = datetime.datetime.utcnow().isoformat()
+        now = datetime.datetime.now(datetime.UTC).isoformat()
         
         # Add history-specific fields
         history_entry['version'] = next_version

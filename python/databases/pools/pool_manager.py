@@ -80,15 +80,31 @@ class PoolManager(ABC):
         logger.info("Task started: will check and reclaim leaked or idle connections from the pool", 
                     pool_name=self.alias(), 
                     check_interval_mins=int(SLEEP_TIME/60))
+        
+        # Create a way to check if the pool is shutting down
+        task_key = self.hash()
+        shutdown_event = asyncio.Event()
+        self._shutdown_events = getattr(self.__class__, '_shutdown_events', {})
+        self._shutdown_events[task_key] = shutdown_event
                     
-        while True:
+        while not shutdown_event.is_set():
             try:
-                # Wait to avoid excessive CPU usage
+                # Wait to avoid excessive CPU usage, but check for shutdown every second
                 try:
-                    await asyncio.sleep(SLEEP_TIME)  
+                    for _ in range(SLEEP_TIME):
+                        if shutdown_event.is_set():
+                            break
+                        await asyncio.sleep(1)
+                    
+                    # If we're shutting down, exit the loop
+                    if shutdown_event.is_set():
+                        break
                 except asyncio.CancelledError:
-                    logger.info("Task cancelled", 
-                            pool_name=self.alias())
+                    logger.info("Task cancelled", pool_name=self.alias())
+                    break
+                
+                # Skip leak detection if we're shutting down
+                if shutdown_event.is_set() or self._shutting_down.get(self.hash(), False):
                     break
                 
                 # Check for leaked connections
@@ -150,8 +166,10 @@ class PoolManager(ABC):
                                     
             except Exception as e:
                 logger.error(f"Error in connection leak detection task for {self.alias()} pool: {e}", 
-                            pool_name=self.alias(), connection_id=conn._id,
+                            pool_name=self.alias(),
                             error=e.to_string() if hasattr(e, 'to_string') else str(e))
+        
+        logger.info(f"Leak detection task for {self.alias()} exiting", pool_name=self.alias())
 
     def alias(self):
         return self._alias
@@ -598,6 +616,11 @@ class PoolManager(ABC):
         for key in keys:
             cls._shutting_down[key] = True
             logger.info(f"Pool {key} marked as shutting down, no new connections allowed")
+            
+            # Signal any leak detection tasks to stop
+            shutdown_events = getattr(cls, '_shutdown_events', {})
+            if key in shutdown_events:
+                shutdown_events[key].set()
         
         # Then process each pool
         for key in keys:
@@ -617,6 +640,11 @@ class PoolManager(ABC):
                 cls._shared_locks.pop(key, None)
                 cls._active_connections.pop(key, None)
                 cls._shutting_down.pop(key, None)
+                
+                # Remove shutdown event
+                shutdown_events = getattr(cls, '_shutdown_events', {})
+                if key in shutdown_events:
+                    shutdown_events.pop(key, None)
 
     @abstractmethod
     @try_catch
