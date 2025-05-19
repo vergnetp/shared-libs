@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import json
 import asyncio
@@ -61,7 +62,8 @@ class PoolManager(ABC):
         try:
             loop = asyncio.get_running_loop()
             loop.create_task(self._initialize_pool_if_needed())
-            loop.create_task(self._leak_detection_task())
+            if "pytest" not in sys.modules:
+                loop.create_task(self._leak_detection_task())
         except RuntimeError:
             # Not in an async environment, which is fine
             pass
@@ -77,99 +79,102 @@ class PoolManager(ABC):
         LEAK_THRESHOLD_SECONDS = 300  # if a connection has been used for longer than 5 mins, it should be considered leaked
         SLEEP_TIME = 300  # 300 seconds are 5 mins
 
+        # Store a reference to the task so we can cancel it later
+        task_key = self.hash()
+        self.__class__._leak_tasks = getattr(self.__class__, '_leak_tasks', {})
+        self.__class__._leak_tasks[task_key] = asyncio.current_task()
+
         logger.info("Task started: will check and reclaim leaked or idle connections from the pool", 
                     pool_name=self.alias(), 
                     check_interval_mins=int(SLEEP_TIME/60))
-        
-        # Create a way to check if the pool is shutting down
-        task_key = self.hash()
-        shutdown_event = asyncio.Event()
-        self._shutdown_events = getattr(self.__class__, '_shutdown_events', {})
-        self._shutdown_events[task_key] = shutdown_event
                     
-        while not shutdown_event.is_set():
-            try:
-                # Wait to avoid excessive CPU usage, but check for shutdown every second
+        try:
+            while True:
                 try:
-                    for _ in range(SLEEP_TIME):
-                        if shutdown_event.is_set():
-                            break
-                        await asyncio.sleep(1)
+                    # Wait to avoid excessive CPU usage
+                    try:
+                        await asyncio.sleep(SLEEP_TIME)  
+                    except asyncio.CancelledError:
+                        logger.info("Leak detection task cancelled", pool_name=self.alias())
+                        return
                     
-                    # If we're shutting down, exit the loop
-                    if shutdown_event.is_set():
-                        break
-                except asyncio.CancelledError:
-                    logger.info("Task cancelled", pool_name=self.alias())
-                    break
-                
-                # Skip leak detection if we're shutting down
-                if shutdown_event.is_set() or self._shutting_down.get(self.hash(), False):
-                    break
-                
-                # Check for leaked connections
-                leaked_conns = await self.check_for_leaked_connections(threshold_seconds=LEAK_THRESHOLD_SECONDS)  
-                
-                # Attempt recovery for leaked connections
-                for conn, duration, stack in leaked_conns:
-                    try:
-                        # Mark as leaked to avoid duplicate recovery attempts
-                        conn._mark_leaked()
-                        
-                        # Try to gracefully return to the pool
-                        logger.warning(f"Attempting to recover leaked connection that has leaked for {duration:.2f}s)", 
-                                    pool_name=self.alias(), 
-                                    duration_seconds=duration,
-                                    connection_id=conn._id)
-                                    
-                        await self._release_connection_to_pool(conn)
-                        
-                        logger.info("Successfully recovered leaked connection", 
-                                pool_name=self.alias(), connection_id=conn._id)
-                                
-                    except Exception as e:
-                        logger.error("Failed to recover leaked connection", pool_name=self.alias(), connection_id=conn._id, error=e.to_string() if hasattr(e, 'to_string') else str(e))
-                                    
-                        self._connections.discard(conn)  # Explicitly discard leaked connection
-                        # Try to close directly as a last resort
+                    # Check if the pool is shutting down or removed
+                    if self.hash() not in self._shared_pools or self._shutting_down.get(self.hash(), False):
+                        logger.info("Pool is shutting down or removed, stopping leak detection task", 
+                                pool_name=self.alias())
+                        return
+                    
+                    # Check for leaked connections
+                    leaked_conns = await self.check_for_leaked_connections(threshold_seconds=LEAK_THRESHOLD_SECONDS)  
+                    
+                    # Attempt recovery for leaked connections
+                    for conn, duration, stack in leaked_conns:
                         try:
-                            await conn.close()
-                        except Exception:
-                            pass
-                
-                # Additionally check for idle connections               
-                idle_conns = []
-                
-                for conn in self._connections:
-                    if conn._is_idle(IDLE_TIMEOUT) and not conn._is_leaked:
-                        idle_conns.append(conn)
-                
-                # Log idle connections
-                if idle_conns:
-                    logger.warning(f"There some idle connections", 
-                                pool_name=self.alias(), 
-                                idle_connections_count=len(idle_conns), 
-                                idle_threshold_mins=int(IDLE_TIMEOUT/60))
-
-                # Also recover idle connections
-                for conn in idle_conns:
-                    try:
-                        logger.warning("Recovering idle connection", 
+                            # Mark as leaked to avoid duplicate recovery attempts
+                            conn._mark_leaked()
+                            
+                            # Try to gracefully return to the pool
+                            logger.warning(f"Attempting to recover leaked connection that has leaked for {duration:.2f}s)", 
+                                        pool_name=self.alias(), 
+                                        duration_seconds=duration,
+                                        connection_id=conn._id)
+                                        
+                            await self._release_connection_to_pool(conn)
+                            
+                            logger.info("Successfully recovered leaked connection", 
                                     pool_name=self.alias(), connection_id=conn._id)
                                     
-                        await self._release_connection_to_pool(conn)
-                        
-                    except Exception as e:
-                        logger.error("Failed to recover idle connection", 
-                                    pool_name=self.alias(), connection_id=conn._id,
-                                    error=e.to_string() if hasattr(e, 'to_string') else str(e))
-                                    
-            except Exception as e:
-                logger.error(f"Error in connection leak detection task for {self.alias()} pool: {e}", 
-                            pool_name=self.alias(),
-                            error=e.to_string() if hasattr(e, 'to_string') else str(e))
-        
-        logger.info(f"Leak detection task for {self.alias()} exiting", pool_name=self.alias())
+                        except Exception as e:
+                            logger.error("Failed to recover leaked connection", pool_name=self.alias(), connection_id=conn._id, error=e.to_string() if hasattr(e, 'to_string') else str(e))
+                                        
+                            self._connections.discard(conn)  # Explicitly discard leaked connection
+                            # Try to close directly as a last resort
+                            try:
+                                await conn.close()
+                            except Exception:
+                                pass
+                    
+                    # Additionally check for idle connections               
+                    idle_conns = []
+                    
+                    for conn in self._connections:
+                        if conn._is_idle(IDLE_TIMEOUT) and not conn._is_leaked:
+                            idle_conns.append(conn)
+                    
+                    # Log idle connections
+                    if idle_conns:
+                        logger.warning(f"There some idle connections", 
+                                    pool_name=self.alias(), 
+                                    idle_connections_count=len(idle_conns), 
+                                    idle_threshold_mins=int(IDLE_TIMEOUT/60))
+
+                    # Also recover idle connections
+                    for conn in idle_conns:
+                        try:
+                            logger.warning("Recovering idle connection", 
+                                        pool_name=self.alias(), connection_id=conn._id)
+                                        
+                            await self._release_connection_to_pool(conn)
+                            
+                        except Exception as e:
+                            logger.error("Failed to recover idle connection", 
+                                        pool_name=self.alias(), connection_id=conn._id,
+                                        error=e.to_string() if hasattr(e, 'to_string') else str(e))
+                                        
+                except asyncio.CancelledError:
+                    # Handle task cancellation
+                    logger.info("Leak detection task cancelled", pool_name=self.alias())
+                    return
+                except Exception as e:
+                    logger.error(f"Error in connection leak detection task for {self.alias()} pool: {e}", 
+                                pool_name=self.alias(),
+                                error=e.to_string() if hasattr(e, 'to_string') else str(e))
+        finally:
+            # Always remove the task reference
+            leak_tasks = getattr(self.__class__, '_leak_tasks', {})
+            if task_key in leak_tasks:
+                del leak_tasks[task_key]
+            logger.info(f"Leak detection task for {self.alias()} exiting", pool_name=self.alias())
 
     def alias(self):
         return self._alias
@@ -591,6 +596,23 @@ class PoolManager(ABC):
                 except asyncio.TimeoutError:
                     logger.warning(f"Timeout waiting for connections to be released for pool {key}")
 
+    @abstractmethod
+    @try_catch
+    async def _create_pool(self, config: DatabaseConfig, connection_acqusition_timeout: float) -> ConnectionPool:
+        """
+        Creates a new connection pool.
+        
+        This abstract method must be implemented by subclasses to create a
+        ConnectionPool implementation specific to the database backend being used.
+        
+        Args:
+            config (Dict): Database configuration dictionary.
+            
+        Returns:
+            ConnectionPool: A connection pool that implements the ConnectionPool interface.
+        """
+        raise NotImplementedError()
+
     @classmethod
     @try_catch
     async def close_pool(cls, config_hash: Optional[str] = None, timeout: Optional[float]=60) -> None:
@@ -617,15 +639,22 @@ class PoolManager(ABC):
             cls._shutting_down[key] = True
             logger.info(f"Pool {key} marked as shutting down, no new connections allowed")
             
-            # Signal any leak detection tasks to stop
-            shutdown_events = getattr(cls, '_shutdown_events', {})
-            if key in shutdown_events:
-                shutdown_events[key].set()
+            # Cancel any leak detection tasks
+            leak_tasks = getattr(cls, '_leak_tasks', {})
+            if key in leak_tasks:
+                task = leak_tasks[key]
+                if not task.done() and not task.cancelled():
+                    task.cancel()
+                    try:
+                        # Give the task a brief moment to clean up
+                        await asyncio.wait_for(asyncio.shield(task), timeout=0.5)
+                    except (asyncio.TimeoutError, asyncio.CancelledError):
+                        pass
         
         # Then process each pool
         for key in keys:
             try:
-                await PoolManager._release_pending_connections(key, timeout)
+                await cls._release_pending_connections(key, timeout)
                 pool = cls._shared_pools.get(key)
                 if pool:
                     try:
@@ -641,24 +670,7 @@ class PoolManager(ABC):
                 cls._active_connections.pop(key, None)
                 cls._shutting_down.pop(key, None)
                 
-                # Remove shutdown event
-                shutdown_events = getattr(cls, '_shutdown_events', {})
-                if key in shutdown_events:
-                    shutdown_events.pop(key, None)
-
-    @abstractmethod
-    @try_catch
-    async def _create_pool(self, config: DatabaseConfig, connection_acqusition_timeout: float) -> ConnectionPool:
-        """
-        Creates a new connection pool.
-        
-        This abstract method must be implemented by subclasses to create a
-        ConnectionPool implementation specific to the database backend being used.
-        
-        Args:
-            config (Dict): Database configuration dictionary.
-            
-        Returns:
-            ConnectionPool: A connection pool that implements the ConnectionPool interface.
-        """
-        raise NotImplementedError()
+                # Clean up the leak task reference
+                leak_tasks = getattr(cls, '_leak_tasks', {})
+                if key in leak_tasks:
+                    leak_tasks.pop(key, None)

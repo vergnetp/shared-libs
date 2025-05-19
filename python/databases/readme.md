@@ -440,6 +440,92 @@ class OracleDatabase(ConnectionManager):
 ```
 ---
 
+## Code Structure
+
+#### Module: 
+```pyhon
+python/databases/
+├── backends/
+│   ├── mysql/
+│   │   ├── connections.py       # MysqlSyncConnection, MysqlAsyncConnection
+│   │   ├── database.py          # MySqlDatabase
+│   │   ├── generators.py        # MySqlSqlGenerator
+│   │   └── pools.py             # MySqlConnectionPool, MySqlPoolManager
+│   ├── postgres/                # Similar structure as mysql
+│   └── sqlite/                  # Similar structure as mysql
+├── config/
+│   └── database_config.py       # DatabaseConfig
+├── connections/
+│   ├── async_connection.py      # AsyncConnection (abstract)
+│   ├── connection.py            # Connection, ConnectionInterface (abstract)
+│   └── sync_connection.py       # SyncConnection (abstract)
+├── database/
+│   └── connection_manager.py    # ConnectionManager (abstract)
+├── entity/
+│   ├── generators/
+│   │   └── entity_generators.py # SqlEntityGenerator (abstract)
+│   └── mixins/
+│       ├── async_mixin.py       # EntityAsyncMixin
+│       ├── sync_mixin.py        # EntitySyncMixin
+│       └── utils_mixin.py       # EntityUtilsMixin
+├── factory.py                   # DatabaseFactory
+├── generators/
+│   └── generators.py            # SqlGenerator (abstract)
+├── pools/
+│   ├── connection_pool.py       # ConnectionPool (abstract)
+│   └── pool_manager.py          # PoolManager (abstract)
+├── utils/
+│   ├── caching.py               # StatementCache
+│   └── decorators.py            # auto_transaction
+└── tests/
+    ├── docker-compose.yml
+    └── test_dal.py              # Test cases
+```
+
+#### Inheritence: 
+```python
+ConnectionInterface (ABC)
+    ├── Connection
+    │       ├── AsyncConnection (ABC) ────┬── PostgresAsyncConnection
+    │       │                             ├── MysqlAsyncConnection 
+    │       │                             └── SqliteAsyncConnection
+    │       └── SyncConnection (ABC) ──────┬── PostgresSyncConnection
+    │                                      ├── MysqlSyncConnection
+    │                                      └── SqliteSyncConnection
+    ├── EntityAsyncMixin
+    │       └── (mixed into AsyncConnection implementations)
+    └── EntitySyncMixin
+            └── (mixed into SyncConnection implementations)
+
+ConnectionManager (ABC)
+    ├── PostgresDatabase
+    ├── MySqlDatabase
+    └── SqliteDatabase
+
+
+ConnectionPool (ABC)
+    ├── PostgresConnectionPool
+    ├── MySqlConnectionPool
+    └── SqliteConnectionPool
+
+PoolManager (ABC)
+    ├── PostgresPoolManager
+    ├── MySqlPoolManager
+    └── SqlitePoolManager
+
+SqlGenerator (ABC)
+    ├── PostgresSqlGenerator
+    ├── MySqlSqlGenerator
+    └── SqliteSqlGenerator
+
+SqlEntityGenerator (ABC)
+    └── (implemented by SqlGenerator implementations)
+
+
+EntityUtilsMixin 
+    ├── EntityAsyncMixin
+    └── EntitySyncMixin
+```
 
 ## 📖 Public API
 
