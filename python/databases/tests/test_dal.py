@@ -39,7 +39,12 @@ def postgres_db():
     yield db, config
     
     # Cleanup after all tests
-    loop = asyncio.get_event_loop()
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        # Create a new event loop if not in an async context
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
     loop.run_until_complete(PoolManager.close_pool(config.hash(), timeout=5))
 
 
@@ -109,7 +114,6 @@ async def mysql_db_async():
     # Cleanup after all tests
     await PoolManager.close_pool(config.hash(), timeout=5)
 
-
 # Fixture for SQLite database connection
 @pytest.fixture
 def sqlite_db():
@@ -141,9 +145,59 @@ def sqlite_db():
     except PermissionError:
         print(f"Could not remove SQLite file {db_file} - it may still be in use")
 
+
+# Fixture for SQLite database connection
+@pytest_asyncio.fixture
+async def sqlite_db_async():
+    """Set up test database connection to SQLite (async version)"""
+    # Use a temporary file for SQLite
+    db_file = f"test_sqlite_{uuid.uuid4().hex[:8]}.db"
+    config = DatabaseConfig(
+        database=db_file,
+        alias="sqlite_test",
+        env="test"
+    )
+    db = DatabaseFactory.create_database("sqlite", config)
+    
+    try:
+        # Provide the database instance
+        yield db, config
+    finally:
+        # Cleanup
+        await PoolManager.close_pool(config.hash(), timeout=5)
+        
+        # Release any remaining connections and wait a bit
+        if hasattr(db, '_local') and hasattr(db._local, '_sync_conn') and db._local._sync_conn:
+            db.release_sync_connection()  # Make sure sync connection is released
+        
+        # Give the OS a moment to release file handles
+        await asyncio.sleep(0.1)
+        
+        # Remove the SQLite file
+        try:
+            if os.path.exists(db_file):
+                os.remove(db_file)
+        except PermissionError:
+            print(f"Could not remove SQLite file {db_file} - it may still be in use")
+
 def test_quick(postgres_db):
     db, _ = postgres_db
     assert(True)
+    
+    # Ensure we properly clean up any event loops we create
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        # Create a new event loop if not in an async context
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            # Do your test
+            pass
+        finally:
+            # Clean up the loop
+            loop.close()
+            asyncio.set_event_loop(None)
 
 
 def test_sync(postgres_db):
@@ -371,9 +425,9 @@ async def test_mysql_soft_delete_restore(mysql_db_async):
 
 # SQLite Tests
 @pytest.mark.asyncio
-async def test_sqlite_transaction_commit(sqlite_db):
+async def test_sqlite_transaction_commit(sqlite_db_async):
     """Test transaction commit"""
-    db, _ = sqlite_db
+    db, _ = sqlite_db_async
     
     entity_name = f"test_accounts_{uuid.uuid4().hex[:8]}"
     
@@ -401,11 +455,12 @@ async def test_sqlite_transaction_commit(sqlite_db):
             await conn.rollback_transaction()
             raise
 
+ 
 
 @pytest.mark.asyncio
-async def test_sqlite_transaction_rollback(sqlite_db):
+async def test_sqlite_transaction_rollback(sqlite_db_async):
     """Test transaction rollback"""
-    db, _ = sqlite_db
+    db, _ = sqlite_db_async
     
     entity_name = f"test_orders_{uuid.uuid4().hex[:8]}"
     
@@ -439,9 +494,9 @@ async def test_sqlite_transaction_rollback(sqlite_db):
             raise
 
 @pytest.mark.asyncio
-async def test_sqlite_save_and_get_entity(sqlite_db):
+async def test_sqlite_save_and_get_entity(sqlite_db_async):
     """Test creating an entity and retrieving it"""
-    db, _ = sqlite_db
+    db, _ = sqlite_db_async
     
     # Create a unique entity name for this test
     entity_name = f"test_users_{uuid.uuid4().hex[:8]}"
@@ -466,9 +521,9 @@ async def test_sqlite_save_and_get_entity(sqlite_db):
         assert success
 
 @pytest.mark.asyncio
-async def test_sqlite_custom_serialization(sqlite_db):
+async def test_sqlite_custom_serialization(sqlite_db_async):
     """Test custom type serialization"""
-    db, _ = sqlite_db
+    db, _ = sqlite_db_async
     
     entity_name = f"test_events_{uuid.uuid4().hex[:8]}"
     

@@ -1,5 +1,7 @@
+import asyncio
 from typing import Dict, Any
 
+from .... import log as logger
 from ....resilience import retry_with_backoff
 from ....utils import async_method
 
@@ -174,7 +176,7 @@ class SqliteAsyncConnection(AsyncConnection, EntityAsyncMixin):
         This releases any resources used by the connection. The connection
         should not be used after calling this method.
         """
-        await self._conn.close()
+        await self._conn.close()       
 
     @async_method
     async def get_version_details(self) -> Dict[str, str]:

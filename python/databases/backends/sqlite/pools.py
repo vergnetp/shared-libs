@@ -99,8 +99,9 @@ class SqliteConnectionPool(ConnectionPool):
             except asyncio.TimeoutError:
                 # Timeout waiting for release, close anyway
                 pass
-            # Close the connection
-            await self._conn.close()
+        
+        # Close the connection - this should be outside the if block
+        await self._conn.close()
     
     async def _test_connection(self, connection):
         await connection.execute("SELECT 1")

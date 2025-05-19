@@ -266,7 +266,7 @@ To add a new backend (say Oracle), you need to write the implementation of a few
 **Notes**: in the connection classes, the sql_generator property should return an instance of the class defined in Step 1.
 
 To add the Entity Framework, you will need to define the relavant sql for the backend: simply add <a href="#class-sqlentitygenerator">`SqlEntityGenerator`</a> in the inheritance list of the class defined in Step 1 and define all the needed sql (`get_upsert_sql` etc.).
-Note that the Entity logic is automatically injected to your connection classes from step 3 and 4.
+You also need to add `EntityAsyncMixin` and `EntitySyncMixin` to the `AsyncConnection` and `AsyncConnection` (step 4 and 5).
 
 <br>
 
@@ -370,7 +370,7 @@ class OraclePoolManager(PoolManager):
         pass
 
 # STEP 4
-class OracleAsyncConnection(AsyncConnection):
+class OracleAsyncConnection(AsyncConnection, EntityAsyncMixin):
     def __init__(self, conn):
         super().__init__(conn)
         self._conn = conn # The async Oracle driver's connection (generated in the Pool acquire method)
@@ -411,7 +411,7 @@ class OracleAsyncConnection(AsyncConnection):
         return {'db_server_version':'to do', 'db_driver':'to do'}
 
 # STEP 5
-class OracleSyncConnection(SyncConnection):
+class OracleSyncConnection(SyncConnection, EntitySyncMixin):
     # similar to the Async version
 
 # STEP 6
