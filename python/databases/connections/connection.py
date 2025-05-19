@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from ...errors import try_catch
 
 from ..generators import SqlGenerator
-from .cache import StatementCache
+from ..utils.caching import StatementCache
 
 class ConnectionInterface(ABC):
     """Interface that defines the required methods and properties for connections."""

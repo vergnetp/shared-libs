@@ -8,7 +8,7 @@ from ...utils import async_method
 from ...resilience import with_timeout, circuit_breaker, track_slow_method
 
 from .connection import Connection
-from ..connections.decorators import auto_transaction
+from ...utils.decorators import auto_transaction
 
 class AsyncConnection(Connection):
     """

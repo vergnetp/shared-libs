@@ -8,7 +8,7 @@ from .... import log as logger
 from ....resilience import with_timeout
 
 from .utils_mixin import EntityUtilsMixin
-from ...connections.decorators import auto_transaction
+from ...utils.decorators import auto_transaction
 from ...connections.connection import  ConnectionInterface
 
   

@@ -1,1 +1,1 @@
-from .managers import *
+from .connection_manager import *

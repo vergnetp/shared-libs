@@ -1294,3 +1294,285 @@ WARNING: daemon is not using the default seccomp profile
 2025-05-19 10:54:10.486 [INFO] [INFO] pool_manager - close_pool -  Pool for 1865322c875592d5d8efbe589fb1c4c9 closed | component=pool_manager subcomponent=close_pool service_name=service-14284 environment=dev
 2025-05-19 10:54:10.991 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-14284 environment=dev
 2025-05-19 10:54:10.997 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-14284 environment=dev
+2025-05-19 12:16:48.315 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-12764 environment=dev
+2025-05-19 12:16:49.000 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-12764 environment=dev
+2025-05-19 12:16:49.064 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'} | component=conftest subcomponent=setup_test_environment service_name=service-12764 environment=dev
+2025-05-19 12:16:49.067 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-12764 environment=dev
+2025-05-19 12:16:49.582 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 3
+  Running: 3
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-12764 environment=dev
+2025-05-19 12:16:49.585 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-12764 environment=dev
+2025-05-19 12:16:49.587 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-12764 environment=dev
+2025-05-19 12:16:49.593 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-12764 environment=dev
+2025-05-19 12:16:49.595 [INFO] [INFO] conftest - setup_test_environment -    - mysql: {'user': 'test', 'password': 'test', 'dbname': 'testdb_mysql'}:localhost (container port: 3307) | component=conftest subcomponent=setup_test_environment service_name=service-12764 environment=dev
+2025-05-19 12:16:49.597 [INFO] [INFO] conftest - setup_test_environment -    - postgres: {'user': 'test', 'password': 'test', 'dbname': 'testdb_postgres'}:localhost (container port: 5433) | component=conftest subcomponent=setup_test_environment service_name=service-12764 environment=dev
+2025-05-19 12:16:49.601 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d | component=conftest subcomponent=run_command service_name=service-12764 environment=dev
+2025-05-19 12:16:50.146 [INFO] [INFO] conftest - run_command -  Command error:  Container test-databases-mysql-1  Running
+ Container test-databases-postgres-1  Running
+ | component=conftest subcomponent=run_command service_name=service-12764 environment=dev
+2025-05-19 12:16:50.148 [INFO] [INFO] services - wait_for_service -  Waiting for mysql to be ready at localhost:3307... | component=services subcomponent=wait_for_service service_name=service-12764 environment=dev
+2025-05-19 12:16:50.156 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:3307 successful | component=services subcomponent=wait_for_service service_name=service-12764 environment=dev
+2025-05-19 12:16:50.206 [INFO] [INFO] services - wait_for_service -  mysql at localhost:3307 is ready! | component=services subcomponent=wait_for_service service_name=service-12764 environment=dev
+2025-05-19 12:16:50.209 [INFO] [INFO] services - wait_for_service -  Waiting for postgres to be ready at localhost:5433... | component=services subcomponent=wait_for_service service_name=service-12764 environment=dev
+2025-05-19 12:16:50.212 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:5433 successful | component=services subcomponent=wait_for_service service_name=service-12764 environment=dev
+2025-05-19 12:16:50.252 [INFO] [INFO] services - wait_for_service -  postgres at localhost:5433 is ready! | component=services subcomponent=wait_for_service service_name=service-12764 environment=dev
+2025-05-19 12:16:50.255 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 19076: Requesting sync connection for testdb_postgres | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:50.282 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 19076: Sync connection created and cached for testdb_postgres in 0.02s | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:50.288 [INFO] [INFO] pool_manager - close_pool -  Pool 039aa5ab782c53fb1f9eb3596f4c49fe marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:50.295 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 19076: Requesting sync connection for testdb_postgres | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:50.323 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 19076: Sync connection created and cached for testdb_postgres in 0.02s | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:50.326 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 19076: Requesting sync connection for testdb_postgres | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:50.328 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 19076: Reusing existing sync connection for testdb_postgres | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:50.374 [INFO] [INFO] pool_manager - close_pool -  Pool 039aa5ab782c53fb1f9eb3596f4c49fe marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:50.389 [INFO] [INFO] pool_manager - close_pool -  Pool 039aa5ab782c53fb1f9eb3596f4c49fe marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:50.413 [INFO] [INFO] PostgresPoolManager - _leak_detection_task -  Task started: will check and reclaim leaked or idle connections from the pool | pool_name=testdb_postgres check_interval_mins=5 component=PostgresPoolManager subcomponent=_leak_detection_task service_name=service-12764 environment=dev
+2025-05-19 12:16:50.697 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  testdb_postgres - 039aa5ab782c53fb1f9eb3596f4c49fe async pool initialized in 0.30s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-12764 environment=dev
+2025-05-19 12:16:50.703 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "039aa5ab782c53fb1f9eb3596f4c49fe", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:50.792 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "039aa5ab782c53fb1f9eb3596f4c49fe", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:50.796 [INFO] [INFO] pool_manager - close_pool -  Pool 039aa5ab782c53fb1f9eb3596f4c49fe marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:50.801 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for 039aa5ab782c53fb1f9eb3596f4c49fe: 'NoneType' object has no attribute 'send' | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:50.817 [INFO] [INFO] PostgresPoolManager - _leak_detection_task -  Task started: will check and reclaim leaked or idle connections from the pool | pool_name=testdb_postgres check_interval_mins=5 component=PostgresPoolManager subcomponent=_leak_detection_task service_name=service-12764 environment=dev
+2025-05-19 12:16:51.010 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  testdb_postgres - 039aa5ab782c53fb1f9eb3596f4c49fe async pool initialized in 0.20s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-12764 environment=dev
+2025-05-19 12:16:51.014 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "039aa5ab782c53fb1f9eb3596f4c49fe", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 2, "total_released": 1, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:51.149 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Found new field name in test_users_ca7f2690 with type str | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:51.208 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_ca7f2690_history from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:51.228 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_ca7f2690 from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:51.242 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "039aa5ab782c53fb1f9eb3596f4c49fe", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 2, "total_released": 2, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:51.245 [INFO] [INFO] pool_manager - close_pool -  Pool 039aa5ab782c53fb1f9eb3596f4c49fe marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:51.248 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for 039aa5ab782c53fb1f9eb3596f4c49fe: 'NoneType' object has no attribute 'send' | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:51.254 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 19076: Requesting sync connection for testdb_postgres | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:51.276 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 19076: Sync connection created and cached for testdb_postgres in 0.02s | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:51.292 [INFO] [INFO] PostgresPoolManager - _leak_detection_task -  Task started: will check and reclaim leaked or idle connections from the pool | pool_name=testdb_postgres check_interval_mins=5 component=PostgresPoolManager subcomponent=_leak_detection_task service_name=service-12764 environment=dev
+2025-05-19 12:16:51.477 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  testdb_postgres - 039aa5ab782c53fb1f9eb3596f4c49fe async pool initialized in 0.19s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-12764 environment=dev
+2025-05-19 12:16:51.483 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "039aa5ab782c53fb1f9eb3596f4c49fe", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 3, "total_released": 2, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:51.572 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Found new field name in test_users_dbdf3f7b with type str | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:51.585 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Found new field age in test_users_dbdf3f7b with type int | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:51.671 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_dbdf3f7b_history from schema: ['name', 'age', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:51.726 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_dbdf3f7b_history from schema: ['name', 'age', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:51.747 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_dbdf3f7b from schema: ['name', 'age', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:51.759 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "039aa5ab782c53fb1f9eb3596f4c49fe", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 3, "total_released": 3, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:51.766 [INFO] [INFO] pool_manager - close_pool -  Pool 039aa5ab782c53fb1f9eb3596f4c49fe marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:51.769 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for 039aa5ab782c53fb1f9eb3596f4c49fe: 'NoneType' object has no attribute 'send' | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:51.776 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 19076: Requesting sync connection for testdb_postgres | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:51.804 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 19076: Sync connection created and cached for testdb_postgres in 0.02s | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:51.818 [INFO] [INFO] PostgresPoolManager - _leak_detection_task -  Task started: will check and reclaim leaked or idle connections from the pool | pool_name=testdb_postgres check_interval_mins=5 component=PostgresPoolManager subcomponent=_leak_detection_task service_name=service-12764 environment=dev
+2025-05-19 12:16:52.055 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  testdb_postgres - 039aa5ab782c53fb1f9eb3596f4c49fe async pool initialized in 0.25s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-12764 environment=dev
+2025-05-19 12:16:52.057 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "039aa5ab782c53fb1f9eb3596f4c49fe", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 4, "total_released": 3, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:52.191 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Found new field name in test_users_08a4704b with type str | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:52.197 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Found new field update_comment in test_users_08a4704b with type str | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:52.267 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_08a4704b_history from schema: ['name', 'id', 'created_at', 'updated_at', 'update_comment', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:52.304 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Found new field department in test_users_08a4704b with type str | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:52.314 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Adding column department to table test_users_08a4704b | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:52.328 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Adding column department to history table test_users_08a4704b_history | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:52.351 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_08a4704b_history from schema: ['name', 'id', 'created_at', 'updated_at', 'update_comment', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment', 'department'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:52.389 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_08a4704b from schema: ['name', 'id', 'created_at', 'updated_at', 'update_comment', 'created_by', 'updated_by', 'deleted_at', 'department'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:52.404 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_08a4704b from schema: ['name', 'id', 'created_at', 'updated_at', 'update_comment', 'created_by', 'updated_by', 'deleted_at', 'department'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:52.410 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_08a4704b_history from schema: ['name', 'id', 'created_at', 'updated_at', 'update_comment', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment', 'department'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:52.423 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_08a4704b_history from schema: ['name', 'id', 'created_at', 'updated_at', 'update_comment', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment', 'department'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:52.437 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "039aa5ab782c53fb1f9eb3596f4c49fe", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 4, "total_released": 4, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:52.444 [INFO] [INFO] pool_manager - close_pool -  Pool 039aa5ab782c53fb1f9eb3596f4c49fe marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:52.447 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for 039aa5ab782c53fb1f9eb3596f4c49fe: 'NoneType' object has no attribute 'send' | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:52.484 [INFO] [INFO] MySqlPoolManager - _leak_detection_task -  Task started: will check and reclaim leaked or idle connections from the pool | pool_name=testdb_mysql check_interval_mins=5 component=MySqlPoolManager subcomponent=_leak_detection_task service_name=service-12764 environment=dev
+2025-05-19 12:16:52.553 [INFO] [INFO] MySqlPoolManager - _initialize_pool_if_needed -  testdb_mysql - a38f6583c7ceb10c7107caf0e8484dd2 async pool initialized in 0.10s | component=MySqlPoolManager subcomponent=_initialize_pool_if_needed service_name=service-12764 environment=dev
+2025-05-19 12:16:52.555 [INFO] [INFO] MySqlPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_mysql", "hash": "a38f6583c7ceb10c7107caf0e8484dd2", "min_size": 3, "max_size": 20, "current_size": 3, "in_use": 1, "idle": 2, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=MySqlPoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:53.186 [INFO] [INFO] MysqlAsyncConnection - _update_entity_metadata -  Found new field name in test_products_de37fa7a with type str | component=MysqlAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:53.202 [INFO] [INFO] MysqlAsyncConnection - _update_entity_metadata -  Found new field price in test_products_de37fa7a with type str | component=MysqlAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:53.339 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_products_de37fa7a from schema: ['updated_at', 'name', 'price', 'id', 'created_at', 'created_by', 'updated_by', 'deleted_at'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:53.356 [INFO] [INFO] MySqlPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_mysql", "hash": "a38f6583c7ceb10c7107caf0e8484dd2", "min_size": 3, "max_size": 20, "current_size": 2, "in_use": 0, "idle": 2, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=MySqlPoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:53.364 [INFO] [INFO] pool_manager - close_pool -  Pool a38f6583c7ceb10c7107caf0e8484dd2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:53.367 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for a38f6583c7ceb10c7107caf0e8484dd2: object NoneType can't be used in 'await' expression | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:53.411 [INFO] [INFO] MySqlPoolManager - _leak_detection_task -  Task started: will check and reclaim leaked or idle connections from the pool | pool_name=testdb_mysql check_interval_mins=5 component=MySqlPoolManager subcomponent=_leak_detection_task service_name=service-12764 environment=dev
+2025-05-19 12:16:53.476 [INFO] [INFO] MySqlPoolManager - _initialize_pool_if_needed -  testdb_mysql - a38f6583c7ceb10c7107caf0e8484dd2 async pool initialized in 0.10s | component=MySqlPoolManager subcomponent=_initialize_pool_if_needed service_name=service-12764 environment=dev
+2025-05-19 12:16:53.483 [INFO] [INFO] MySqlPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_mysql", "hash": "a38f6583c7ceb10c7107caf0e8484dd2", "min_size": 3, "max_size": 20, "current_size": 3, "in_use": 1, "idle": 2, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 2, "total_released": 1, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=MySqlPoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:54.156 [INFO] [INFO] MysqlAsyncConnection - _update_entity_metadata -  Found new field department in test_employees_0aacc69f with type str | component=MysqlAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:54.164 [INFO] [INFO] MysqlAsyncConnection - _update_entity_metadata -  Found new field name in test_employees_0aacc69f with type str | component=MysqlAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:54.252 [INFO] [INFO] MySqlPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_mysql", "hash": "a38f6583c7ceb10c7107caf0e8484dd2", "min_size": 3, "max_size": 20, "current_size": 2, "in_use": 0, "idle": 2, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 2, "total_released": 2, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=MySqlPoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:54.258 [INFO] [INFO] pool_manager - close_pool -  Pool a38f6583c7ceb10c7107caf0e8484dd2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:54.263 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for a38f6583c7ceb10c7107caf0e8484dd2: object NoneType can't be used in 'await' expression | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:54.282 [INFO] [INFO] MySqlPoolManager - _leak_detection_task -  Task started: will check and reclaim leaked or idle connections from the pool | pool_name=testdb_mysql check_interval_mins=5 component=MySqlPoolManager subcomponent=_leak_detection_task service_name=service-12764 environment=dev
+2025-05-19 12:16:54.313 [INFO] [INFO] MySqlPoolManager - _initialize_pool_if_needed -  testdb_mysql - a38f6583c7ceb10c7107caf0e8484dd2 async pool initialized in 0.04s | component=MySqlPoolManager subcomponent=_initialize_pool_if_needed service_name=service-12764 environment=dev
+2025-05-19 12:16:54.316 [INFO] [INFO] MySqlPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_mysql", "hash": "a38f6583c7ceb10c7107caf0e8484dd2", "min_size": 3, "max_size": 20, "current_size": 3, "in_use": 1, "idle": 2, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 3, "total_released": 2, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=MySqlPoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:54.553 [INFO] [INFO] MysqlAsyncConnection - _update_entity_metadata -  Found new field name in test_users_737ed6ce with type str | component=MysqlAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:54.591 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_users_737ed6ce_history from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:54.603 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_users_737ed6ce from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:54.614 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_users_737ed6ce_history from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:54.627 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_users_737ed6ce from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:54.635 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_users_737ed6ce from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:54.647 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_users_737ed6ce_history from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:54.655 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_users_737ed6ce from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:54.659 [INFO] [INFO] MySqlPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_mysql", "hash": "a38f6583c7ceb10c7107caf0e8484dd2", "min_size": 3, "max_size": 20, "current_size": 2, "in_use": 0, "idle": 2, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 3, "total_released": 3, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=MySqlPoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:54.667 [INFO] [INFO] pool_manager - close_pool -  Pool a38f6583c7ceb10c7107caf0e8484dd2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:54.669 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for a38f6583c7ceb10c7107caf0e8484dd2: object NoneType can't be used in 'await' expression | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:54.676 [INFO] [INFO] SqliteDatabase - get_sync_connection -  Thread 19076: Requesting sync connection for test_sqlite_a9e2f133.db | component=SqliteDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:54.679 [INFO] [INFO] SqliteDatabase - get_sync_connection -  Thread 19076: Sync connection created and cached for test_sqlite_a9e2f133.db in 0.00s | component=SqliteDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:54.685 [INFO] [INFO] SqlitePoolManager - _leak_detection_task -  Task started: will check and reclaim leaked or idle connections from the pool | pool_name=test_sqlite_a9e2f133.db check_interval_mins=5 component=SqlitePoolManager subcomponent=_leak_detection_task service_name=service-12764 environment=dev
+2025-05-19 12:16:54.688 [INFO] [INFO] SqlitePoolManager - _initialize_pool_if_needed -  test_sqlite_a9e2f133.db - 611f38df86fb723a953b86ca39ccfbde async pool initialized in 0.00s | component=SqlitePoolManager subcomponent=_initialize_pool_if_needed service_name=service-12764 environment=dev
+2025-05-19 12:16:54.690 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "test_sqlite_a9e2f133.db", "hash": "611f38df86fb723a953b86ca39ccfbde", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 1, "idle": 0, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:54.709 [INFO] [INFO] SqliteAsyncConnection - _update_entity_metadata -  Found new field account in test_accounts_fc447914 with type str | component=SqliteAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:54.714 [INFO] [INFO] SqliteAsyncConnection - _update_entity_metadata -  Found new field balance in test_accounts_fc447914 with type int | component=SqliteAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:54.726 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_accounts_fc447914_history from schema: ['account', 'balance', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:54.735 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_accounts_fc447914_history from schema: ['account', 'balance', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:54.759 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "test_sqlite_a9e2f133.db", "hash": "611f38df86fb723a953b86ca39ccfbde", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 0, "idle": 1, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:54.765 [INFO] [INFO] pool_manager - close_pool -  Pool 611f38df86fb723a953b86ca39ccfbde marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:54.768 [INFO] [INFO] pool_manager - close_pool -  Pool for 611f38df86fb723a953b86ca39ccfbde closed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:55.272 [INFO] [INFO] SqliteDatabase - get_sync_connection -  Thread 19076: Requesting sync connection for test_sqlite_d766173b.db | component=SqliteDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:55.278 [INFO] [INFO] SqliteDatabase - get_sync_connection -  Thread 19076: Sync connection created and cached for test_sqlite_d766173b.db in 0.00s | component=SqliteDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:55.284 [INFO] [INFO] SqlitePoolManager - _leak_detection_task -  Task started: will check and reclaim leaked or idle connections from the pool | pool_name=test_sqlite_d766173b.db check_interval_mins=5 component=SqlitePoolManager subcomponent=_leak_detection_task service_name=service-12764 environment=dev
+2025-05-19 12:16:55.286 [INFO] [INFO] SqlitePoolManager - _initialize_pool_if_needed -  test_sqlite_d766173b.db - 8a9902e392043baa78a1b3029895cc7f async pool initialized in 0.00s | component=SqlitePoolManager subcomponent=_initialize_pool_if_needed service_name=service-12764 environment=dev
+2025-05-19 12:16:55.289 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "test_sqlite_d766173b.db", "hash": "8a9902e392043baa78a1b3029895cc7f", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 1, "idle": 0, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:55.300 [INFO] [INFO] SqliteAsyncConnection - _update_entity_metadata -  Found new field order in test_orders_acef3d83 with type str | component=SqliteAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:55.309 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_orders_acef3d83_history from schema: ['order', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:55.326 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_orders_acef3d83_history from schema: ['order', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:55.338 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "test_sqlite_d766173b.db", "hash": "8a9902e392043baa78a1b3029895cc7f", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 0, "idle": 1, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:55.344 [INFO] [INFO] pool_manager - close_pool -  Pool 8a9902e392043baa78a1b3029895cc7f marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:55.347 [INFO] [INFO] pool_manager - close_pool -  Pool for 8a9902e392043baa78a1b3029895cc7f closed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:55.851 [INFO] [INFO] SqliteDatabase - get_sync_connection -  Thread 19076: Requesting sync connection for test_sqlite_1ee0b475.db | component=SqliteDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:55.854 [INFO] [INFO] SqliteDatabase - get_sync_connection -  Thread 19076: Sync connection created and cached for test_sqlite_1ee0b475.db in 0.00s | component=SqliteDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:55.858 [INFO] [INFO] SqlitePoolManager - _leak_detection_task -  Task started: will check and reclaim leaked or idle connections from the pool | pool_name=test_sqlite_1ee0b475.db check_interval_mins=5 component=SqlitePoolManager subcomponent=_leak_detection_task service_name=service-12764 environment=dev
+2025-05-19 12:16:55.860 [INFO] [INFO] SqlitePoolManager - _initialize_pool_if_needed -  test_sqlite_1ee0b475.db - c4a9fe2c8ecf36d02d3652a9d652d979 async pool initialized in 0.00s | component=SqlitePoolManager subcomponent=_initialize_pool_if_needed service_name=service-12764 environment=dev
+2025-05-19 12:16:55.864 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "test_sqlite_1ee0b475.db", "hash": "c4a9fe2c8ecf36d02d3652a9d652d979", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 1, "idle": 0, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:55.876 [INFO] [INFO] SqliteAsyncConnection - _update_entity_metadata -  Found new field name in test_users_0bd4c984 with type str | component=SqliteAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:55.886 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_users_0bd4c984_history from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:55.896 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_users_0bd4c984 from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:55.899 [INFO] [INFO] test_dal - test_sqlite_save_and_get_entity -  ============= {
+    "name": "Alice",
+    "id": "30a2a576-e943-4460-abdb-27e201e72a7f",
+    "created_at": "2025-05-19T11:16:55.867595",
+    "updated_at": "2025-05-19T11:16:55.867595",
+    "created_by": null,
+    "updated_by": null,
+    "deleted_at": null
+} | component=test_dal subcomponent=test_sqlite_save_and_get_entity service_name=service-12764 environment=dev
+2025-05-19 12:16:55.910 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "test_sqlite_1ee0b475.db", "hash": "c4a9fe2c8ecf36d02d3652a9d652d979", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 0, "idle": 1, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:55.915 [INFO] [INFO] pool_manager - close_pool -  Pool c4a9fe2c8ecf36d02d3652a9d652d979 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:55.917 [INFO] [INFO] pool_manager - close_pool -  Pool for c4a9fe2c8ecf36d02d3652a9d652d979 closed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:56.422 [INFO] [INFO] SqliteDatabase - get_sync_connection -  Thread 19076: Requesting sync connection for test_sqlite_d3610653.db | component=SqliteDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:56.429 [INFO] [INFO] SqliteDatabase - get_sync_connection -  Thread 19076: Sync connection created and cached for test_sqlite_d3610653.db in 0.00s | component=SqliteDatabase subcomponent=get_sync_connection service_name=service-12764 environment=dev
+2025-05-19 12:16:56.433 [INFO] [INFO] SqlitePoolManager - _leak_detection_task -  Task started: will check and reclaim leaked or idle connections from the pool | pool_name=test_sqlite_d3610653.db check_interval_mins=5 component=SqlitePoolManager subcomponent=_leak_detection_task service_name=service-12764 environment=dev
+2025-05-19 12:16:56.435 [INFO] [INFO] SqlitePoolManager - _initialize_pool_if_needed -  test_sqlite_d3610653.db - a76411ecd3dc6e9918f36440ee260c88 async pool initialized in 0.00s | component=SqlitePoolManager subcomponent=_initialize_pool_if_needed service_name=service-12764 environment=dev
+2025-05-19 12:16:56.437 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "test_sqlite_d3610653.db", "hash": "a76411ecd3dc6e9918f36440ee260c88", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 1, "idle": 0, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:56.449 [INFO] [INFO] SqliteAsyncConnection - _update_entity_metadata -  Found new field title in test_events_5a0b928d with type str | component=SqliteAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:56.452 [INFO] [INFO] SqliteAsyncConnection - _update_entity_metadata -  Found new field event_date in test_events_5a0b928d with type datetime | component=SqliteAsyncConnection subcomponent=_update_entity_metadata service_name=service-12764 environment=dev
+2025-05-19 12:16:56.461 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_events_5a0b928d_history from schema: ['title', 'event_date', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:56.475 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_events_5a0b928d from schema: ['title', 'event_date', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-12764 environment=dev
+2025-05-19 12:16:56.484 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "test_sqlite_d3610653.db", "hash": "a76411ecd3dc6e9918f36440ee260c88", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 0, "idle": 1, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-12764 environment=dev
+2025-05-19 12:16:56.488 [INFO] [INFO] pool_manager - close_pool -  Pool a76411ecd3dc6e9918f36440ee260c88 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:56.490 [INFO] [INFO] pool_manager - close_pool -  Pool for a76411ecd3dc6e9918f36440ee260c88 closed | component=pool_manager subcomponent=close_pool service_name=service-12764 environment=dev
+2025-05-19 12:16:56.994 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-12764 environment=dev
+2025-05-19 12:16:56.996 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-12764 environment=dev

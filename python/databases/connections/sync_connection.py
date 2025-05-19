@@ -7,7 +7,7 @@ from ...resilience import with_timeout,  circuit_breaker, track_slow_method
 
 from ..generators import SqlGenerator
 from .connection import Connection
-from ..connections.decorators import auto_transaction
+from ...utils.decorators import auto_transaction
 
 class SyncConnection(Connection):
     """
