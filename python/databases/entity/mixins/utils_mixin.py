@@ -1,10 +1,12 @@
-
 import asyncio
 import datetime
 import json
 import uuid
+import threading
 from typing import Dict, Any, Optional
+
 from .... import log as logger
+
 
 class EntityUtilsMixin:
     """
@@ -12,46 +14,86 @@ class EntityUtilsMixin:
     
     This mixin class provides common functionality needed by both database-level
     and connection-level entity operations, including serialization/deserialization,
-    type handling, and entity preparation.
+    type handling, and entity preparation.  
     """
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)      
-        self._init_serializers()
-        self._custom_serializers = {}
-        self._custom_deserializers = {}     
+    # Class-level lock registry
+    _locks = {}
+    _locks_lock = threading.RLock()
     
-    def _init_serializers(self):
-        """Initialize standard serializers and deserializers for different types."""
-        # Type serializers (Python type -> string)
-        self._serializers = {
-            'dict': lambda v: json.dumps(v) if v is not None else None,
-            'list': lambda v: json.dumps(v) if v is not None else None,
-            'set': lambda v: json.dumps(list(v)) if v is not None else None,
-            'tuple': lambda v: json.dumps(list(v)) if v is not None else None,
-            'datetime': lambda v: v.isoformat() if v is not None else None,
-            'date': lambda v: v.isoformat() if v is not None else None,
-            'time': lambda v: v.isoformat() if v is not None else None,
-            'bytes': lambda v: v.hex() if v is not None else None,
-            'bool': lambda v: str(v).lower() if v is not None else None,
-            'int': lambda v: str(v) if v is not None else None,
-            'float': lambda v: str(v) if v is not None else None,
-        }
+    # Default serializers and deserializers
+    _default_serializers = {
+        'dict': lambda v: json.dumps(v) if v is not None else None,
+        'list': lambda v: json.dumps(v) if v is not None else None,
+        'set': lambda v: json.dumps(list(v)) if v is not None else None,
+        'tuple': lambda v: json.dumps(list(v)) if v is not None else None,
+        'datetime': lambda v: v.isoformat() if v is not None else None,
+        'date': lambda v: v.isoformat() if v is not None else None,
+        'time': lambda v: v.isoformat() if v is not None else None,
+        'bytes': lambda v: v.hex() if v is not None else None,
+        'bool': lambda v: str(v).lower() if v is not None else None,
+        'int': lambda v: str(v) if v is not None else None,
+        'float': lambda v: str(v) if v is not None else None,
+    }
+    
+    _default_deserializers = {
+        'dict': lambda v: json.loads(v) if v else {},
+        'list': lambda v: json.loads(v) if v else [],
+        'set': lambda v: set(json.loads(v)) if v else set(),
+        'tuple': lambda v: tuple(json.loads(v)) if v else (),
+        'datetime': lambda v: datetime.datetime.fromisoformat(v) if v else None,
+        'date': lambda v: datetime.date.fromisoformat(v) if v else None,
+        'time': lambda v: datetime.time.fromisoformat(v) if v else None,
+        'bytes': lambda v: bytes.fromhex(v) if v else None,
+        'int': lambda v: int(v) if v and v.strip() else 0,
+        'float': lambda v: float(v) if v and v.strip() else 0.0,
+        'bool': lambda v: v.lower() in ('true', '1', 'yes', 'y', 't') if v else False,
+    }
+    
+    def _get_instance_lock(self):
+        """Get a lock unique to this instance."""
+        instance_id = id(self)
         
-        # Type deserializers (string -> Python type)
-        self._deserializers = {
-            'dict': lambda v: json.loads(v) if v else {},
-            'list': lambda v: json.loads(v) if v else [],
-            'set': lambda v: set(json.loads(v)) if v else set(),
-            'tuple': lambda v: tuple(json.loads(v)) if v else (),
-            'datetime': lambda v: datetime.datetime.fromisoformat(v) if v else None,
-            'date': lambda v: datetime.date.fromisoformat(v) if v else None,
-            'time': lambda v: datetime.time.fromisoformat(v) if v else None,
-            'bytes': lambda v: bytes.fromhex(v) if v else None,
-            'int': lambda v: int(v) if v and v.strip() else 0,
-            'float': lambda v: float(v) if v and v.strip() else 0.0,
-            'bool': lambda v: v.lower() in ('true', '1', 'yes', 'y', 't') if v else False,
-        }
+        with self._locks_lock:
+            if instance_id not in self._locks:
+                self._locks[instance_id] = threading.RLock()
+            return self._locks[instance_id]
+    
+    @property
+    def _serializers(self):
+        """Lazily initialize and return serializers dictionary."""
+        if not hasattr(self, '_serializers_dict'):
+            with self._get_instance_lock():
+                if not hasattr(self, '_serializers_dict'):
+                    self._serializers_dict = self._default_serializers.copy()
+        return self._serializers_dict
+    
+    @property
+    def _deserializers(self):
+        """Lazily initialize and return deserializers dictionary."""
+        if not hasattr(self, '_deserializers_dict'):
+            with self._get_instance_lock():
+                if not hasattr(self, '_deserializers_dict'):
+                    self._deserializers_dict = self._default_deserializers.copy()
+        return self._deserializers_dict
+    
+    @property
+    def _custom_serializers(self):
+        """Lazily initialize and return custom serializers dictionary."""
+        if not hasattr(self, '_custom_serializers_dict'):
+            with self._get_instance_lock():
+                if not hasattr(self, '_custom_serializers_dict'):
+                    self._custom_serializers_dict = {}
+        return self._custom_serializers_dict
+    
+    @property
+    def _custom_deserializers(self):
+        """Lazily initialize and return custom deserializers dictionary."""
+        if not hasattr(self, '_custom_deserializers_dict'):
+            with self._get_instance_lock():
+                if not hasattr(self, '_custom_deserializers_dict'):
+                    self._custom_deserializers_dict = {}
+        return self._custom_deserializers_dict
     
     def register_serializer(self, type_name: str, serializer_func, deserializer_func):
         """
@@ -364,4 +406,10 @@ class EntityUtilsMixin:
             return await internal_method(is_async=True, *combined_args, **combined_kwargs)
         
         return async_method
-  
+    
+    def __del__(self):
+        """Clean up the lock when this instance is garbage collected."""
+        instance_id = id(self)
+        with self._locks_lock:
+            if instance_id in self._locks:
+                del self._locks[instance_id]

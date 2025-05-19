@@ -1,5 +1,5 @@
 from .config import DatabaseConfig
-from .connections import ConnectionManager
+from .database import ConnectionManager
 from .backends import PostgresDatabase, MySqlDatabase, SqliteDatabase
 
 class DatabaseFactory:

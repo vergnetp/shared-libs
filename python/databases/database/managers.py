@@ -6,12 +6,14 @@ import threading
 import contextlib
 from typing import Dict, Any, Iterator
 from abc import abstractmethod
+
 from ...errors import try_catch
 from ... import log as logger
 from ...utils import async_method
+
 from ..config import DatabaseConfig
-from .base import SyncConnection, AsyncConnection
-from .pools import PoolManager
+from ..connections import SyncConnection, AsyncConnection
+from ..pools import PoolManager
 
 
 class ConnectionManager():

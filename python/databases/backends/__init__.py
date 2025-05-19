@@ -1,3 +1,3 @@
-from .mysql_database import *
-from .postgres_database import *
-from .sqlite_database import *
+from .mysql import *
+from .postgres import *
+from .sqlite import *

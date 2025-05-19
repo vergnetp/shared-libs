@@ -2,17 +2,17 @@
 import asyncio
 import datetime
 from typing import Dict, Tuple, List, Any, Optional
+
 from ....utils import async_method
-from ....errors import try_catch
 from .... import log as logger
 from ....resilience import with_timeout
 
 from .utils_mixin import EntityUtilsMixin
-from ...connections import auto_transaction, ConnectionInterface # todo: might interfer with the patch.. to check
-
+from ...connections.decorators import auto_transaction
+from ...connections.connection import  ConnectionInterface
 
   
-class EntityAsyncMixin(EntityUtilsMixin):#, ConnectionInterface):
+class EntityAsyncMixin(EntityUtilsMixin, ConnectionInterface):
     """
     Mixin that adds entity operations to async connections.
     
