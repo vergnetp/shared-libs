@@ -42,6 +42,7 @@ class SyncConnection(Connection):
         Returns:
             List[Tuple]: Result rows as tuples
         """
+        timeout = timeout or self._conn._config.query_execution_timeout()
         stmt = self._get_statement_sync(sql, timeout, tags)
         raw_result = self._execute_statement_sync(stmt, params)
         return self._normalize_result(raw_result)

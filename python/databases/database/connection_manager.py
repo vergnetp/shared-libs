@@ -53,26 +53,10 @@ class ConnectionManager():
         config (DatabaseConfig)     
         ...
     """
-    def __init__(self, config: DatabaseConfig=None, database: str=None, host: str="localhost", port: int=5432, user: str=None, 
-                 password: str=None, alias: str=None, env: str='prod', 
-                 connection_acquisition_timeout: float=10.0, *args, **kwargs):
-        super().__init__(*args,**kwargs)
-        
-        # todo: move in config
-        self._connection_acquisition_timeout = connection_acquisition_timeout
-        
-        # todo add validation or remove named args
-        if config:
-            self.config = config
-        else:
-            self.config = DatabaseConfig(
-            database=database, 
-            host=host, 
-            port=port, 
-            user=user, 
-            password=password, 
-            alias=alias, 
-            env=env)           
+    def __init__(self, config: DatabaseConfig=None):
+      
+        self._connection_acquisition_timeout = config.connection_acquisition_timeout
+        self.config = config                  
               
         # Use thread-local storage for sync connections
         self._local = threading.local()

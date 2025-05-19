@@ -20,9 +20,26 @@ class DatabaseConfig:
         password (str, optional): Password for authentication. Defaults to None.
         alias (str, optional): Friendly name for the connection. Defaults to database name.
         env (str, optional): Environment label (e.g. prod, dev, test). Defaults to "prod".
+        connection_acquisition_timeout (float, optional): Maximum time in seconds to wait when acquiring a connection from the pool. Defaults to 10.0.
+        pool_creation_timeout (float, optional): Maximum time in seconds to wait for pool creation and initialization. Defaults to 30.0.
+        query_execution_timeout (float, optional): Default timeout in seconds for SQL query execution. Can be overridden in individual queries. Defaults to 60.0.
+        connection_creation_timeout (float, optional): Maximum time in seconds to wait for an individual database connection to be established. Defaults to 15.0.
+        pool_shutdown_timeout (float, optional): Maximum time in seconds to wait for graceful pool shutdown before forcing connections to close. Defaults to 30.0.
     """
-    def __init__(self, database: str, host: str="localhost", port: int=5432, user: str=None, 
-                 password: str=None, alias: str=None, env: str='prod',  *args, **kwargs):
+    def __init__(self, 
+                 database: str, 
+                 host: str="localhost", 
+                 port: int=5432, 
+                 user: str=None, 
+                 password: str=None, 
+                 alias: str=None, 
+                 env: str='prod',  
+                 connection_acquisition_timeout: float=10.0,  # Time to acquire connection from pool
+                 pool_creation_timeout: float=30.0,          # Time to create/initialize pool
+                 query_execution_timeout: float=60.0,        # Default timeout for SQL queries
+                 connection_creation_timeout: float=15.0,    # Time to create individual connections
+                 pool_shutdown_timeout: float=30.0,          # Time for graceful pool shutdown
+                 *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # Validate inputs
@@ -42,6 +59,11 @@ class DatabaseConfig:
         self.__password = password
         self.__env = env
         self.__alias = alias or database or f'database'
+        self.connection_acquisition_timeout = connection_acquisition_timeout
+        self.pool_creation_timeout = pool_creation_timeout
+        self.query_execution_timeout = query_execution_timeout
+        self.connection_creation_timeout = connection_creation_timeout
+        self.pool_shutdown_timeout = pool_shutdown_timeout
 
     def config(self) -> Dict[str, Any]:
         """
@@ -58,7 +80,12 @@ class DatabaseConfig:
             'port': self.__port,
             'database': self.__database,
             'user': self.__user,
-            'password': self.__password
+            'password': self.__password,
+            'connection_acquisition_timeout': self.connection_acquisition_timeout,
+            'pool_creation_timeout': self.pool_creation_timeout,
+            'query_execution_timeout': self.query_execution_timeout,
+            'connection_creation_timeout': self.connection_creation_timeout,
+            'pool_shutdown_timeout': self.pool_shutdown_timeout
         }
     
     def database(self) -> str:

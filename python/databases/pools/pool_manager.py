@@ -52,11 +52,11 @@ class PoolManager(ABC):
     _metrics: ClassVar[Final[Dict[str, Dict[str, int]]]] = {}
     _metrics_lock: ClassVar[asyncio.Lock] = asyncio.Lock()
     
-    def __init__(self, config: DatabaseConfig, connection_acquisition_timeout: float=60):
+    def __init__(self, config: DatabaseConfig):
         self._alias = config.alias()
         self._hash = config.hash()
         self.config = config
-        self._connection_acquisition_timeout = connection_acquisition_timeout     
+        self._connection_acquisition_timeout = self.config.connection_acquisition_timeout     
         
         # Try to initialize pool and start leak detection task if in async environment
         try:
@@ -71,7 +71,7 @@ class PoolManager(ABC):
     @property
     def connection_acquisition_timeout(self) -> float:
         '''Returns the connection acquisition timeout defined in PoolManager'''
-        return self._connection_acquisition_timeout
+        return self.config.connection_acquisition_timeout
     
     async def _leak_detection_task(self):
         """Background task that periodically checks for and recovers from connection leaks"""
@@ -392,7 +392,7 @@ class PoolManager(ABC):
             start_time = time.time()
             try:
                 # Acquire connection
-                raw_conn = await self._pool.acquire(timeout=self._connection_acquisition_timeout)
+                raw_conn = await self._pool.acquire(timeout=self.config.connection_acquisition_timeout)
                 acquisition_time = time.time() - start_time
                 logger.debug(f"Connection acquired from {self.alias()} pool in {acquisition_time:.2f}s")
                 await self._track_metrics(True)
@@ -529,7 +529,7 @@ class PoolManager(ABC):
             if self._pool is None:
                 try:
                     start_time = time.time()
-                    self._pool = await self._create_pool(self.config, self._connection_acquisition_timeout)
+                    self._pool = await asyncio.wait_for(self._create_pool(self.config), timeout=self.config.pool_creation_timeout())
                     logger.info(f"{self.alias()} - {self.hash()} async pool initialized in {(time.time() - start_time):.2f}s")
                 except Exception as e:
                     logger.error(f"{self.alias()} - {self.hash()} async pool creation failed: {e}")

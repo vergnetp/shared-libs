@@ -69,6 +69,7 @@ class AsyncConnection(Connection):
         Returns:
             List[Tuple]: Result rows as tuples
         """
+        timeout = timeout or self._conn._config.query_execution_timeout()
         self._mark_active()
         stmt = await self._get_statement_async(sql, timeout, tags)        
         raw_result = await self._execute_statement_async(stmt, params)
