@@ -52,10 +52,11 @@ class AsyncConnection(Connection):
         return self._leaked
 
     
-    @async_method   
-    @track_slow_method()
-    @circuit_breaker(name="async_execute")    
-    @try_catch    
+    @async_method
+    @try_catch()
+    @auto_transaction
+    @circuit_breaker(name="async_execute")
+    @track_slow_method
     @profile
     async def execute(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
@@ -88,10 +89,10 @@ class AsyncConnection(Connection):
 
 
     @async_method
-    @auto_transaction
-    @track_slow_method()
-    @circuit_breaker(name="async_executemany")
     @try_catch()
+    @auto_transaction
+    @circuit_breaker(name="async_executemany")
+    @track_slow_method
     @profile
     async def executemany(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]] = None) -> List[Tuple]:
         """

@@ -519,16 +519,23 @@ class PoolManager(ABC):
                     logger.warning(f"Error closing unusable pool: {e}")
                 self._pool = None
 
-        # Create pool under lock
         async with self._pool_lock:
             if self._pool is None:
-                # Create a task outside wait_for to properly handle cancellation
-                creation_task = None
                 try:
                     start_time = time.time()
                     
                     # Create the task for pool creation
                     creation_task = asyncio.create_task(self._create_pool(self.config))
+                    
+                    # Add a done callback to handle exceptions and prevent warnings
+                    def _on_done(task):
+                        try:
+                            # Just access the exception to mark it as handled
+                            task.exception()
+                        except (asyncio.CancelledError, asyncio.InvalidStateError):
+                            pass
+                    
+                    creation_task.add_done_callback(_on_done)
                     
                     # Wait for the task with timeout but don't cancel the task itself
                     timeout = self.config.pool_creation_timeout
@@ -543,14 +550,9 @@ class PoolManager(ABC):
                         
                 except Exception as e:
                     logger.error(f"Pool creation failed for {self.alias()}: {e}")
-                    # If we have a running task, handle it carefully
-                    if creation_task and not creation_task.done():
-                        # Let it run in the background but detach from it
-                        creation_task.add_done_callback(
-                            lambda t: logger.debug(f"Background pool creation completed: {t.exception() if t.exception() else 'success'}")
-                        )
                     self._pool = None
                     raise
+
 
     @try_catch
     async def _test_connection(self, conn: Any) -> None:

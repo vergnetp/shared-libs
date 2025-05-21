@@ -30,30 +30,38 @@ async def clean_event_loop():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
     
+    # Store background tasks that should be allowed to run
+    background_tasks = set()
+    for cls in [PoolManager]:
+        if hasattr(cls, '_background_tasks'):
+            background_tasks.update(cls._background_tasks)
+    
     # Yield the loop
     yield loop
     
     # Proper cleanup
     pending = asyncio.all_tasks(loop)
-    if pending:
-        # Allow pending tasks to complete with a short timeout
+    pending_to_cancel = [task for task in pending if task not in background_tasks]
+    
+    if pending_to_cancel:
+        # Cancel tasks that are not marked as background tasks
+        for task in pending_to_cancel:
+            if not task.done():
+                task.cancel()
+        
+        # Allow canceled tasks to complete
         try:
-            await asyncio.wait_for(asyncio.gather(*pending, return_exceptions=True), timeout=1.0)
+            await asyncio.wait_for(asyncio.gather(*pending_to_cancel, return_exceptions=True), timeout=1.0)
         except asyncio.TimeoutError:
-            logger.warning(f"Some tasks did not complete: {len(pending)} pending tasks")
+            logger.warning(f"Some tasks did not complete: {len(pending_to_cancel)} pending tasks")
             
             # Log information about pending tasks for debugging
-            for task in pending:
+            for task in pending_to_cancel:
                 if not task.done():
                     logger.warning(f"Pending task: {task!r}")
     
-    # Close the loop resources but don't close the loop itself
-    # (pytest-asyncio will handle that)
-    await asyncio.gather(*[task for task in asyncio.all_tasks(loop) 
-                        if not task.done()], return_exceptions=True)
-    
     # Let the loop run once more to process any callbacks
-    loop.run_until_complete(asyncio.sleep(0.1))
+    await asyncio.sleep(0.1)
 
 # Then update your test_transaction_timeout test to use this fixture
 @pytest.mark.asyncio

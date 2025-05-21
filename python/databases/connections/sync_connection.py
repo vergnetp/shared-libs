@@ -25,9 +25,10 @@ class SyncConnection(Connection):
         self._conn = conn
         self.config = config
     
-    @track_slow_method()
+    @try_catch()
+    @auto_transaction
     @circuit_breaker(name="sync_execute")
-    @try_catch
+    @track_slow_method
     @profile
     def execute(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
@@ -57,11 +58,11 @@ class SyncConnection(Connection):
         except (TimeoutError, RuntimeError) as e:
            raise TimeoutError(f"Execute operation timed out after {timeout}s")  
 
-    @track_slow_method()
+
+    @try_catch()
     @auto_transaction
     @circuit_breaker(name="sync_executemany")
-    @overridable
-    @try_catch
+    @track_slow_method
     @profile
     def executemany(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """

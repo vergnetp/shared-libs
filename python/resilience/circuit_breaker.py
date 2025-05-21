@@ -238,3 +238,4 @@ def circuit_breaker(name=None, failure_threshold=5, recovery_timeout=30.0,
             return sync_wrapper
     
     return decorator
+
