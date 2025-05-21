@@ -472,63 +472,70 @@ def _log(level: LogLevel, prefix: str, message: str, indent: int = 0, context: D
         context: Additional context data
         **fields: Additional structured fields to include in the log
     """
-    # Get logger instance and call log method with all parameters
+    # Get logger instance
     logger = Logger.get_instance()
-    logger.log(level, message, indent=indent, context=context, prefix=prefix, **fields)
+    
+    # Remove 'self' from fields if present to avoid conflict with the logger instance
+    fields_copy = fields.copy() if fields else {}
+    if 'self' in fields_copy:
+        del fields_copy['self']
+    
+    # Now call log with the cleaned fields
+    logger.log(level, message, indent=indent, context=context, prefix=prefix, **fields_copy)
 
-def debug(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
+def debug(message: str, indent: int = 0, context: Dict[str, Any] = None, frames_back: bool=1, **fields):
     """Log a debug message with structured fields."""
-    component, subcomponent = utils.get_caller_info(frames_back=1)
+    component, subcomponent = utils.get_caller_info(frames_back)
     if 'component' not in fields:
         fields['component'] = component
     if 'subcomponent' not in fields:
         fields['subcomponent'] = subcomponent 
-    _log(LogLevel.DEBUG, f"[DEBUG] {component} - {subcomponent} - ", message, indent, context, **fields)
+    _log(LogLevel.DEBUG, f"[DEBUG] {fields['component']} - {fields['subcomponent']} - ", message, indent, context, **fields)
 
-def info(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
+def info(message: str, indent: int = 0, context: Dict[str, Any] = None, frames_back: bool=1, **fields):
     """Log an info message with structured fields."""
-    component, subcomponent = utils.get_caller_info(frames_back=1)
+    component, subcomponent = utils.get_caller_info(frames_back)
     if 'component' not in fields:
         fields['component'] = component
     if 'subcomponent' not in fields:
         fields['subcomponent'] = subcomponent 
-    _log(LogLevel.INFO, f"[INFO] {component} - {subcomponent} - ", message, indent, context, **fields)
+    _log(LogLevel.INFO, f"[INFO] {fields['component']} - {fields['subcomponent']} - ", message, indent, context, **fields)
 
-def warning(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
+def warning(message: str, indent: int = 0, context: Dict[str, Any] = None, frames_back: bool=1, **fields):
     """Log a warning message with structured fields."""
-    component, subcomponent = utils.get_caller_info(frames_back=1)
+    component, subcomponent = utils.get_caller_info(frames_back)
     if 'component' not in fields:
         fields['component'] = component
     if 'subcomponent' not in fields:
         fields['subcomponent'] = subcomponent 
-    _log(LogLevel.WARN, f"[WARN] {component} - {subcomponent} - ", message, indent, context, **fields)
+    _log(LogLevel.WARN, f"[WARN] {fields['component']} - {fields['subcomponent']} - ", message, indent, context, **fields)
 
-def error(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
+def error(message: str, indent: int = 0, context: Dict[str, Any] = None, frames_back: bool=1, **fields):
     """Log an error message with structured fields."""
-    component, subcomponent = utils.get_caller_info(frames_back=1)
+    component, subcomponent = utils.get_caller_info(frames_back)
     if 'component' not in fields:
         fields['component'] = component
     if 'subcomponent' not in fields:
         fields['subcomponent'] = subcomponent 
-    _log(LogLevel.ERROR, f"[ERROR] {component} - {subcomponent} - ", message, indent, context, **fields)
+    _log(LogLevel.ERROR, f"[ERROR] {fields['component']} - {fields['subcomponent']} - ", message, indent, context, **fields)
 
-def critical(message: str, context: Dict[str, Any] = None, **fields):
+def critical(message: str, context: Dict[str, Any] = None, frames_back: bool=1, **fields):
     """Log a critical message with structured fields."""
-    component, subcomponent = utils.get_caller_info(frames_back=1)
+    component, subcomponent = utils.get_caller_info(frames_back)
     if 'component' not in fields:
         fields['component'] = component
     if 'subcomponent' not in fields:
         fields['subcomponent'] = subcomponent 
-    _log(LogLevel.CRITICAL, f"[CRITICAL] {component} - {subcomponent} - ", message, 0, context, **fields)
+    _log(LogLevel.CRITICAL, f"[CRITICAL] {fields['component']} - {fields['subcomponent']} - ", message, 0, context, **fields)
 
-def profile(message: str, indent: int = 0, context: Dict[str, Any] = None, **fields):
+def profile(message: str, indent: int = 0, context: Dict[str, Any] = None, frames_back: bool=1, **fields):
     """Log a profiling message with structured fields."""
-    component, subcomponent = utils.get_caller_info(frames_back=1)
+    component, subcomponent = utils.get_caller_info(frames_back)
     if 'component' not in fields:
         fields['component'] = component
     if 'subcomponent' not in fields:
         fields['subcomponent'] = subcomponent 
-    _log(LogLevel.DEBUG, f"[PROFILER] {component} - {subcomponent} - ", message, indent, context, **fields)
+    _log(LogLevel.DEBUG, f"[PROFILER] {fields['component']} - {fields['subcomponent']} - ", message, indent, context, **fields)
 
 def get_log_file():
     """

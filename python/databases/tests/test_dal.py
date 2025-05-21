@@ -20,6 +20,47 @@ from ...databases import (
     PoolManager
 ) 
 
+@pytest_asyncio.fixture(scope="function")
+async def clean_event_loop():
+    """Fixture providing a clean event loop for each test."""
+    # Get the current event loop or create a new one
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    
+    # Yield the loop
+    yield loop
+    
+    # Proper cleanup
+    pending = asyncio.all_tasks(loop)
+    if pending:
+        # Allow pending tasks to complete with a short timeout
+        try:
+            await asyncio.wait_for(asyncio.gather(*pending, return_exceptions=True), timeout=1.0)
+        except asyncio.TimeoutError:
+            logger.warning(f"Some tasks did not complete: {len(pending)} pending tasks")
+            
+            # Log information about pending tasks for debugging
+            for task in pending:
+                if not task.done():
+                    logger.warning(f"Pending task: {task!r}")
+    
+    # Close the loop resources but don't close the loop itself
+    # (pytest-asyncio will handle that)
+    await asyncio.gather(*[task for task in asyncio.all_tasks(loop) 
+                        if not task.done()], return_exceptions=True)
+    
+    # Let the loop run once more to process any callbacks
+    loop.run_until_complete(asyncio.sleep(0.1))
+
+# Then update your test_transaction_timeout test to use this fixture
+@pytest.mark.asyncio
+async def test_transaction_timeout(clean_event_loop):
+    # Test code
+    pass
+
 # Fixture for PostgreSQL database connection
 @pytest.fixture
 def postgres_db():
@@ -763,3 +804,4 @@ async def test_transaction_timeout(postgres_db_async):
         finally:
             # Clean up
             await conn.execute("DROP TABLE tx_timeout_test")
+            await asyncio.sleep(0.1)  # Allow any pending tasks to complete

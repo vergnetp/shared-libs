@@ -509,24 +509,46 @@ class PoolManager(ABC):
             try:
                 is_healthy = await self._pool.health_check()
             except Exception as e:
-                pass
+                logger.debug(f"Health check failed for {self.alias()} pool: {e}")
+            
             if not is_healthy:
-                logger.debug(f"Existing pool unusable for {self.alias()} - {self.hash()}: {e}")
+                logger.debug(f"Existing pool unusable for {self.alias()} - {self.hash()}")
                 try:
                     await self._pool.close()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Error closing unusable pool: {e}")
                 self._pool = None
 
         # Create pool under lock
         async with self._pool_lock:
             if self._pool is None:
+                # Create a task outside wait_for to properly handle cancellation
+                creation_task = None
                 try:
                     start_time = time.time()
-                    self._pool = await asyncio.wait_for(self._create_pool(self.config), timeout=self.config.pool_creation_timeout)
-                    logger.info(f"{self.alias()} - {self.hash()} async pool initialized in {(time.time() - start_time):.2f}s")
+                    
+                    # Create the task for pool creation
+                    creation_task = asyncio.create_task(self._create_pool(self.config))
+                    
+                    # Wait for the task with timeout but don't cancel the task itself
+                    timeout = self.config.pool_creation_timeout
+                    try:
+                        self._pool = await asyncio.wait_for(asyncio.shield(creation_task), timeout=timeout)
+                        logger.info(f"{self.alias()} pool initialized in {(time.time() - start_time):.2f}s")
+                    except asyncio.TimeoutError:
+                        logger.error(f"Timeout initializing {self.alias()} pool after {timeout}s")
+                        # Don't cancel the task, let it complete in the background
+                        # Just raise the timeout to the caller
+                        raise TimeoutError(f"Pool initialization timed out after {timeout}s")
+                        
                 except Exception as e:
-                    logger.error(f"{self.alias()} - {self.hash()} async pool creation failed: {e}")
+                    logger.error(f"Pool creation failed for {self.alias()}: {e}")
+                    # If we have a running task, handle it carefully
+                    if creation_task and not creation_task.done():
+                        # Let it run in the background but detach from it
+                        creation_task.add_done_callback(
+                            lambda t: logger.debug(f"Background pool creation completed: {t.exception() if t.exception() else 'success'}")
+                        )
                     self._pool = None
                     raise
 

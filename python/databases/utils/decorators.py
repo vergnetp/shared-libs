@@ -1,5 +1,6 @@
 import functools
 import asyncio
+import inspect
 
 
 def auto_transaction(func):
@@ -22,8 +23,23 @@ def auto_transaction(func):
         async def some_async_function(self, ...):
             # Async function body, runs within a transaction
     """
+    is_async = asyncio.iscoroutinefunction(func)
+    
+    # Helper to safely call a method that might be sync or async
+    async def _safely_await_if_needed(method, *args, **kwargs):
+        if asyncio.iscoroutinefunction(method):
+            return await method(*args, **kwargs)
+        else:
+            result = method(*args, **kwargs)
+            if asyncio.iscoroutine(result):
+                return await result
+            return result
+    
     @functools.wraps(func)
     def sync_wrapper(self, *args, **kwargs):
+        # This wrapper is ONLY used for synchronous functions
+        # Synchronous functions should only be used with classes
+        # that have synchronous transaction methods
         if self.in_transaction():
             return func(self, *args, **kwargs)
         else:
@@ -38,21 +54,22 @@ def auto_transaction(func):
 
     @functools.wraps(func)
     async def async_wrapper(self, *args, **kwargs):
-        if await self.in_transaction():
+        # For async methods, always use the _safely_await_if_needed helper
+        # to handle both sync and async transaction methods
+        if await _safely_await_if_needed(self.in_transaction):
             return await func(self, *args, **kwargs)
         else:
-            await self.begin_transaction()
+            await _safely_await_if_needed(self.begin_transaction)
             try:
                 result = await func(self, *args, **kwargs)
-                await self.commit_transaction()
+                await _safely_await_if_needed(self.commit_transaction)
                 return result
             except:
-                await self.rollback_transaction()
+                await _safely_await_if_needed(self.rollback_transaction)
                 raise
 
-    # Choose the appropriate wrapper based on whether the function is async or not
-    if asyncio.iscoroutinefunction(func):
+    # Return appropriate wrapper based on whether the function is async or not
+    if is_async:
         return async_wrapper
     else:
         return sync_wrapper
-    

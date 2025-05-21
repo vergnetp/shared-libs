@@ -27,8 +27,8 @@ class SyncConnection(Connection):
     
     @track_slow_method()
     @circuit_breaker(name="sync_execute")
-    #@try_catch
-    #@profile
+    @try_catch
+    @profile
     def execute(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Synchronously executes a SQL query with standard ? placeholders.
@@ -61,8 +61,8 @@ class SyncConnection(Connection):
     @auto_transaction
     @circuit_breaker(name="sync_executemany")
     @overridable
-    #@try_catch
-    #@profile
+    @try_catch
+    @profile
     def executemany(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Synchronously executes a SQL query multiple times with different parameters.

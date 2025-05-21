@@ -51,12 +51,12 @@ class AsyncConnection(Connection):
         """Check if this connection has been marked as leaked"""
         return self._leaked
 
-     
+    
     @async_method   
     @track_slow_method()
     @circuit_breaker(name="async_execute")    
-    #@try_catch()
-    #@profile
+    @try_catch    
+    @profile
     async def execute(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Asynchronously executes a SQL query with standard ? placeholders.
@@ -91,8 +91,8 @@ class AsyncConnection(Connection):
     @auto_transaction
     @track_slow_method()
     @circuit_breaker(name="async_executemany")
-    #@try_catch()
-    #@profile
+    @try_catch()
+    @profile
     async def executemany(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]] = None) -> List[Tuple]:
         """
         Asynchronously executes a SQL query multiple times with different parameters.

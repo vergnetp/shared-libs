@@ -27,7 +27,7 @@ class LoggerConfig:
                  use_redis: bool = True,
                  redis_url: Optional[str] = None,
                  log_dir: Optional[str] = None,
-                 min_level: Union[LogLevel, str] = LogLevel.INFO,
+                 min_level: Union[LogLevel, str] = LogLevel.DEBUG,
                  log_debug_to_file: bool = False,
                  flush_interval: int = 5,
                  quiet_init: bool = False,

@@ -39,9 +39,11 @@ class MySqlSqlGenerator(SqlGenerator, SqlEntityGenerator):
         """Generate MySQL-specific upsert SQL for an entity."""
         fields_str = ', '.join([f"[{field}]" for field in fields])
         placeholders = ', '.join(['?'] * len(fields))
-        update_clause = ', '.join([f"[{field}]=VALUES([{field}])" for field in fields if field != 'id'])
         
-        return f"INSERT INTO [{entity_name}] ({fields_str}) VALUES ({placeholders}) ON DUPLICATE KEY UPDATE {update_clause}"
+        # Fix: Use the alias syntax instead of VALUES()
+        update_clause = ', '.join([f"[{field}]=new_data.[{field}]" for field in fields if field != 'id'])
+        
+        return f"INSERT INTO [{entity_name}] ({fields_str}) VALUES ({placeholders}) AS new_data ON DUPLICATE KEY UPDATE {update_clause}"
     
     def get_create_table_sql(self, entity_name: str, columns: List[Tuple[str, str]]) -> str:
         """Generate MySQL-specific CREATE TABLE SQL."""
