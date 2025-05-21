@@ -3307,3 +3307,1650 @@ WARNING: daemon is not using the default seccomp profile
 2025-05-21 10:27:28.944 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-5140 environment=dev
 2025-05-21 10:27:28.947 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-5140 environment=dev
 2025-05-21 10:27:28.948 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-5140 environment=dev
+2025-05-21 10:48:02.464 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-21348 environment=dev
+2025-05-21 10:48:03.522 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-21348 environment=dev
+2025-05-21 10:48:03.583 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'} | component=conftest subcomponent=setup_test_environment service_name=service-21348 environment=dev
+2025-05-21 10:48:03.588 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-21348 environment=dev
+2025-05-21 10:48:04.734 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 3
+  Running: 3
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-21348 environment=dev
+2025-05-21 10:48:04.736 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-21348 environment=dev
+2025-05-21 10:48:04.738 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-21348 environment=dev
+2025-05-21 10:48:04.745 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-21348 environment=dev
+2025-05-21 10:48:04.747 [INFO] [INFO] conftest - setup_test_environment -    - mysql: {'user': 'test', 'password': 'test', 'dbname': 'testdb_mysql'}:localhost (container port: 3307) | component=conftest subcomponent=setup_test_environment service_name=service-21348 environment=dev
+2025-05-21 10:48:04.757 [INFO] [INFO] conftest - setup_test_environment -    - postgres: {'user': 'test', 'password': 'test', 'dbname': 'testdb_postgres'}:localhost (container port: 5433) | component=conftest subcomponent=setup_test_environment service_name=service-21348 environment=dev
+2025-05-21 10:48:04.760 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d | component=conftest subcomponent=run_command service_name=service-21348 environment=dev
+2025-05-21 10:48:05.548 [INFO] [INFO] conftest - run_command -  Command error:  Container test-databases-mysql-1  Running
+ Container test-databases-postgres-1  Running
+ | component=conftest subcomponent=run_command service_name=service-21348 environment=dev
+2025-05-21 10:48:05.555 [INFO] [INFO] services - wait_for_service -  Waiting for mysql to be ready at localhost:3307... | component=services subcomponent=wait_for_service service_name=service-21348 environment=dev
+2025-05-21 10:48:05.563 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:3307 successful | component=services subcomponent=wait_for_service service_name=service-21348 environment=dev
+2025-05-21 10:48:05.584 [INFO] [INFO] services - wait_for_service -  mysql at localhost:3307 is ready! | component=services subcomponent=wait_for_service service_name=service-21348 environment=dev
+2025-05-21 10:48:05.587 [INFO] [INFO] services - wait_for_service -  Waiting for postgres to be ready at localhost:5433... | component=services subcomponent=wait_for_service service_name=service-21348 environment=dev
+2025-05-21 10:48:05.592 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:5433 successful | component=services subcomponent=wait_for_service service_name=service-21348 environment=dev
+2025-05-21 10:48:05.622 [INFO] [INFO] services - wait_for_service -  postgres at localhost:5433 is ready! | component=services subcomponent=wait_for_service service_name=service-21348 environment=dev
+2025-05-21 10:48:05.625 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 25868: Requesting sync connection for postgres_test | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-21348 environment=dev
+2025-05-21 10:48:05.654 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 25868: Sync connection created and cached for postgres_test in 0.03s | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-21348 environment=dev
+2025-05-21 10:48:05.662 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:05.668 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 25868: Requesting sync connection for postgres_test | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-21348 environment=dev
+2025-05-21 10:48:05.695 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 25868: Sync connection created and cached for postgres_test in 0.02s | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-21348 environment=dev
+2025-05-21 10:48:05.698 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 25868: Requesting sync connection for postgres_test | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-21348 environment=dev
+2025-05-21 10:48:05.701 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 25868: Reusing existing sync connection for postgres_test | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-21348 environment=dev
+2025-05-21 10:48:05.722 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:05.737 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:06.065 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  postgres_test - f8b62b2e37dbfd9550b956945ea5a2a2 async pool initialized in 0.32s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-21348 environment=dev
+2025-05-21 10:48:06.068 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:06.303 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:06.307 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:06.311 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for f8b62b2e37dbfd9550b956945ea5a2a2: 'NoneType' object has no attribute 'send' | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:06.659 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  postgres_test - f8b62b2e37dbfd9550b956945ea5a2a2 async pool initialized in 0.34s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-21348 environment=dev
+2025-05-21 10:48:06.662 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 2, "total_released": 1, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:06.995 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Found new field name in test_users_33a64972 with type str | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:07.141 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_33a64972_history from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:07.164 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_33a64972 from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:07.182 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 2, "total_released": 2, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:07.186 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:07.189 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for f8b62b2e37dbfd9550b956945ea5a2a2: 'NoneType' object has no attribute 'send' | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:07.196 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 25868: Requesting sync connection for postgres_test | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-21348 environment=dev
+2025-05-21 10:48:07.219 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 25868: Sync connection created and cached for postgres_test in 0.02s | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-21348 environment=dev
+2025-05-21 10:48:07.542 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  postgres_test - f8b62b2e37dbfd9550b956945ea5a2a2 async pool initialized in 0.32s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-21348 environment=dev
+2025-05-21 10:48:07.547 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 3, "total_released": 2, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:07.677 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Found new field name in test_users_a662d3cb with type str | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:07.683 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Found new field age in test_users_a662d3cb with type int | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:07.746 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_a662d3cb_history from schema: ['name', 'age', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:07.788 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_a662d3cb_history from schema: ['name', 'age', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:07.808 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_a662d3cb from schema: ['name', 'age', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:07.823 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 3, "total_released": 3, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:07.828 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:07.832 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for f8b62b2e37dbfd9550b956945ea5a2a2: 'NoneType' object has no attribute 'send' | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:07.838 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 25868: Requesting sync connection for postgres_test | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-21348 environment=dev
+2025-05-21 10:48:07.859 [INFO] [INFO] PostgresDatabase - get_sync_connection -  Thread 25868: Sync connection created and cached for postgres_test in 0.02s | component=PostgresDatabase subcomponent=get_sync_connection service_name=service-21348 environment=dev
+2025-05-21 10:48:08.109 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  postgres_test - f8b62b2e37dbfd9550b956945ea5a2a2 async pool initialized in 0.24s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-21348 environment=dev
+2025-05-21 10:48:08.112 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 4, "total_released": 3, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:08.227 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Found new field name in test_users_4afbf233 with type str | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:08.236 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Found new field update_comment in test_users_4afbf233 with type str | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:08.296 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_4afbf233_history from schema: ['name', 'id', 'created_at', 'updated_at', 'update_comment', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:08.321 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Found new field department in test_users_4afbf233 with type str | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:08.328 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Adding column department to table test_users_4afbf233 | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:08.342 [INFO] [INFO] PostgresAsyncConnection - _update_entity_metadata -  Adding column department to history table test_users_4afbf233_history | component=PostgresAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:08.360 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_4afbf233_history from schema: ['name', 'id', 'created_at', 'updated_at', 'update_comment', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment', 'department'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:08.375 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_4afbf233 from schema: ['name', 'id', 'created_at', 'updated_at', 'update_comment', 'created_by', 'updated_by', 'deleted_at', 'department'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:08.383 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_4afbf233 from schema: ['name', 'id', 'created_at', 'updated_at', 'update_comment', 'created_by', 'updated_by', 'deleted_at', 'department'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:08.388 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_4afbf233_history from schema: ['name', 'id', 'created_at', 'updated_at', 'update_comment', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment', 'department'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:08.397 [INFO] [INFO] PostgresAsyncConnection - _get_field_names -  Got field names for test_users_4afbf233_history from schema: ['name', 'id', 'created_at', 'updated_at', 'update_comment', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment', 'department'] | component=PostgresAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:08.406 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 4, "total_released": 4, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:08.415 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:08.417 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for f8b62b2e37dbfd9550b956945ea5a2a2: 'NoneType' object has no attribute 'send' | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:08.465 [INFO] [INFO] MySqlPoolManager - _initialize_pool_if_needed -  mysql_test - 0b2a7acac55d45d18c5cff7e154bc2b2 async pool initialized in 0.04s | component=MySqlPoolManager subcomponent=_initialize_pool_if_needed service_name=service-21348 environment=dev
+2025-05-21 10:48:08.468 [INFO] [INFO] MySqlPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "mysql_test", "hash": "0b2a7acac55d45d18c5cff7e154bc2b2", "min_size": 3, "max_size": 20, "current_size": 3, "in_use": 1, "idle": 2, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=MySqlPoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:08.891 [INFO] [INFO] MysqlAsyncConnection - _update_entity_metadata -  Found new field name in test_products_c4bacc46 with type str | component=MysqlAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:08.902 [INFO] [INFO] MysqlAsyncConnection - _update_entity_metadata -  Found new field price in test_products_c4bacc46 with type str | component=MysqlAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:08.973 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_products_c4bacc46 from schema: ['created_at', 'name', 'price', 'id', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:08.982 [INFO] [INFO] MySqlPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "mysql_test", "hash": "0b2a7acac55d45d18c5cff7e154bc2b2", "min_size": 3, "max_size": 20, "current_size": 2, "in_use": 0, "idle": 2, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=MySqlPoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:08.988 [INFO] [INFO] pool_manager - close_pool -  Pool 0b2a7acac55d45d18c5cff7e154bc2b2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:08.992 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for 0b2a7acac55d45d18c5cff7e154bc2b2: object NoneType can't be used in 'await' expression | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:09.050 [INFO] [INFO] MySqlPoolManager - _initialize_pool_if_needed -  mysql_test - 0b2a7acac55d45d18c5cff7e154bc2b2 async pool initialized in 0.04s | component=MySqlPoolManager subcomponent=_initialize_pool_if_needed service_name=service-21348 environment=dev
+2025-05-21 10:48:09.055 [INFO] [INFO] MySqlPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "mysql_test", "hash": "0b2a7acac55d45d18c5cff7e154bc2b2", "min_size": 3, "max_size": 20, "current_size": 3, "in_use": 1, "idle": 2, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 2, "total_released": 1, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=MySqlPoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:09.318 [INFO] [INFO] MysqlAsyncConnection - _update_entity_metadata -  Found new field name in test_employees_bcab1d42 with type str | component=MysqlAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:09.323 [INFO] [INFO] MysqlAsyncConnection - _update_entity_metadata -  Found new field department in test_employees_bcab1d42 with type str | component=MysqlAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:09.402 [INFO] [INFO] MySqlPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "mysql_test", "hash": "0b2a7acac55d45d18c5cff7e154bc2b2", "min_size": 3, "max_size": 20, "current_size": 2, "in_use": 0, "idle": 2, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 2, "total_released": 2, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=MySqlPoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:09.408 [INFO] [INFO] pool_manager - close_pool -  Pool 0b2a7acac55d45d18c5cff7e154bc2b2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:09.411 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for 0b2a7acac55d45d18c5cff7e154bc2b2: object NoneType can't be used in 'await' expression | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:09.457 [INFO] [INFO] MySqlPoolManager - _initialize_pool_if_needed -  mysql_test - 0b2a7acac55d45d18c5cff7e154bc2b2 async pool initialized in 0.04s | component=MySqlPoolManager subcomponent=_initialize_pool_if_needed service_name=service-21348 environment=dev
+2025-05-21 10:48:09.459 [INFO] [INFO] MySqlPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "mysql_test", "hash": "0b2a7acac55d45d18c5cff7e154bc2b2", "min_size": 3, "max_size": 20, "current_size": 3, "in_use": 1, "idle": 2, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 3, "total_released": 2, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=MySqlPoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:09.734 [INFO] [INFO] MysqlAsyncConnection - _update_entity_metadata -  Found new field name in test_users_8cd99461 with type str | component=MysqlAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:09.781 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_users_8cd99461_history from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:09.793 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_users_8cd99461 from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:09.810 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_users_8cd99461_history from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:09.824 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_users_8cd99461 from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:09.831 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_users_8cd99461 from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:09.842 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_users_8cd99461_history from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:09.851 [INFO] [INFO] MysqlAsyncConnection - _get_field_names -  Got field names for test_users_8cd99461 from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=MysqlAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:09.859 [INFO] [INFO] MySqlPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "mysql_test", "hash": "0b2a7acac55d45d18c5cff7e154bc2b2", "min_size": 3, "max_size": 20, "current_size": 2, "in_use": 0, "idle": 2, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 3, "total_released": 3, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=MySqlPoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:09.865 [INFO] [INFO] pool_manager - close_pool -  Pool 0b2a7acac55d45d18c5cff7e154bc2b2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:09.868 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for 0b2a7acac55d45d18c5cff7e154bc2b2: object NoneType can't be used in 'await' expression | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:09.881 [INFO] [INFO] SqlitePoolManager - _initialize_pool_if_needed -  sqlite_test - 1f5c3e3e6c493fc3edf2a532c60bccbb async pool initialized in 0.00s | component=SqlitePoolManager subcomponent=_initialize_pool_if_needed service_name=service-21348 environment=dev
+2025-05-21 10:48:09.884 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "sqlite_test", "hash": "1f5c3e3e6c493fc3edf2a532c60bccbb", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 1, "idle": 0, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:09.905 [INFO] [INFO] SqliteAsyncConnection - _update_entity_metadata -  Found new field account in test_accounts_f44e69fe with type str | component=SqliteAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:09.909 [INFO] [INFO] SqliteAsyncConnection - _update_entity_metadata -  Found new field balance in test_accounts_f44e69fe with type int | component=SqliteAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:09.926 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_accounts_f44e69fe_history from schema: ['account', 'balance', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:09.946 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_accounts_f44e69fe_history from schema: ['account', 'balance', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:09.981 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "sqlite_test", "hash": "1f5c3e3e6c493fc3edf2a532c60bccbb", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 0, "idle": 1, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:09.986 [INFO] [INFO] pool_manager - close_pool -  Pool 1f5c3e3e6c493fc3edf2a532c60bccbb marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:09.990 [INFO] [INFO] pool_manager - close_pool -  Pool for 1f5c3e3e6c493fc3edf2a532c60bccbb closed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:10.136 [INFO] [INFO] SqlitePoolManager - _initialize_pool_if_needed -  sqlite_test - d84a37560798a7f0bbd4cea643730192 async pool initialized in 0.03s | component=SqlitePoolManager subcomponent=_initialize_pool_if_needed service_name=service-21348 environment=dev
+2025-05-21 10:48:10.139 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "sqlite_test", "hash": "d84a37560798a7f0bbd4cea643730192", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 1, "idle": 0, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:10.161 [INFO] [INFO] SqliteAsyncConnection - _update_entity_metadata -  Found new field order in test_orders_3e6ee964 with type str | component=SqliteAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:10.177 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_orders_3e6ee964_history from schema: ['order', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:10.202 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_orders_3e6ee964_history from schema: ['order', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:10.218 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "sqlite_test", "hash": "d84a37560798a7f0bbd4cea643730192", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 0, "idle": 1, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:10.222 [INFO] [INFO] pool_manager - close_pool -  Pool d84a37560798a7f0bbd4cea643730192 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:10.225 [INFO] [INFO] pool_manager - close_pool -  Pool for d84a37560798a7f0bbd4cea643730192 closed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:10.342 [INFO] [INFO] SqlitePoolManager - _initialize_pool_if_needed -  sqlite_test - 486999074864812a497c841a513631c2 async pool initialized in 0.00s | component=SqlitePoolManager subcomponent=_initialize_pool_if_needed service_name=service-21348 environment=dev
+2025-05-21 10:48:10.344 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "sqlite_test", "hash": "486999074864812a497c841a513631c2", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 1, "idle": 0, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:10.358 [INFO] [INFO] SqliteAsyncConnection - _update_entity_metadata -  Found new field name in test_users_f0bb25b9 with type str | component=SqliteAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:10.368 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_users_f0bb25b9_history from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:10.382 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_users_f0bb25b9 from schema: ['name', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:10.384 [INFO] [INFO] test_dal - test_sqlite_save_and_get_entity -  ============= {
+    "name": "Alice",
+    "id": "daac0de2-8c30-4b71-b0d0-060bba87523a",
+    "created_at": "2025-05-21T09:48:10.347401+00:00",
+    "updated_at": "2025-05-21T09:48:10.347401+00:00",
+    "created_by": null,
+    "updated_by": null,
+    "deleted_at": null
+} | component=test_dal subcomponent=test_sqlite_save_and_get_entity service_name=service-21348 environment=dev
+2025-05-21 10:48:10.395 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "sqlite_test", "hash": "486999074864812a497c841a513631c2", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 0, "idle": 1, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:10.401 [INFO] [INFO] pool_manager - close_pool -  Pool 486999074864812a497c841a513631c2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:10.404 [INFO] [INFO] pool_manager - close_pool -  Pool for 486999074864812a497c841a513631c2 closed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:10.523 [INFO] [INFO] SqlitePoolManager - _initialize_pool_if_needed -  sqlite_test - 7c0571868ab0cb889f84f48a9a6dfa9d async pool initialized in 0.00s | component=SqlitePoolManager subcomponent=_initialize_pool_if_needed service_name=service-21348 environment=dev
+2025-05-21 10:48:10.526 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "sqlite_test", "hash": "7c0571868ab0cb889f84f48a9a6dfa9d", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 1, "idle": 0, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:10.541 [INFO] [INFO] SqliteAsyncConnection - _update_entity_metadata -  Found new field title in test_events_d3dba571 with type str | component=SqliteAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:10.544 [INFO] [INFO] SqliteAsyncConnection - _update_entity_metadata -  Found new field event_date in test_events_d3dba571 with type datetime | component=SqliteAsyncConnection subcomponent=_update_entity_metadata service_name=service-21348 environment=dev
+2025-05-21 10:48:10.558 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_events_d3dba571_history from schema: ['title', 'event_date', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at', 'version', 'history_timestamp', 'history_user_id', 'history_comment'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:10.569 [INFO] [INFO] SqliteAsyncConnection - _get_field_names -  Got field names for test_events_d3dba571 from schema: ['title', 'event_date', 'id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_at'] | component=SqliteAsyncConnection subcomponent=_get_field_names service_name=service-21348 environment=dev
+2025-05-21 10:48:10.581 [INFO] [INFO] SqlitePoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "sqlite_test", "hash": "7c0571868ab0cb889f84f48a9a6dfa9d", "min_size": 1, "max_size": 1, "current_size": 1, "in_use": 0, "idle": 1, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=SqlitePoolManager subcomponent=_track_metrics service_name=service-21348 environment=dev
+2025-05-21 10:48:10.585 [INFO] [INFO] pool_manager - close_pool -  Pool 7c0571868ab0cb889f84f48a9a6dfa9d marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:10.588 [INFO] [INFO] pool_manager - close_pool -  Pool for 7c0571868ab0cb889f84f48a9a6dfa9d closed | component=pool_manager subcomponent=close_pool service_name=service-21348 environment=dev
+2025-05-21 10:48:10.703 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-21348 environment=dev
+2025-05-21 10:48:10.705 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-21348 environment=dev
+2025-05-21 10:48:10.728 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-21348 environment=dev
+2025-05-21 10:51:09.876 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-15732 environment=dev
+2025-05-21 10:51:10.594 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-15732 environment=dev
+2025-05-21 10:51:10.642 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'} | component=conftest subcomponent=setup_test_environment service_name=service-15732 environment=dev
+2025-05-21 10:51:10.644 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-15732 environment=dev
+2025-05-21 10:51:11.153 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 3
+  Running: 3
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-15732 environment=dev
+2025-05-21 10:51:11.155 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-15732 environment=dev
+2025-05-21 10:51:11.158 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-15732 environment=dev
+2025-05-21 10:51:11.163 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-15732 environment=dev
+2025-05-21 10:51:11.166 [INFO] [INFO] conftest - setup_test_environment -    - mysql: {'user': 'test', 'password': 'test', 'dbname': 'testdb_mysql'}:localhost (container port: 3307) | component=conftest subcomponent=setup_test_environment service_name=service-15732 environment=dev
+2025-05-21 10:51:11.169 [INFO] [INFO] conftest - setup_test_environment -    - postgres: {'user': 'test', 'password': 'test', 'dbname': 'testdb_postgres'}:localhost (container port: 5433) | component=conftest subcomponent=setup_test_environment service_name=service-15732 environment=dev
+2025-05-21 10:51:11.172 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d | component=conftest subcomponent=run_command service_name=service-15732 environment=dev
+2025-05-21 10:51:11.633 [INFO] [INFO] conftest - run_command -  Command error:  Container test-databases-postgres-1  Running
+ Container test-databases-mysql-1  Running
+ | component=conftest subcomponent=run_command service_name=service-15732 environment=dev
+2025-05-21 10:51:11.637 [INFO] [INFO] services - wait_for_service -  Waiting for mysql to be ready at localhost:3307... | component=services subcomponent=wait_for_service service_name=service-15732 environment=dev
+2025-05-21 10:51:11.644 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:3307 successful | component=services subcomponent=wait_for_service service_name=service-15732 environment=dev
+2025-05-21 10:51:11.671 [INFO] [INFO] services - wait_for_service -  mysql at localhost:3307 is ready! | component=services subcomponent=wait_for_service service_name=service-15732 environment=dev
+2025-05-21 10:51:11.673 [INFO] [INFO] services - wait_for_service -  Waiting for postgres to be ready at localhost:5433... | component=services subcomponent=wait_for_service service_name=service-15732 environment=dev
+2025-05-21 10:51:11.676 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:5433 successful | component=services subcomponent=wait_for_service service_name=service-15732 environment=dev
+2025-05-21 10:51:11.703 [INFO] [INFO] services - wait_for_service -  postgres at localhost:5433 is ready! | component=services subcomponent=wait_for_service service_name=service-15732 environment=dev
+2025-05-21 10:51:11.917 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  testdb_postgres - 80b0cd9f32c3bedb7f58cf4aefc6b915 async pool initialized in 0.20s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-15732 environment=dev
+2025-05-21 10:51:11.920 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "80b0cd9f32c3bedb7f58cf4aefc6b915", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-15732 environment=dev
+2025-05-21 10:51:11.937 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "80b0cd9f32c3bedb7f58cf4aefc6b915", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-15732 environment=dev
+2025-05-21 10:51:11.942 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "80b0cd9f32c3bedb7f58cf4aefc6b915", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 2, "total_released": 1, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-15732 environment=dev
+2025-05-21 10:51:11.946 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "80b0cd9f32c3bedb7f58cf4aefc6b915", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 2, "idle": 18, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 3, "total_released": 1, "current_active": 2, "peak_active": 2, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-15732 environment=dev
+2025-05-21 10:51:11.951 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "80b0cd9f32c3bedb7f58cf4aefc6b915", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 3, "idle": 17, "active_connections": 2, "shutting_down": false, "metrics": {"total_acquired": 4, "total_released": 1, "current_active": 3, "peak_active": 3, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-15732 environment=dev
+2025-05-21 10:51:11.957 [WARN] [WARN] PostgresPoolManager - _get_connection_from_pool -  Timeout acquiring connection from testdb_postgres pool after 0.00s | component=PostgresPoolManager subcomponent=_get_connection_from_pool service_name=service-15732 environment=dev
+2025-05-21 10:51:11.959 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "80b0cd9f32c3bedb7f58cf4aefc6b915", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 3, "idle": 17, "active_connections": 3, "shutting_down": false, "metrics": {"total_acquired": 4, "total_released": 1, "current_active": 3, "peak_active": 3, "errors": 0, "timeouts": 1, "last_timeout": 1747821071.959141, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-15732 environment=dev
+2025-05-21 10:51:11.961 [ERROR] [ERROR] test_dal - test_connection_acquisition_timeout -  Failed to get connection 4: Timed out waiting for PostgreSQL connection after 0.001s | component=test_dal subcomponent=test_connection_acquisition_timeout service_name=service-15732 environment=dev
+2025-05-21 10:51:11.966 [WARN] [WARN] PostgresPoolManager - _get_connection_from_pool -  Timeout acquiring connection from testdb_postgres pool after 0.00s | component=PostgresPoolManager subcomponent=_get_connection_from_pool service_name=service-15732 environment=dev
+2025-05-21 10:51:11.970 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "80b0cd9f32c3bedb7f58cf4aefc6b915", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 3, "idle": 17, "active_connections": 3, "shutting_down": false, "metrics": {"total_acquired": 4, "total_released": 1, "current_active": 3, "peak_active": 3, "errors": 0, "timeouts": 2, "last_timeout": 1747821071.9699314, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-15732 environment=dev
+2025-05-21 10:51:11.974 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "80b0cd9f32c3bedb7f58cf4aefc6b915", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 2, "idle": 18, "active_connections": 3, "shutting_down": false, "metrics": {"total_acquired": 4, "total_released": 2, "current_active": 2, "peak_active": 3, "errors": 0, "timeouts": 2, "last_timeout": 1747821071.9699314, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-15732 environment=dev
+2025-05-21 10:51:11.978 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "80b0cd9f32c3bedb7f58cf4aefc6b915", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 2, "shutting_down": false, "metrics": {"total_acquired": 4, "total_released": 3, "current_active": 1, "peak_active": 3, "errors": 0, "timeouts": 2, "last_timeout": 1747821071.9699314, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-15732 environment=dev
+2025-05-21 10:51:11.982 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "80b0cd9f32c3bedb7f58cf4aefc6b915", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 4, "total_released": 4, "current_active": 0, "peak_active": 3, "errors": 0, "timeouts": 2, "last_timeout": 1747821071.9699314, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-15732 environment=dev
+2025-05-21 10:51:11.984 [INFO] [INFO] pool_manager - close_pool -  Pool 80b0cd9f32c3bedb7f58cf4aefc6b915 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-15732 environment=dev
+2025-05-21 10:51:11.995 [INFO] [INFO] pool_manager - close_pool -  Pool for 80b0cd9f32c3bedb7f58cf4aefc6b915 closed | component=pool_manager subcomponent=close_pool service_name=service-15732 environment=dev
+2025-05-21 10:51:12.000 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-15732 environment=dev
+2025-05-21 10:51:12.003 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-15732 environment=dev
+2025-05-21 10:51:12.006 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-15732 environment=dev
+2025-05-21 10:51:18.089 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-4448 environment=dev
+2025-05-21 10:51:18.797 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-4448 environment=dev
+2025-05-21 10:51:18.869 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'} | component=conftest subcomponent=setup_test_environment service_name=service-4448 environment=dev
+2025-05-21 10:51:18.872 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-4448 environment=dev
+2025-05-21 10:51:19.340 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 3
+  Running: 3
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: nvidia runc io.containerd.runc.v2
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-4448 environment=dev
+2025-05-21 10:51:19.342 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-4448 environment=dev
+2025-05-21 10:51:19.343 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-4448 environment=dev
+2025-05-21 10:51:19.349 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-4448 environment=dev
+2025-05-21 10:51:19.351 [INFO] [INFO] conftest - setup_test_environment -    - mysql: {'user': 'test', 'password': 'test', 'dbname': 'testdb_mysql'}:localhost (container port: 3307) | component=conftest subcomponent=setup_test_environment service_name=service-4448 environment=dev
+2025-05-21 10:51:19.354 [INFO] [INFO] conftest - setup_test_environment -    - postgres: {'user': 'test', 'password': 'test', 'dbname': 'testdb_postgres'}:localhost (container port: 5433) | component=conftest subcomponent=setup_test_environment service_name=service-4448 environment=dev
+2025-05-21 10:51:19.356 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d | component=conftest subcomponent=run_command service_name=service-4448 environment=dev
+2025-05-21 10:51:19.776 [INFO] [INFO] conftest - run_command -  Command error:  Container test-databases-postgres-1  Running
+ Container test-databases-mysql-1  Running
+ | component=conftest subcomponent=run_command service_name=service-4448 environment=dev
+2025-05-21 10:51:19.778 [INFO] [INFO] services - wait_for_service -  Waiting for mysql to be ready at localhost:3307... | component=services subcomponent=wait_for_service service_name=service-4448 environment=dev
+2025-05-21 10:51:19.785 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:3307 successful | component=services subcomponent=wait_for_service service_name=service-4448 environment=dev
+2025-05-21 10:51:19.803 [INFO] [INFO] services - wait_for_service -  mysql at localhost:3307 is ready! | component=services subcomponent=wait_for_service service_name=service-4448 environment=dev
+2025-05-21 10:51:19.806 [INFO] [INFO] services - wait_for_service -  Waiting for postgres to be ready at localhost:5433... | component=services subcomponent=wait_for_service service_name=service-4448 environment=dev
+2025-05-21 10:51:19.808 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:5433 successful | component=services subcomponent=wait_for_service service_name=service-4448 environment=dev
+2025-05-21 10:51:19.838 [INFO] [INFO] services - wait_for_service -  postgres at localhost:5433 is ready! | component=services subcomponent=wait_for_service service_name=service-4448 environment=dev
+2025-05-21 10:51:20.094 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  testdb_postgres - d795734bcb05f9d4bc1b8923d4495403 async pool initialized in 0.25s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-4448 environment=dev
+2025-05-21 10:51:20.098 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "d795734bcb05f9d4bc1b8923d4495403", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-4448 environment=dev
+2025-05-21 10:51:20.645 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "testdb_postgres", "hash": "d795734bcb05f9d4bc1b8923d4495403", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-4448 environment=dev
+2025-05-21 10:51:20.648 [INFO] [INFO] pool_manager - close_pool -  Pool d795734bcb05f9d4bc1b8923d4495403 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-4448 environment=dev
+2025-05-21 10:51:20.660 [INFO] [INFO] pool_manager - close_pool -  Pool for d795734bcb05f9d4bc1b8923d4495403 closed | component=pool_manager subcomponent=close_pool service_name=service-4448 environment=dev
+2025-05-21 10:51:20.665 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-4448 environment=dev
+2025-05-21 10:51:20.668 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-4448 environment=dev
+2025-05-21 10:51:20.670 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-4448 environment=dev
+2025-05-21 10:51:25.810 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-26528 environment=dev
+2025-05-21 10:51:26.472 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-26528 environment=dev
+2025-05-21 10:51:26.532 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'} | component=conftest subcomponent=setup_test_environment service_name=service-26528 environment=dev
+2025-05-21 10:51:26.535 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-26528 environment=dev
+2025-05-21 10:51:27.034 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 3
+  Running: 3
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-26528 environment=dev
+2025-05-21 10:51:27.036 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-26528 environment=dev
+2025-05-21 10:51:27.040 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-26528 environment=dev
+2025-05-21 10:51:27.046 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-26528 environment=dev
+2025-05-21 10:51:27.048 [INFO] [INFO] conftest - setup_test_environment -    - mysql: {'user': 'test', 'password': 'test', 'dbname': 'testdb_mysql'}:localhost (container port: 3307) | component=conftest subcomponent=setup_test_environment service_name=service-26528 environment=dev
+2025-05-21 10:51:27.050 [INFO] [INFO] conftest - setup_test_environment -    - postgres: {'user': 'test', 'password': 'test', 'dbname': 'testdb_postgres'}:localhost (container port: 5433) | component=conftest subcomponent=setup_test_environment service_name=service-26528 environment=dev
+2025-05-21 10:51:27.051 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d | component=conftest subcomponent=run_command service_name=service-26528 environment=dev
+2025-05-21 10:51:27.432 [INFO] [INFO] conftest - run_command -  Command error:  Container test-databases-postgres-1  Running
+ Container test-databases-mysql-1  Running
+ | component=conftest subcomponent=run_command service_name=service-26528 environment=dev
+2025-05-21 10:51:27.434 [INFO] [INFO] services - wait_for_service -  Waiting for mysql to be ready at localhost:3307... | component=services subcomponent=wait_for_service service_name=service-26528 environment=dev
+2025-05-21 10:51:27.444 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:3307 successful | component=services subcomponent=wait_for_service service_name=service-26528 environment=dev
+2025-05-21 10:51:27.462 [INFO] [INFO] services - wait_for_service -  mysql at localhost:3307 is ready! | component=services subcomponent=wait_for_service service_name=service-26528 environment=dev
+2025-05-21 10:51:27.465 [INFO] [INFO] services - wait_for_service -  Waiting for postgres to be ready at localhost:5433... | component=services subcomponent=wait_for_service service_name=service-26528 environment=dev
+2025-05-21 10:51:27.468 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:5433 successful | component=services subcomponent=wait_for_service service_name=service-26528 environment=dev
+2025-05-21 10:51:27.497 [INFO] [INFO] services - wait_for_service -  postgres at localhost:5433 is ready! | component=services subcomponent=wait_for_service service_name=service-26528 environment=dev
+2025-05-21 10:51:28.508 [ERROR] [ERROR] PostgresPoolManager - _initialize_pool_if_needed -  postgres - 0ff27583285342336e403fc54b4c8923 async pool creation failed:  | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-26528 environment=dev
+2025-05-21 10:51:28.705 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-26528 environment=dev
+2025-05-21 10:51:28.709 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-26528 environment=dev
+2025-05-21 10:51:43.457 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-19692 environment=dev
+2025-05-21 10:51:44.073 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-19692 environment=dev
+2025-05-21 10:51:44.110 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'} | component=conftest subcomponent=setup_test_environment service_name=service-19692 environment=dev
+2025-05-21 10:51:44.114 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-19692 environment=dev
+2025-05-21 10:51:44.553 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 3
+  Running: 3
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-19692 environment=dev
+2025-05-21 10:51:44.556 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-19692 environment=dev
+2025-05-21 10:51:44.558 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-19692 environment=dev
+2025-05-21 10:51:44.565 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-19692 environment=dev
+2025-05-21 10:51:44.567 [INFO] [INFO] conftest - setup_test_environment -    - mysql: {'user': 'test', 'password': 'test', 'dbname': 'testdb_mysql'}:localhost (container port: 3307) | component=conftest subcomponent=setup_test_environment service_name=service-19692 environment=dev
+2025-05-21 10:51:44.569 [INFO] [INFO] conftest - setup_test_environment -    - postgres: {'user': 'test', 'password': 'test', 'dbname': 'testdb_postgres'}:localhost (container port: 5433) | component=conftest subcomponent=setup_test_environment service_name=service-19692 environment=dev
+2025-05-21 10:51:44.572 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d | component=conftest subcomponent=run_command service_name=service-19692 environment=dev
+2025-05-21 10:51:45.087 [INFO] [INFO] conftest - run_command -  Command error:  Container test-databases-postgres-1  Running
+ Container test-databases-mysql-1  Running
+ | component=conftest subcomponent=run_command service_name=service-19692 environment=dev
+2025-05-21 10:51:45.089 [INFO] [INFO] services - wait_for_service -  Waiting for mysql to be ready at localhost:3307... | component=services subcomponent=wait_for_service service_name=service-19692 environment=dev
+2025-05-21 10:51:45.099 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:3307 successful | component=services subcomponent=wait_for_service service_name=service-19692 environment=dev
+2025-05-21 10:51:45.115 [INFO] [INFO] services - wait_for_service -  mysql at localhost:3307 is ready! | component=services subcomponent=wait_for_service service_name=service-19692 environment=dev
+2025-05-21 10:51:45.118 [INFO] [INFO] services - wait_for_service -  Waiting for postgres to be ready at localhost:5433... | component=services subcomponent=wait_for_service service_name=service-19692 environment=dev
+2025-05-21 10:51:45.120 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:5433 successful | component=services subcomponent=wait_for_service service_name=service-19692 environment=dev
+2025-05-21 10:51:45.146 [INFO] [INFO] services - wait_for_service -  postgres at localhost:5433 is ready! | component=services subcomponent=wait_for_service service_name=service-19692 environment=dev
+2025-05-21 10:51:45.359 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  postgres_test - f8b62b2e37dbfd9550b956945ea5a2a2 async pool initialized in 0.20s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-19692 environment=dev
+2025-05-21 10:51:45.363 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-19692 environment=dev
+2025-05-21 10:51:46.118 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-19692 environment=dev
+2025-05-21 10:51:46.122 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-19692 environment=dev
+2025-05-21 10:51:46.124 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for f8b62b2e37dbfd9550b956945ea5a2a2: 'NoneType' object has no attribute 'send' | component=pool_manager subcomponent=close_pool service_name=service-19692 environment=dev
+2025-05-21 10:51:46.127 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-19692 environment=dev
+2025-05-21 10:51:46.129 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-19692 environment=dev
+2025-05-21 10:51:51.121 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-21032 environment=dev
+2025-05-21 10:51:51.948 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-21032 environment=dev
+2025-05-21 10:51:52.003 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'} | component=conftest subcomponent=setup_test_environment service_name=service-21032 environment=dev
+2025-05-21 10:51:52.006 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-21032 environment=dev
+2025-05-21 10:51:52.525 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 3
+  Running: 3
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-21032 environment=dev
+2025-05-21 10:51:52.527 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-21032 environment=dev
+2025-05-21 10:51:52.530 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-21032 environment=dev
+2025-05-21 10:51:52.538 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-21032 environment=dev
+2025-05-21 10:51:52.540 [INFO] [INFO] conftest - setup_test_environment -    - mysql: {'user': 'test', 'password': 'test', 'dbname': 'testdb_mysql'}:localhost (container port: 3307) | component=conftest subcomponent=setup_test_environment service_name=service-21032 environment=dev
+2025-05-21 10:51:52.543 [INFO] [INFO] conftest - setup_test_environment -    - postgres: {'user': 'test', 'password': 'test', 'dbname': 'testdb_postgres'}:localhost (container port: 5433) | component=conftest subcomponent=setup_test_environment service_name=service-21032 environment=dev
+2025-05-21 10:51:52.545 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d | component=conftest subcomponent=run_command service_name=service-21032 environment=dev
+2025-05-21 10:51:53.165 [INFO] [INFO] conftest - run_command -  Command error:  Container test-databases-mysql-1  Running
+ Container test-databases-postgres-1  Running
+ | component=conftest subcomponent=run_command service_name=service-21032 environment=dev
+2025-05-21 10:51:53.167 [INFO] [INFO] services - wait_for_service -  Waiting for mysql to be ready at localhost:3307... | component=services subcomponent=wait_for_service service_name=service-21032 environment=dev
+2025-05-21 10:51:53.175 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:3307 successful | component=services subcomponent=wait_for_service service_name=service-21032 environment=dev
+2025-05-21 10:51:53.191 [INFO] [INFO] services - wait_for_service -  mysql at localhost:3307 is ready! | component=services subcomponent=wait_for_service service_name=service-21032 environment=dev
+2025-05-21 10:51:53.193 [INFO] [INFO] services - wait_for_service -  Waiting for postgres to be ready at localhost:5433... | component=services subcomponent=wait_for_service service_name=service-21032 environment=dev
+2025-05-21 10:51:53.197 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:5433 successful | component=services subcomponent=wait_for_service service_name=service-21032 environment=dev
+2025-05-21 10:51:53.225 [INFO] [INFO] services - wait_for_service -  postgres at localhost:5433 is ready! | component=services subcomponent=wait_for_service service_name=service-21032 environment=dev
+2025-05-21 10:51:53.524 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  postgres_test - f8b62b2e37dbfd9550b956945ea5a2a2 async pool initialized in 0.29s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-21032 environment=dev
+2025-05-21 10:51:53.529 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-21032 environment=dev
+2025-05-21 10:51:54.094 [ERROR] [ERROR] PostgresAsyncConnection - _prepare_statement_async -  Error while Postgres async driver tried to prepare this: INSERT INTO tx_timeout_test (value) VALUES ('after timeout'): current transaction is aborted, commands ignored until end of transaction block | component=PostgresAsyncConnection subcomponent=_prepare_statement_async service_name=service-21032 environment=dev
+2025-05-21 10:51:54.107 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-21032 environment=dev
+2025-05-21 10:51:54.324 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-21032 environment=dev
+2025-05-21 10:51:54.327 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for f8b62b2e37dbfd9550b956945ea5a2a2: 'NoneType' object has no attribute 'send' | component=pool_manager subcomponent=close_pool service_name=service-21032 environment=dev
+2025-05-21 10:51:54.329 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-21032 environment=dev
+2025-05-21 10:51:54.332 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-21032 environment=dev
+2025-05-21 10:53:11.965 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-21920 environment=dev
+2025-05-21 10:53:12.963 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-21920 environment=dev
+2025-05-21 10:53:13.011 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'} | component=conftest subcomponent=setup_test_environment service_name=service-21920 environment=dev
+2025-05-21 10:53:13.014 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-21920 environment=dev
+2025-05-21 10:53:13.522 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 3
+  Running: 3
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-21920 environment=dev
+2025-05-21 10:53:13.524 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-21920 environment=dev
+2025-05-21 10:53:13.526 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-21920 environment=dev
+2025-05-21 10:53:13.533 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-21920 environment=dev
+2025-05-21 10:53:13.535 [INFO] [INFO] conftest - setup_test_environment -    - mysql: {'user': 'test', 'password': 'test', 'dbname': 'testdb_mysql'}:localhost (container port: 3307) | component=conftest subcomponent=setup_test_environment service_name=service-21920 environment=dev
+2025-05-21 10:53:13.538 [INFO] [INFO] conftest - setup_test_environment -    - postgres: {'user': 'test', 'password': 'test', 'dbname': 'testdb_postgres'}:localhost (container port: 5433) | component=conftest subcomponent=setup_test_environment service_name=service-21920 environment=dev
+2025-05-21 10:53:13.542 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d | component=conftest subcomponent=run_command service_name=service-21920 environment=dev
+2025-05-21 10:53:14.484 [INFO] [INFO] conftest - run_command -  Command error:  Container test-databases-postgres-1  Running
+ Container test-databases-mysql-1  Running
+ | component=conftest subcomponent=run_command service_name=service-21920 environment=dev
+2025-05-21 10:53:14.486 [INFO] [INFO] services - wait_for_service -  Waiting for mysql to be ready at localhost:3307... | component=services subcomponent=wait_for_service service_name=service-21920 environment=dev
+2025-05-21 10:53:14.492 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:3307 successful | component=services subcomponent=wait_for_service service_name=service-21920 environment=dev
+2025-05-21 10:53:14.508 [INFO] [INFO] services - wait_for_service -  mysql at localhost:3307 is ready! | component=services subcomponent=wait_for_service service_name=service-21920 environment=dev
+2025-05-21 10:53:14.511 [INFO] [INFO] services - wait_for_service -  Waiting for postgres to be ready at localhost:5433... | component=services subcomponent=wait_for_service service_name=service-21920 environment=dev
+2025-05-21 10:53:14.513 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:5433 successful | component=services subcomponent=wait_for_service service_name=service-21920 environment=dev
+2025-05-21 10:53:14.542 [INFO] [INFO] services - wait_for_service -  postgres at localhost:5433 is ready! | component=services subcomponent=wait_for_service service_name=service-21920 environment=dev
+2025-05-21 10:53:15.549 [ERROR] [ERROR] PostgresPoolManager - _initialize_pool_if_needed -  postgres - 0ff27583285342336e403fc54b4c8923 async pool creation failed:  | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-21920 environment=dev
+2025-05-21 10:53:15.556 [INFO] [INFO] test_dal - test_pool_creation_timeout -  Pool creation failure message:  | component=test_dal subcomponent=test_pool_creation_timeout service_name=service-21920 environment=dev
+2025-05-21 10:53:15.752 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-21920 environment=dev
+2025-05-21 10:53:15.757 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-21920 environment=dev
+2025-05-21 10:55:49.719 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-23764 environment=dev
+2025-05-21 10:55:50.508 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-23764 environment=dev
+2025-05-21 10:55:50.548 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'} | component=conftest subcomponent=setup_test_environment service_name=service-23764 environment=dev
+2025-05-21 10:55:50.550 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-23764 environment=dev
+2025-05-21 10:55:51.023 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 3
+  Running: 3
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-23764 environment=dev
+2025-05-21 10:55:51.025 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-23764 environment=dev
+2025-05-21 10:55:51.027 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-23764 environment=dev
+2025-05-21 10:55:51.035 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-23764 environment=dev
+2025-05-21 10:55:51.037 [INFO] [INFO] conftest - setup_test_environment -    - mysql: {'user': 'test', 'password': 'test', 'dbname': 'testdb_mysql'}:localhost (container port: 3307) | component=conftest subcomponent=setup_test_environment service_name=service-23764 environment=dev
+2025-05-21 10:55:51.039 [INFO] [INFO] conftest - setup_test_environment -    - postgres: {'user': 'test', 'password': 'test', 'dbname': 'testdb_postgres'}:localhost (container port: 5433) | component=conftest subcomponent=setup_test_environment service_name=service-23764 environment=dev
+2025-05-21 10:55:51.041 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d | component=conftest subcomponent=run_command service_name=service-23764 environment=dev
+2025-05-21 10:55:51.418 [INFO] [INFO] conftest - run_command -  Command error:  Container test-databases-mysql-1  Running
+ Container test-databases-postgres-1  Running
+ | component=conftest subcomponent=run_command service_name=service-23764 environment=dev
+2025-05-21 10:55:51.420 [INFO] [INFO] services - wait_for_service -  Waiting for mysql to be ready at localhost:3307... | component=services subcomponent=wait_for_service service_name=service-23764 environment=dev
+2025-05-21 10:55:51.426 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:3307 successful | component=services subcomponent=wait_for_service service_name=service-23764 environment=dev
+2025-05-21 10:55:51.440 [INFO] [INFO] services - wait_for_service -  mysql at localhost:3307 is ready! | component=services subcomponent=wait_for_service service_name=service-23764 environment=dev
+2025-05-21 10:55:51.443 [INFO] [INFO] services - wait_for_service -  Waiting for postgres to be ready at localhost:5433... | component=services subcomponent=wait_for_service service_name=service-23764 environment=dev
+2025-05-21 10:55:51.446 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:5433 successful | component=services subcomponent=wait_for_service service_name=service-23764 environment=dev
+2025-05-21 10:55:51.469 [INFO] [INFO] services - wait_for_service -  postgres at localhost:5433 is ready! | component=services subcomponent=wait_for_service service_name=service-23764 environment=dev
+2025-05-21 10:55:52.484 [ERROR] [ERROR] PostgresPoolManager - _initialize_pool_if_needed -  postgres - 0ff27583285342336e403fc54b4c8923 async pool creation failed:  | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-23764 environment=dev
+2025-05-21 10:55:52.941 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-23764 environment=dev
+2025-05-21 10:55:52.943 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-23764 environment=dev
+2025-05-21 10:58:21.272 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-16844 environment=dev
+2025-05-21 10:58:22.003 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-16844 environment=dev
+2025-05-21 10:58:22.053 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'} | component=conftest subcomponent=setup_test_environment service_name=service-16844 environment=dev
+2025-05-21 10:58:22.056 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-16844 environment=dev
+2025-05-21 10:58:22.557 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 3
+  Running: 3
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: nvidia runc io.containerd.runc.v2
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-16844 environment=dev
+2025-05-21 10:58:22.560 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-16844 environment=dev
+2025-05-21 10:58:22.562 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-16844 environment=dev
+2025-05-21 10:58:22.571 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-16844 environment=dev
+2025-05-21 10:58:22.573 [INFO] [INFO] conftest - setup_test_environment -    - mysql: {'user': 'test', 'password': 'test', 'dbname': 'testdb_mysql'}:localhost (container port: 3307) | component=conftest subcomponent=setup_test_environment service_name=service-16844 environment=dev
+2025-05-21 10:58:22.575 [INFO] [INFO] conftest - setup_test_environment -    - postgres: {'user': 'test', 'password': 'test', 'dbname': 'testdb_postgres'}:localhost (container port: 5433) | component=conftest subcomponent=setup_test_environment service_name=service-16844 environment=dev
+2025-05-21 10:58:22.577 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d | component=conftest subcomponent=run_command service_name=service-16844 environment=dev
+2025-05-21 10:58:23.338 [INFO] [INFO] conftest - run_command -  Command error:  Container test-databases-mysql-1  Running
+ Container test-databases-postgres-1  Running
+ | component=conftest subcomponent=run_command service_name=service-16844 environment=dev
+2025-05-21 10:58:23.340 [INFO] [INFO] services - wait_for_service -  Waiting for mysql to be ready at localhost:3307... | component=services subcomponent=wait_for_service service_name=service-16844 environment=dev
+2025-05-21 10:58:23.348 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:3307 successful | component=services subcomponent=wait_for_service service_name=service-16844 environment=dev
+2025-05-21 10:58:23.359 [INFO] [INFO] services - wait_for_service -  mysql at localhost:3307 is ready! | component=services subcomponent=wait_for_service service_name=service-16844 environment=dev
+2025-05-21 10:58:23.361 [INFO] [INFO] services - wait_for_service -  Waiting for postgres to be ready at localhost:5433... | component=services subcomponent=wait_for_service service_name=service-16844 environment=dev
+2025-05-21 10:58:23.364 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:5433 successful | component=services subcomponent=wait_for_service service_name=service-16844 environment=dev
+2025-05-21 10:58:23.389 [INFO] [INFO] services - wait_for_service -  postgres at localhost:5433 is ready! | component=services subcomponent=wait_for_service service_name=service-16844 environment=dev
+2025-05-21 10:58:24.403 [ERROR] [ERROR] PostgresPoolManager - _initialize_pool_if_needed -  postgres - 0ff27583285342336e403fc54b4c8923 async pool creation failed:  | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-16844 environment=dev
+2025-05-21 10:58:24.408 [INFO] [INFO] test_dal - test_pool_creation_timeout -  Connection attempt failed after 1.01s with:  | component=test_dal subcomponent=test_pool_creation_timeout service_name=service-16844 environment=dev
+2025-05-21 10:58:24.421 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-16844 environment=dev
+2025-05-21 10:58:24.424 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-16844 environment=dev
+2025-05-21 10:58:31.948 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-25672 environment=dev
+2025-05-21 10:58:32.541 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-25672 environment=dev
+2025-05-21 10:58:32.579 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'} | component=conftest subcomponent=setup_test_environment service_name=service-25672 environment=dev
+2025-05-21 10:58:32.581 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-25672 environment=dev
+2025-05-21 10:58:33.074 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 3
+  Running: 3
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-25672 environment=dev
+2025-05-21 10:58:33.076 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-25672 environment=dev
+2025-05-21 10:58:33.078 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-25672 environment=dev
+2025-05-21 10:58:33.084 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-25672 environment=dev
+2025-05-21 10:58:33.086 [INFO] [INFO] conftest - setup_test_environment -    - mysql: {'user': 'test', 'password': 'test', 'dbname': 'testdb_mysql'}:localhost (container port: 3307) | component=conftest subcomponent=setup_test_environment service_name=service-25672 environment=dev
+2025-05-21 10:58:33.088 [INFO] [INFO] conftest - setup_test_environment -    - postgres: {'user': 'test', 'password': 'test', 'dbname': 'testdb_postgres'}:localhost (container port: 5433) | component=conftest subcomponent=setup_test_environment service_name=service-25672 environment=dev
+2025-05-21 10:58:33.089 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d | component=conftest subcomponent=run_command service_name=service-25672 environment=dev
+2025-05-21 10:58:33.547 [INFO] [INFO] conftest - run_command -  Command error:  Container test-databases-mysql-1  Running
+ Container test-databases-postgres-1  Running
+ | component=conftest subcomponent=run_command service_name=service-25672 environment=dev
+2025-05-21 10:58:33.549 [INFO] [INFO] services - wait_for_service -  Waiting for mysql to be ready at localhost:3307... | component=services subcomponent=wait_for_service service_name=service-25672 environment=dev
+2025-05-21 10:58:33.559 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:3307 successful | component=services subcomponent=wait_for_service service_name=service-25672 environment=dev
+2025-05-21 10:58:33.582 [INFO] [INFO] services - wait_for_service -  mysql at localhost:3307 is ready! | component=services subcomponent=wait_for_service service_name=service-25672 environment=dev
+2025-05-21 10:58:33.584 [INFO] [INFO] services - wait_for_service -  Waiting for postgres to be ready at localhost:5433... | component=services subcomponent=wait_for_service service_name=service-25672 environment=dev
+2025-05-21 10:58:33.587 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:5433 successful | component=services subcomponent=wait_for_service service_name=service-25672 environment=dev
+2025-05-21 10:58:33.617 [INFO] [INFO] services - wait_for_service -  postgres at localhost:5433 is ready! | component=services subcomponent=wait_for_service service_name=service-25672 environment=dev
+2025-05-21 10:58:33.897 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  postgres_test - f8b62b2e37dbfd9550b956945ea5a2a2 async pool initialized in 0.27s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-25672 environment=dev
+2025-05-21 10:58:33.900 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-25672 environment=dev
+2025-05-21 10:58:34.459 [ERROR] [ERROR] PostgresAsyncConnection - _prepare_statement_async -  Error while Postgres async driver tried to prepare this: INSERT INTO tx_timeout_test (value) VALUES ('after timeout'): current transaction is aborted, commands ignored until end of transaction block | component=PostgresAsyncConnection subcomponent=_prepare_statement_async service_name=service-25672 environment=dev
+2025-05-21 10:58:34.471 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-25672 environment=dev
+2025-05-21 10:58:34.678 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-25672 environment=dev
+2025-05-21 10:58:34.685 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for f8b62b2e37dbfd9550b956945ea5a2a2: 'NoneType' object has no attribute 'send' | component=pool_manager subcomponent=close_pool service_name=service-25672 environment=dev
+2025-05-21 10:58:34.688 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-25672 environment=dev
+2025-05-21 10:58:34.690 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-25672 environment=dev
+2025-05-21 10:59:50.689 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-24504 environment=dev
+2025-05-21 10:59:51.293 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-24504 environment=dev
+2025-05-21 10:59:51.331 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'} | component=conftest subcomponent=setup_test_environment service_name=service-24504 environment=dev
+2025-05-21 10:59:51.334 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-24504 environment=dev
+2025-05-21 10:59:51.844 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 3
+  Running: 3
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-24504 environment=dev
+2025-05-21 10:59:51.846 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-24504 environment=dev
+2025-05-21 10:59:51.847 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-24504 environment=dev
+2025-05-21 10:59:51.854 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-24504 environment=dev
+2025-05-21 10:59:51.856 [INFO] [INFO] conftest - setup_test_environment -    - mysql: {'user': 'test', 'password': 'test', 'dbname': 'testdb_mysql'}:localhost (container port: 3307) | component=conftest subcomponent=setup_test_environment service_name=service-24504 environment=dev
+2025-05-21 10:59:51.858 [INFO] [INFO] conftest - setup_test_environment -    - postgres: {'user': 'test', 'password': 'test', 'dbname': 'testdb_postgres'}:localhost (container port: 5433) | component=conftest subcomponent=setup_test_environment service_name=service-24504 environment=dev
+2025-05-21 10:59:51.859 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d | component=conftest subcomponent=run_command service_name=service-24504 environment=dev
+2025-05-21 10:59:52.505 [INFO] [INFO] conftest - run_command -  Command error:  Container test-databases-mysql-1  Running
+ Container test-databases-postgres-1  Running
+ | component=conftest subcomponent=run_command service_name=service-24504 environment=dev
+2025-05-21 10:59:52.509 [INFO] [INFO] services - wait_for_service -  Waiting for mysql to be ready at localhost:3307... | component=services subcomponent=wait_for_service service_name=service-24504 environment=dev
+2025-05-21 10:59:52.519 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:3307 successful | component=services subcomponent=wait_for_service service_name=service-24504 environment=dev
+2025-05-21 10:59:52.535 [INFO] [INFO] services - wait_for_service -  mysql at localhost:3307 is ready! | component=services subcomponent=wait_for_service service_name=service-24504 environment=dev
+2025-05-21 10:59:52.538 [INFO] [INFO] services - wait_for_service -  Waiting for postgres to be ready at localhost:5433... | component=services subcomponent=wait_for_service service_name=service-24504 environment=dev
+2025-05-21 10:59:52.541 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:5433 successful | component=services subcomponent=wait_for_service service_name=service-24504 environment=dev
+2025-05-21 10:59:52.568 [INFO] [INFO] services - wait_for_service -  postgres at localhost:5433 is ready! | component=services subcomponent=wait_for_service service_name=service-24504 environment=dev
+2025-05-21 10:59:52.782 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  postgres_test - f8b62b2e37dbfd9550b956945ea5a2a2 async pool initialized in 0.20s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-24504 environment=dev
+2025-05-21 10:59:52.787 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-24504 environment=dev
+2025-05-21 10:59:52.855 [INFO] [INFO] test_dal - test_transaction_timeout -  Testing transaction behavior with timeout... | component=test_dal subcomponent=test_transaction_timeout service_name=service-24504 environment=dev
+2025-05-21 10:59:53.366 [INFO] [INFO] test_dal - test_transaction_timeout -  Query timed out as expected. Rolling back transaction... | component=test_dal subcomponent=test_transaction_timeout service_name=service-24504 environment=dev
+2025-05-21 10:59:53.387 [INFO] [INFO] test_dal - test_transaction_timeout -  Values in table after test: ['after rollback'] | component=test_dal subcomponent=test_transaction_timeout service_name=service-24504 environment=dev
+2025-05-21 10:59:53.396 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-24504 environment=dev
+2025-05-21 10:59:53.400 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-24504 environment=dev
+2025-05-21 10:59:53.403 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for f8b62b2e37dbfd9550b956945ea5a2a2: 'NoneType' object has no attribute 'send' | component=pool_manager subcomponent=close_pool service_name=service-24504 environment=dev
+2025-05-21 10:59:53.406 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-24504 environment=dev
+2025-05-21 10:59:53.408 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-24504 environment=dev
+2025-05-21 11:00:07.701 [INFO] [INFO] conftest - setup_test_environment -  Setting up test environment... | component=conftest subcomponent=setup_test_environment service_name=service-25088 environment=dev
+2025-05-21 11:00:08.659 [INFO] [INFO] conftest - delete_pytest_cache -  Removing .\.pytest_cache | component=conftest subcomponent=delete_pytest_cache service_name=service-25088 environment=dev
+2025-05-21 11:00:08.715 [INFO] [INFO] conftest - setup_test_environment -  Test files in this session: {'c:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python\\databases\\tests\\test_dal.py'} | component=conftest subcomponent=setup_test_environment service_name=service-25088 environment=dev
+2025-05-21 11:00:08.719 [INFO] [INFO] conftest - run_command -  Running command: docker info | component=conftest subcomponent=run_command service_name=service-25088 environment=dev
+2025-05-21 11:00:09.292 [INFO] [INFO] conftest - run_command -  Command output: Client:
+ Version:    28.0.4
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.1.3
+    Path:     C:\Program Files\Docker\cli-plugins\docker-ai.exe
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.22.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-buildx.exe
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  0.2.20
+    Path:     C:\Program Files\Docker\cli-plugins\docker-cloud.exe
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.34.0-desktop.1
+    Path:     C:\Program Files\Docker\cli-plugins\docker-compose.exe
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.38
+    Path:     C:\Program Files\Docker\cli-plugins\docker-debug.exe
+  desktop: Docker Desktop commands (Beta) (Docker Inc.)
+    Version:  v0.1.6
+    Path:     C:\Program Files\Docker\cli-plugins\docker-desktop.exe
+  dev: Docker Dev Environments (Docker Inc.)
+    Version:  v0.1.2
+    Path:     C:\Program Files\Docker\cli-plugins\docker-dev.exe
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.27
+    Path:     C:\Program Files\Docker\cli-plugins\docker-extension.exe
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-init.exe
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-sbom.exe
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.17.0
+    Path:     C:\Program Files\Docker\cli-plugins\docker-scout.exe
+
+Server:
+ Containers: 3
+  Running: 3
+  Paused: 0
+  Stopped: 0
+ Images: 9
+ Server Version: 28.0.4
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 753481ec61c7c8955a23d6ff7bc8e4daed455734
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: unconfined
+ Kernel Version: 5.15.167.4-microsoft-standard-WSL2
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 4
+ Total Memory: 7.649GiB
+ Name: docker-desktop
+ ID: bd414c6b-a391-41c8-9560-cbfc52f7f58d
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+
+ | component=conftest subcomponent=run_command service_name=service-25088 environment=dev
+2025-05-21 11:00:09.294 [INFO] [INFO] conftest - run_command -  Command error: WARNING: No blkio throttle.read_bps_device support
+WARNING: No blkio throttle.write_bps_device support
+WARNING: No blkio throttle.read_iops_device support
+WARNING: No blkio throttle.write_iops_device support
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+WARNING: daemon is not using the default seccomp profile
+ | component=conftest subcomponent=run_command service_name=service-25088 environment=dev
+2025-05-21 11:00:09.296 [INFO] [INFO] conftest - setup_test_environment -  Found Docker Compose file for c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\test_dal.py: c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml | component=conftest subcomponent=setup_test_environment service_name=service-25088 environment=dev
+2025-05-21 11:00:09.303 [INFO] [INFO] conftest - setup_test_environment -  Detected the following services in c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml: | component=conftest subcomponent=setup_test_environment service_name=service-25088 environment=dev
+2025-05-21 11:00:09.306 [INFO] [INFO] conftest - setup_test_environment -    - mysql: {'user': 'test', 'password': 'test', 'dbname': 'testdb_mysql'}:localhost (container port: 3307) | component=conftest subcomponent=setup_test_environment service_name=service-25088 environment=dev
+2025-05-21 11:00:09.308 [INFO] [INFO] conftest - setup_test_environment -    - postgres: {'user': 'test', 'password': 'test', 'dbname': 'testdb_postgres'}:localhost (container port: 5433) | component=conftest subcomponent=setup_test_environment service_name=service-25088 environment=dev
+2025-05-21 11:00:09.310 [INFO] [INFO] conftest - run_command -  Running command: docker-compose -f c:\Users\Phil\Desktop\Projects\shared-libs\python\databases\tests\docker-compose.yml -p test-databases up -d | component=conftest subcomponent=run_command service_name=service-25088 environment=dev
+2025-05-21 11:00:09.995 [INFO] [INFO] conftest - run_command -  Command error:  Container test-databases-mysql-1  Running
+ Container test-databases-postgres-1  Running
+ | component=conftest subcomponent=run_command service_name=service-25088 environment=dev
+2025-05-21 11:00:09.997 [INFO] [INFO] services - wait_for_service -  Waiting for mysql to be ready at localhost:3307... | component=services subcomponent=wait_for_service service_name=service-25088 environment=dev
+2025-05-21 11:00:10.005 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:3307 successful | component=services subcomponent=wait_for_service service_name=service-25088 environment=dev
+2025-05-21 11:00:10.018 [INFO] [INFO] services - wait_for_service -  mysql at localhost:3307 is ready! | component=services subcomponent=wait_for_service service_name=service-25088 environment=dev
+2025-05-21 11:00:10.020 [INFO] [INFO] services - wait_for_service -  Waiting for postgres to be ready at localhost:5433... | component=services subcomponent=wait_for_service service_name=service-25088 environment=dev
+2025-05-21 11:00:10.023 [INFO] [INFO] services - wait_for_service -  TCP connection to localhost:5433 successful | component=services subcomponent=wait_for_service service_name=service-25088 environment=dev
+2025-05-21 11:00:10.048 [INFO] [INFO] services - wait_for_service -  postgres at localhost:5433 is ready! | component=services subcomponent=wait_for_service service_name=service-25088 environment=dev
+2025-05-21 11:00:10.228 [INFO] [INFO] PostgresPoolManager - _initialize_pool_if_needed -  postgres_test - f8b62b2e37dbfd9550b956945ea5a2a2 async pool initialized in 0.17s | component=PostgresPoolManager subcomponent=_initialize_pool_if_needed service_name=service-25088 environment=dev
+2025-05-21 11:00:10.233 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 1, "idle": 19, "active_connections": 0, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 0, "current_active": 1, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-25088 environment=dev
+2025-05-21 11:00:10.270 [INFO] [INFO] test_dal - test_transaction_timeout -  Testing transaction behavior with timeout... | component=test_dal subcomponent=test_transaction_timeout service_name=service-25088 environment=dev
+2025-05-21 11:00:10.789 [INFO] [INFO] test_dal - test_transaction_timeout -  Query timed out as expected. Rolling back transaction... | component=test_dal subcomponent=test_transaction_timeout service_name=service-25088 environment=dev
+2025-05-21 11:00:10.814 [INFO] [INFO] test_dal - test_transaction_timeout -  Values in table after test: ['after rollback'] | component=test_dal subcomponent=test_transaction_timeout service_name=service-25088 environment=dev
+2025-05-21 11:00:10.816 [ERROR] [ERROR] test_dal - test_transaction_timeout -  Error during test: assert False | component=test_dal subcomponent=test_transaction_timeout service_name=service-25088 environment=dev
+2025-05-21 11:00:10.825 [INFO] [INFO] PostgresPoolManager - _track_metrics -  Pool status:
+{"initialized": true, "alias": "postgres_test", "hash": "f8b62b2e37dbfd9550b956945ea5a2a2", "min_size": 3, "max_size": 20, "current_size": 20, "in_use": 0, "idle": 20, "active_connections": 1, "shutting_down": false, "metrics": {"total_acquired": 1, "total_released": 1, "current_active": 0, "peak_active": 1, "errors": 0, "timeouts": 0, "last_timeout": null, "avg_acquisition_time": 0.0}} | component=PostgresPoolManager subcomponent=_track_metrics service_name=service-25088 environment=dev
+2025-05-21 11:00:10.988 [INFO] [INFO] pool_manager - close_pool -  Pool f8b62b2e37dbfd9550b956945ea5a2a2 marked as shutting down, no new connections allowed | component=pool_manager subcomponent=close_pool service_name=service-25088 environment=dev
+2025-05-21 11:00:10.991 [ERROR] [ERROR] pool_manager - close_pool -  Error closing pool for f8b62b2e37dbfd9550b956945ea5a2a2: 'NoneType' object has no attribute 'send' | component=pool_manager subcomponent=close_pool service_name=service-25088 environment=dev
+2025-05-21 11:00:10.993 [INFO] [INFO] conftest - setup_test_environment -  Tearing down test environment... | component=conftest subcomponent=setup_test_environment service_name=service-25088 environment=dev
+2025-05-21 11:00:10.995 [INFO] [INFO] conftest - run_command -  Running command:  | component=conftest subcomponent=run_command service_name=service-25088 environment=dev

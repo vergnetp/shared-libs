@@ -10,6 +10,7 @@ from abc import abstractmethod
 from ...errors import try_catch
 from ... import log as logger
 from ...utils import async_method
+from ...resilience import execute_with_timeout
 
 from ..config import DatabaseConfig
 from ..connections import SyncConnection, AsyncConnection
@@ -107,7 +108,7 @@ class ConnectionManager():
         if not hasattr(self._local, '_sync_conn') or self._local._sync_conn is None:
             try:
                 start_time = time.time()
-                raw_conn = self._create_sync_connection(self.config)
+                raw_conn = execute_with_timeout(self._create_sync_connection, (self.config,), timeout=self.config.connection_creation_timeout, override_context=True)               
                 logger.info(f"Thread {thread_id}: Sync connection created and cached for {self.config.alias()} in {(time.time() - start_time):.2f}s")
                 self._local._sync_conn = self._wrap_sync_connection(raw_conn, self.config)
             except Exception as e:

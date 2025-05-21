@@ -565,7 +565,201 @@ async def test_sqlite_custom_serialization(sqlite_db_async):
         # Clean up
         await conn.delete_entity(entity_name, event['id'], permanent=True)
 
+import pytest
+import time
+import asyncio
+from ... import log as logger
 
-# Add a simple command to run the tests
-if __name__ == "__main__":
-    pytest.main(["-v"])
+# Test timeouts on connection acquisition
+@pytest.mark.asyncio
+async def test_connection_acquisition_timeout(postgres_db_async):
+    """Test that connection acquisition properly times out"""
+    db, config = postgres_db_async
+    
+    # Create a config with very short acquisition timeout
+    short_timeout_config = DatabaseConfig(
+        database=config.database(),
+        host=config.host(),
+        port=config.port(),
+        user=config.user(),
+        password=config.password(),
+        connection_acquisition_timeout=0.001  # Very short timeout (1ms)
+    )
+    
+    # Create a new database instance with the short timeout
+    db_short_timeout = DatabaseFactory.create_database("postgres", short_timeout_config)
+    
+    # Create enough connections to exhaust the pool
+    connections = []
+    pool_size = 0
+    
+    try:
+        # First get the pool's max size to make sure we exhaust it
+        async with db_short_timeout.async_connection() as conn:
+            pool_manager = db_short_timeout.pool_manager
+            pool = pool_manager._pool
+            pool_size = pool.max_size
+        
+        # Now get enough connections to fill the pool
+        for _ in range(pool_size):
+            try:
+                conn = await db_short_timeout.get_async_connection()
+                connections.append(conn)
+            except Exception as e:
+                logger.error(f"Failed to get connection {len(connections)+1}: {e}")
+                break
+        
+        # The next connection acquisition should time out
+        with pytest.raises(TimeoutError):
+            await db_short_timeout.get_async_connection()
+            
+    finally:
+        # Release all connections
+        for conn in connections:
+            await db_short_timeout.release_async_connection(conn)
+        
+        # Close the pool
+        await PoolManager.close_pool(short_timeout_config.hash())
+
+
+# Test timeouts on query execution
+@pytest.mark.asyncio
+async def test_query_execution_timeout(postgres_db_async):
+    """Test that long-running queries properly time out"""
+    db, config = postgres_db_async
+    
+    # Create a config with reasonable query timeout
+    query_timeout_config = DatabaseConfig(
+        database=config.database(),
+        host=config.host(),
+        port=config.port(),
+        user=config.user(),
+        password=config.password(),
+        query_execution_timeout=0.5  # 500ms timeout
+    )
+    
+    # Create a new database instance with the query timeout
+    db_query_timeout = DatabaseFactory.create_database("postgres", query_timeout_config)
+    
+    async with db_query_timeout.async_connection() as conn:
+        # Run a query that will definitely timeout (pg_sleep takes seconds)
+        with pytest.raises(TimeoutError):
+            await conn.execute("SELECT pg_sleep(2)")
+        
+        # Normal query should still work
+        result = await conn.execute("SELECT 1")
+        assert result == [(1,)]
+    
+    # Close the pool
+    await PoolManager.close_pool(query_timeout_config.hash())
+
+
+@pytest.mark.asyncio
+async def test_pool_creation_timeout():
+    """Test that pool creation properly times out"""
+    # Use a non-routable IP address to force timeout
+    timeout_config = DatabaseConfig(
+        database="postgres",
+        host="10.255.255.1",  # Non-routable IP address
+        port=5432,
+        user="test",
+        password="test",
+        pool_creation_timeout=1.0  # 1 second timeout
+    )
+    
+    # Creating a database with this config should trigger pool creation timeout
+    db = DatabaseFactory.create_database("postgres", timeout_config)
+    
+    # Check that attempting to get a connection raises a TimeoutError
+    start_time = time.time()
+    
+    with pytest.raises(TimeoutError) as exc_info:
+        async with db.async_connection() as conn:
+            pass
+    
+    elapsed_time = time.time() - start_time
+    logger.info(f"Connection attempt failed after {elapsed_time:.2f}s with: {exc_info.value}")
+    
+    # Verify that the operation took approximately the time we specified
+    # We allow a bit of flexibility in timing
+    assert 0.5 <= elapsed_time <= 3.0, f"Expected timeout in ~1.0s, got {elapsed_time:.2f}s"
+
+
+# Test timeouts for both the explicit parameter and config default
+@pytest.mark.asyncio
+async def test_explicit_vs_config_timeout(postgres_db_async):
+    """Test that explicit timeout overrides config default"""
+    db, config = postgres_db_async
+    
+    async with db.async_connection() as conn:
+        # Create a table for this test
+        await conn.execute("CREATE TABLE IF NOT EXISTS timeout_test (id SERIAL PRIMARY KEY, value TEXT)")
+        
+        # Insert some data
+        await conn.execute("INSERT INTO timeout_test (value) VALUES ('test data')")
+        
+        # Query with explicit short timeout (should fail)
+        with pytest.raises(TimeoutError):
+            await conn.execute("SELECT pg_sleep(1), * FROM timeout_test", timeout=0.1)
+        
+        # Same query with longer explicit timeout (should succeed)
+        result = await conn.execute("SELECT pg_sleep(0.5), * FROM timeout_test", timeout=2.0)
+        assert len(result) > 0
+        
+        # Clean up
+        await conn.execute("DROP TABLE timeout_test")
+
+@pytest.mark.asyncio
+async def test_transaction_timeout(postgres_db_async):
+    """Test timeout behavior within transactions"""
+    db, config = postgres_db_async
+    
+    async with db.async_connection() as conn:
+        # Create a test table
+        await conn.execute("CREATE TABLE IF NOT EXISTS tx_timeout_test (id SERIAL PRIMARY KEY, value TEXT)")
+        
+        # First test: Normal transaction behavior with timeout
+        logger.info("Testing transaction behavior with timeout...")
+        
+        # Start a transaction
+        await conn.begin_transaction()
+        
+        try:
+            # Insert some data
+            await conn.execute("INSERT INTO tx_timeout_test (value) VALUES ('before timeout')")
+            
+            # Execute a query that will timeout
+            with pytest.raises(TimeoutError):
+                await conn.execute("SELECT pg_sleep(2)", timeout=0.5)
+            
+            # In PostgreSQL, the transaction is now aborted and we must roll back
+            logger.info("Query timed out as expected. Rolling back transaction...")
+            await conn.rollback_transaction()
+            
+            # Start a new transaction
+            await conn.begin_transaction()
+            try:
+                # Insert after rolling back and starting a new transaction
+                await conn.execute("INSERT INTO tx_timeout_test (value) VALUES ('after rollback')")
+                await conn.commit_transaction()
+            except Exception as e:
+                await conn.rollback_transaction()
+                raise
+                
+            # Verify the results - should have 'after rollback' but not 'before timeout'
+            # since that transaction was rolled back
+            rows = await conn.execute("SELECT value FROM tx_timeout_test ORDER BY id")
+            values = [row[0] for row in rows]
+            logger.info(f"Values in table after test: {values}")
+            
+            # 'before timeout' should not be present since that transaction was rolled back
+            assert 'after rollback' in [row[0] for row in rows]
+            
+        except Exception as e:
+            # Make sure we rollback on any error
+            logger.error(f"Error during test: {e}")
+            await conn.rollback_transaction()
+            raise
+        finally:
+            # Clean up
+            await conn.execute("DROP TABLE tx_timeout_test")

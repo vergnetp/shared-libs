@@ -115,7 +115,8 @@ class MySqlPoolManager(PoolManager):
                 password=config.password(),
                 db=config.database(),
                 charset='utf8mb4',  # Recommended for proper UTF-8 support
-                autocommit=False
+                autocommit=False,
+                connect_timeout=config.connection_creation_timeout
             ),
             timeout=config.pool_creation_timeout
         )

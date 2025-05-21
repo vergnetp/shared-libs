@@ -105,13 +105,13 @@ class PostgresPoolManager(PoolManager):
         min_size, max_size = self._calculate_pool_size()        
         raw_pool = await asyncio.wait_for(asyncpg.create_pool(
             min_size=min_size, 
-            max_size=max_size, 
-            command_timeout=config.connection_acquisition_timeout,  
+            max_size=max_size,            
             host=config.host(),
             port=config.port(),
             database=config.database(),
             user=config.user(),
-            password=config.password()           
+            password=config.password(),
+            timeout=config.connection_creation_timeout        
         ), timeout=config.pool_creation_timeout)
         return PostgresConnectionPool(
             raw_pool           

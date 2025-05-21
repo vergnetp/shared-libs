@@ -625,7 +625,7 @@ class PoolManager(ABC):
             timeout (Optional[float]): The number of seconds to wait before
                 canceling the proper commit+release of pending connections. 
                 If timeout is reached, will forcibly close connections (losing active transactions) (at least for Postgres, MySql and Sqlite)
-        """
+        """        
         keys = [config_hash] if config_hash else list(cls._shared_pools.keys())
         
         # First mark all specified pools as shutting down
