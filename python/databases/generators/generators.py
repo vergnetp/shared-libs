@@ -45,19 +45,6 @@ class SqlGenerator(ABC):
             parts = [f"{k}={v}" for k, v in tags.items()]
             return f"/* {' '.join(parts)} */"
         return None
-
-    @overridable
-    def get_timeout_sql(self, timeout: Optional[float]) -> Optional[str]:
-        """
-        Return a SQL statement to enforce query timeout (if applicable).
-
-        Args:
-            timeout (Optional[float]): Timeout in seconds.
-
-        Returns:
-            Optional[str]: SQL statement to enforce timeout, or None if not supported.
-        """
-        return None 
     
     def escape_identifier(self, identifier: str) -> str:
         """

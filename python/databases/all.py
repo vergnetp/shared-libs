@@ -948,21 +948,20 @@ class BaseConnection(ConnectionInterface):
         return "\n".join(combined_parts)
 
     @try_catch
-    async def _get_statement_async(self, sql: str, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]] = None) -> Any:
+    async def _get_statement_async(self, sql: str, tags: Optional[Dict[str, Any]] = None) -> Any:
         """
         Gets a prepared statement from cache or creates a new one
 
         Note that statement is unique for the combination of sql, timeout and tags 
         
         Args:
-            sql: SQL query with ? placeholders
-            timeout: optional timeout in seconds
+            sql: SQL query with ? placeholders          
             tags: optional dictionary of tags to add in the sql comment
                        
         Returns:
             A database-specific prepared statement object
         """
-        final_sql = self._finalize_sql(sql, timeout, tags)
+        final_sql = self._finalize_sql(sql, tags)
         sql_hash = StatementCache.hash(final_sql)      
     
         stmt_tuple = self._statement_cache.get(sql_hash)
@@ -976,19 +975,18 @@ class BaseConnection(ConnectionInterface):
         return stmt
 
     @try_catch  
-    def _get_statement_sync(self, sql: str, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]] = None) -> Any:
+    def _get_statement_sync(self, sql: str, tags: Optional[Dict[str, Any]] = None) -> Any:
         """
         Gets a prepared statement from cache or creates a new one (synchronous version)
         
         Args:
-            sql: SQL query with ? placeholders
-            timeout: optional timeout in seconds
+            sql: SQL query with ? placeholders          
             tags: optional dictionary of tags to add in the sql comment
             
         Returns:
             A database-specific prepared statement object
         """
-        final_sql = self._finalize_sql(sql, timeout, tags)
+        final_sql = self._finalize_sql(sql, tags)
         sql_hash = StatementCache.hash(final_sql)       
     
         stmt_tuple = self._statement_cache.get(sql_hash)

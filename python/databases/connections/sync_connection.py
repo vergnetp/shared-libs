@@ -3,11 +3,12 @@ from abc import abstractmethod
 
 from ...errors import try_catch
 from ...utils import overridable
-from ...resilience import with_timeout,  circuit_breaker, track_slow_method
+from ...resilience import profile, execute_with_timeout,  circuit_breaker, track_slow_method
 
 from ..generators import SqlGenerator
 from .connection import Connection
 from ..utils.decorators import auto_transaction
+from ..config import DatabaseConfig
 
 class SyncConnection(Connection):
     """
@@ -19,13 +20,15 @@ class SyncConnection(Connection):
     
     All methods are abstract and must be implemented by derived classes.
     """
-    def __init__(self, conn: Any):
+    def __init__(self, conn: Any, config: DatabaseConfig):
         super().__init__()
         self._conn = conn
+        self.config = config
     
-    @with_timeout()
     @track_slow_method()
     @circuit_breaker(name="sync_execute")
+    #@try_catch
+    #@profile
     def execute(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Synchronously executes a SQL query with standard ? placeholders.
@@ -42,16 +45,24 @@ class SyncConnection(Connection):
         Returns:
             List[Tuple]: Result rows as tuples
         """
-        timeout = timeout or self._conn._config.query_execution_timeout()
-        stmt = self._get_statement_sync(sql, timeout, tags)
-        raw_result = self._execute_statement_sync(stmt, params)
-        return self._normalize_result(raw_result)
+        timeout = timeout or self.config.query_execution_timeout     
+        
+        try:
+            stmt = self._get_statement_sync(sql, tags)        
+            raw_result = execute_with_timeout(self._execute_statement_sync, (stmt, params), timeout=timeout, override_context=True)
+            result = self._normalize_result(raw_result)            
+ 
+            return result
+            
+        except (TimeoutError, RuntimeError) as e:
+           raise TimeoutError(f"Execute operation timed out after {timeout}s")  
 
-    @with_timeout()
     @track_slow_method()
     @auto_transaction
     @circuit_breaker(name="sync_executemany")
     @overridable
+    #@try_catch
+    #@profile
     def executemany(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Synchronously executes a SQL query multiple times with different parameters.
@@ -69,26 +80,29 @@ class SyncConnection(Connection):
         Returns:
             List[Tuple]: Result rows as tuples
         """
-        if not param_list:
-            return []
-    
-        individual_timeout = None
-        if timeout and timeout > 1:
-            individual_timeout = timeout * 0.1
+        timeout = timeout or self.config.query_execution_timeout
 
-        stmt = self._get_statement_sync(sql, individual_timeout, tags)
-
-        # Fallback to executing one-by-one
-        results = []
-   
-        for params in param_list:
-            raw_result = self._execute_statement_sync(stmt, params)
-            normalized = self._normalize_result(raw_result)
-            if normalized:
-                results.extend(normalized)
-
-        return results
-
+        stmt = self._get_statement_sync(sql, tags)
+        
+        try:
+            def execute_all():
+                results = []
+                for i, params in enumerate(param_list):
+                    raw_result = self._execute_statement_sync(stmt, params)
+                    normalized = self._normalize_result(raw_result)
+                    if normalized:
+                        results.extend(normalized)
+                return results
+            
+            # Execute with overall timeout
+            results = execute_with_timeout(execute_all, timeout=timeout, override_context=True)            
+            return results
+            
+        except TimeoutError:
+            raise TimeoutError(f"Executemany operation timed out after {timeout}s")  
+        except RuntimeError:
+            raise RuntimeError(f"Executemany operation timeout safeguard failed due to thread pool exhaustion. Try again at a less busy time.") 
+          
     def _get_raw_connection(self) -> Any:
         """ Return the underlying database connection (as defined by the driver) """
         return self._conn

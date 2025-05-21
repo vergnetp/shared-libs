@@ -23,7 +23,7 @@ class SqliteConnectionPool(ConnectionPool):
         _lock: Lock to ensure thread safety
     """
     
-    def __init__(self, conn, timeout: float = 10.0):
+    def __init__(self, conn):
         """
         Initialize a SQLite connection pool wrapper.
         
@@ -32,8 +32,7 @@ class SqliteConnectionPool(ConnectionPool):
             timeout: Default timeout for connection acquisition in seconds
         """
         self._conn = conn
-        self._in_use = False
-        self._timeout = timeout
+        self._in_use = False       
         self._lock = asyncio.Lock()
     
     @async_method
@@ -46,7 +45,7 @@ class SqliteConnectionPool(ConnectionPool):
         at a time.
         
         Args:
-            timeout: Maximum time to wait for the connection to be available
+            timeout: Maximum time to wait for the connection to be available. Default to 10 seconds.
             
         Returns:
             The SQLite connection
@@ -54,7 +53,7 @@ class SqliteConnectionPool(ConnectionPool):
         Raises:
             TimeoutError: If the connection is busy for too long
         """
-        timeout = timeout if timeout is not None else self._timeout
+        timeout = timeout if timeout is not None else 10
         try:
             # Wait for the lock with timeout
             acquired = await asyncio.wait_for(self._lock.acquire(), timeout=timeout)
@@ -132,11 +131,10 @@ class SqliteConnectionPool(ConnectionPool):
         return 0 if self._in_use else 1
 
 class SqlitePoolManager(PoolManager):
-    async def _create_pool(self, config: DatabaseConfig, connection_acquisition_timeout: float) -> ConnectionPool:
+    async def _create_pool(self, config: DatabaseConfig) -> ConnectionPool:
         db_path = config.config()["database"]
         conn = await aiosqlite.connect(db_path)
         return SqliteConnectionPool(
-            conn,
-            timeout=self.connection_acquisition_timeout
+            conn           
         )
     

@@ -13,8 +13,10 @@ todos:
 * pay tiphaine
 * pay electricity 13B
 * alergy appointment
+* hypos
 * MRI
 * Cancel 75£ pm Claude
+* renew processmyrun.com
 
 
 
@@ -23,6 +25,16 @@ next:
 
 * improve logging and try_catch in base2
 * split base2
+
+
+
+hostomatic bugs
+
+* no pictures shown in listing (https://hostomatic.app/properties/kingston-road-40-3121)
+* amount not updated with number of nights (lety alone cleaning fees)
+* when landlord set daily rate, there is both £ and $ signs in or above the input box
+* when turning down the booking request, no email sent
+* people cannot search properties maybe
 
 
 

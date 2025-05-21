@@ -1,14 +1,16 @@
 import time
 import uuid
+import asyncio
 from typing import Dict, Any, Optional, Tuple, List
 from abc import abstractmethod
 
 from ...errors import try_catch
 from ...utils import async_method
-from ...resilience import with_timeout, circuit_breaker, track_slow_method
+from ...resilience import profile, execute_with_timeout, circuit_breaker, track_slow_method
 
 from .connection import Connection
 from ..utils.decorators import auto_transaction
+from ..config import DatabaseConfig
 
 class AsyncConnection(Connection):
     """
@@ -20,9 +22,10 @@ class AsyncConnection(Connection):
     
     All methods are abstract and must be implemented by derived classes.
     """ 
-    def __init__(self, conn: Any):
+    def __init__(self, conn: Any, config: DatabaseConfig):
         super().__init__()
         self._conn = conn
+        self.config = config
         self._acquired_time = None
         self._acquired_stack = None
         self._last_active_time = None
@@ -50,9 +53,10 @@ class AsyncConnection(Connection):
 
      
     @async_method   
-    @with_timeout()
     @track_slow_method()
     @circuit_breaker(name="async_execute")    
+    #@try_catch()
+    #@profile
     async def execute(self, sql: str, params: Optional[tuple] = None, timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
         """
         Asynchronously executes a SQL query with standard ? placeholders.
@@ -69,52 +73,64 @@ class AsyncConnection(Connection):
         Returns:
             List[Tuple]: Result rows as tuples
         """
-        timeout = timeout or self._conn._config.query_execution_timeout()
-        self._mark_active()
-        stmt = await self._get_statement_async(sql, timeout, tags)        
-        raw_result = await self._execute_statement_async(stmt, params)
-        result = self._normalize_result(raw_result)
-        return result
+        timeout = timeout or self.config.query_execution_timeout
+        self._mark_active()        
+        
+        try:
+            stmt = await self._get_statement_async(sql, tags)        
+            raw_result = await execute_with_timeout(self._execute_statement_async, (stmt, params), timeout=timeout, override_context=True)
+            result = self._normalize_result(raw_result)            
+ 
+            return result
+            
+        except (TimeoutError, RuntimeError) as e:
+           raise TimeoutError(f"Execute operation timed out after {timeout}s")  
 
-    @async_method   
-    @with_timeout()
+
+    @async_method
     @auto_transaction
     @track_slow_method()
     @circuit_breaker(name="async_executemany")
-    async def executemany(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]]=None) -> List[Tuple]:
+    #@try_catch()
+    #@profile
+    async def executemany(self, sql: str, param_list: List[tuple], timeout: Optional[float] = None, tags: Optional[Dict[str, Any]] = None) -> List[Tuple]:
         """
         Asynchronously executes a SQL query multiple times with different parameters.
-
+        
         Note:
-            Automatically prepares and caches statements for repeated executions.            
+            This runs on a single connection sequentially. For parallel execution,
+            you would need multiple connections from a connection pool.
             
         Args:
             sql: SQL query with ? placeholders
-            param_list: List of parameter tuples, one for each execution
-            timeout (float, optional): a timeout, in second, after which a TimeoutError is raised
-            tags: optional dictionary of tags to inject to the sql as comment
+            param_list: List of parameter tuples for the query
+            timeout (float, optional): Total timeout in seconds for all executions
+            tags: Optional dictionary of tags to inject to the SQL as comment
             
         Returns:
-            List[Tuple]: Result rows as tuples
-        """
+            List[Tuple]: Combined result rows from all executions
+        """        
+        timeout = timeout or self.config.query_execution_timeout
         self._mark_active()
-        
-        if not param_list:
-            return []
-        
-        individual_timeout = None
-        if timeout and timeout > 1:
-            individual_timeout = timeout * 0.1
 
-        stmt = await self._get_statement_async(sql, individual_timeout, tags)
-       
-        results = []
-        for params in param_list:
-            raw_result = await self._execute_statement_async(stmt, params)
-            normalized = self._normalize_result(raw_result)
-            if normalized:
-                results.extend(normalized)
-        return results
+        stmt = await self._get_statement_async(sql, tags)
+        
+        try:
+            async def execute_all():
+                results = []
+                for i, params in enumerate(param_list):
+                    raw_result = await self._execute_statement_async(stmt, params)
+                    normalized = self._normalize_result(raw_result)
+                    if normalized:
+                        results.extend(normalized)
+                return results
+            
+            # Execute with overall timeout
+            results = await asyncio.wait_for(execute_all(), timeout=timeout)            
+            return results
+            
+        except asyncio.TimeoutError:
+            raise TimeoutError(f"Executemany operation timed out after {timeout}s")       
        
 
     def _get_raw_connection(self) -> Any:

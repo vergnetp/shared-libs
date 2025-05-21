@@ -19,7 +19,7 @@ class MySqlConnectionPool(ConnectionPool):
         _timeout: Default timeout for connection acquisition
     """
     
-    def __init__(self, pool, timeout: float = 10.0):
+    def __init__(self, pool):
         """
         Initialize a MySQL connection pool wrapper.
         
@@ -27,8 +27,7 @@ class MySqlConnectionPool(ConnectionPool):
             pool: The underlying aiomysql pool
             timeout: Default timeout for connection acquisition in seconds
         """
-        self._pool = pool
-        self._timeout = timeout
+        self._pool = pool      
      
     @async_method
     async def acquire(self, timeout: Optional[float] = None) -> Any:
@@ -36,7 +35,7 @@ class MySqlConnectionPool(ConnectionPool):
         Acquires a connection from the pool with timeout.
         
         Args:
-            timeout: Maximum time to wait for connection, defaults to pool default
+            timeout: Maximum time to wait for connection, defaults to 10 seconds
             
         Returns:
             The raw aiomysql connection
@@ -44,7 +43,7 @@ class MySqlConnectionPool(ConnectionPool):
         Raises:
             TimeoutError: If connection acquisition times out
         """
-        timeout = timeout if timeout is not None else self._timeout
+        timeout = timeout if timeout is not None else 10
         try:
             # aiomysql doesn't directly support timeout in acquire
             return await asyncio.wait_for(self._pool.acquire(), timeout=timeout)
@@ -104,17 +103,23 @@ class MySqlConnectionPool(ConnectionPool):
         return len(self._pool._free)   
 
 class MySqlPoolManager(PoolManager):
-    async def _create_pool(self, config: DatabaseConfig, connection_acquisition_timeout: float) -> ConnectionPool:
+    async def _create_pool(self, config: DatabaseConfig) -> ConnectionPool:
         min_size, max_size = self._calculate_pool_size()
-        cfg = config.config().copy()
-        cfg["db"] = cfg.pop("database")  # aiomysql expects "db"
-        raw_pool = await aiomysql.create_pool(
-            minsize=min_size, 
-            maxsize=max_size, 
-            **cfg
+        raw_pool = await asyncio.wait_for(
+            aiomysql.create_pool(
+                minsize=min_size, 
+                maxsize=max_size, 
+                host=config.host(),
+                port=config.port(),
+                user=config.user(),
+                password=config.password(),
+                db=config.database(),
+                charset='utf8mb4',  # Recommended for proper UTF-8 support
+                autocommit=False
+            ),
+            timeout=config.pool_creation_timeout
         )
         return MySqlConnectionPool(
-            raw_pool, 
-            timeout=self.connection_acquisition_timeout
+            raw_pool           
         )
  

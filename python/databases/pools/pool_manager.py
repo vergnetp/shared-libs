@@ -55,8 +55,7 @@ class PoolManager(ABC):
     def __init__(self, config: DatabaseConfig):
         self._alias = config.alias()
         self._hash = config.hash()
-        self.config = config
-        self._connection_acquisition_timeout = self.config.connection_acquisition_timeout     
+        self.config = config 
         
         # Try to initialize pool and start leak detection task if in async environment
         try:
@@ -67,12 +66,7 @@ class PoolManager(ABC):
         except RuntimeError:
             # Not in an async environment, which is fine
             pass
-
-    @property
-    def connection_acquisition_timeout(self) -> float:
-        '''Returns the connection acquisition timeout defined in PoolManager'''
-        return self.config.connection_acquisition_timeout
-    
+     
     async def _leak_detection_task(self):
         """Background task that periodically checks for and recovers from connection leaks"""
         IDLE_TIMEOUT = 1800  # 30 minutes idle time before considering a connection dead
@@ -416,7 +410,7 @@ class PoolManager(ABC):
             await self._track_metrics(True, e)           
             raise
         
-        async_conn = wrap_raw_connection(raw_conn)
+        async_conn = wrap_raw_connection(raw_conn, self.config)
         
         # Add tracking information for leak detection
         async_conn._acquired_time = time.time()
@@ -529,7 +523,7 @@ class PoolManager(ABC):
             if self._pool is None:
                 try:
                     start_time = time.time()
-                    self._pool = await asyncio.wait_for(self._create_pool(self.config), timeout=self.config.pool_creation_timeout())
+                    self._pool = await asyncio.wait_for(self._create_pool(self.config), timeout=self.config.pool_creation_timeout)
                     logger.info(f"{self.alias()} - {self.hash()} async pool initialized in {(time.time() - start_time):.2f}s")
                 except Exception as e:
                     logger.error(f"{self.alias()} - {self.hash()} async pool creation failed: {e}")
@@ -598,7 +592,7 @@ class PoolManager(ABC):
 
     @abstractmethod
     @try_catch
-    async def _create_pool(self, config: DatabaseConfig, connection_acqusition_timeout: float) -> ConnectionPool:
+    async def _create_pool(self, config: DatabaseConfig) -> ConnectionPool:
         """
         Creates a new connection pool.
         
@@ -606,7 +600,7 @@ class PoolManager(ABC):
         ConnectionPool implementation specific to the database backend being used.
         
         Args:
-            config (Dict): Database configuration dictionary.
+            config (DatabaseConfig): Database configuration.
             
         Returns:
             ConnectionPool: A connection pool that implements the ConnectionPool interface.

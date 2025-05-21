@@ -20,16 +20,14 @@ class PostgresConnectionPool(ConnectionPool):
         _timeout: Default timeout for connection acquisition
     """
     
-    def __init__(self, pool, timeout: float = 10.0):
+    def __init__(self, pool):
         """
         Initialize a PostgreSQL connection pool wrapper.
         
         Args:
-            pool: The underlying asyncpg pool
-            timeout: Default timeout for connection acquisition in seconds
+            pool: The underlying asyncpg pool            
         """
-        self._pool = pool
-        self._timeout = timeout        
+        self._pool = pool             
        
     @async_method
     async def acquire(self, timeout: Optional[float] = None) -> Any:
@@ -37,7 +35,7 @@ class PostgresConnectionPool(ConnectionPool):
         Acquires a connection from the pool with timeout.
         
         Args:
-            timeout: Maximum time to wait for connection, defaults to pool default
+            timeout: Maximum time to wait for connection, defaults to 10 seconds
             
         Returns:
             The raw asyncpg connection
@@ -45,7 +43,7 @@ class PostgresConnectionPool(ConnectionPool):
         Raises:
             TimeoutError: If connection acquisition times out
         """
-        timeout = timeout if timeout is not None else self._timeout
+        timeout = timeout if timeout is not None else 10
         try:
             return await asyncio.wait_for(self._pool.acquire(), timeout=timeout)
         except asyncio.TimeoutError:
@@ -103,21 +101,19 @@ class PostgresConnectionPool(ConnectionPool):
         return len([h for h in self._pool._holders if not h._in_use])
 
 class PostgresPoolManager(PoolManager):
-    async def _create_pool(self, config: DatabaseConfig, connection_acquisition_timeout: float) -> ConnectionPool:
-        min_size, max_size = self._calculate_pool_size()
-        raw_pool = await asyncpg.create_pool(
+    async def _create_pool(self, config: DatabaseConfig) -> ConnectionPool:
+        min_size, max_size = self._calculate_pool_size()        
+        raw_pool = await asyncio.wait_for(asyncpg.create_pool(
             min_size=min_size, 
             max_size=max_size, 
-            command_timeout=connection_acquisition_timeout,  
+            command_timeout=config.connection_acquisition_timeout,  
             host=config.host(),
-             port=config.port(),
-              database=config.database(),
-               user=config.user(),
-                password=config.password()
-           
-        )
+            port=config.port(),
+            database=config.database(),
+            user=config.user(),
+            password=config.password()           
+        ), timeout=config.pool_creation_timeout)
         return PostgresConnectionPool(
-            raw_pool, 
-            timeout=self.connection_acquisition_timeout
+            raw_pool           
         )
     

@@ -7,6 +7,7 @@ from ....utils import async_method
 
 from ...connections import SyncConnection, AsyncConnection
 from .generators import SqliteSqlGenerator
+from ...config import DatabaseConfig
 
 from ...entity.mixins import EntitySyncMixin, EntityAsyncMixin
 
@@ -20,8 +21,8 @@ class SqliteSyncConnection(SyncConnection, EntitySyncMixin):
     Args:
         conn: Raw sqlite3 connection object.
     """
-    def __init__(self, conn):
-        super().__init__(conn)
+    def __init__(self, conn, config: DatabaseConfig):
+        super().__init__(conn, config)
         self._cursor = self._conn.cursor()
         self._sql_generator = None
 
@@ -110,8 +111,8 @@ class SqliteAsyncConnection(AsyncConnection, EntityAsyncMixin):
     Args:
         conn: Raw aiosqlite connection object.
     """
-    def __init__(self, conn):
-        super().__init__(conn) 
+    def __init__(self, conn, config: DatabaseConfig):
+        super().__init__(conn, config) 
         self._sql_generator = None
 
     @property

@@ -10,6 +10,7 @@ from .... import log as logger
 
 from ...connections import SyncConnection, AsyncConnection
 from .generators import PostgresSqlGenerator
+from ...config import DatabaseConfig
 
 from ...entity.mixins import EntitySyncMixin, EntityAsyncMixin
 
@@ -23,8 +24,8 @@ class PostgresSyncConnection(SyncConnection, EntitySyncMixin):
     Args:
         conn: Raw psycopg2 connection object.
     """
-    def __init__(self, conn):
-        super().__init__(conn)   
+    def __init__(self, conn, config: DatabaseConfig):
+        super().__init__(conn, config)   
         logger.debug("postgres init")     
         self._cursor = self._conn.cursor()       
         self._prepared_counter = self.ThreadSafeCounter()
@@ -143,8 +144,8 @@ class PostgresAsyncConnection(AsyncConnection, EntityAsyncMixin):
     Args:
         conn: Raw asyncpg connection object.
     """
-    def __init__(self, conn):
-        super().__init__(conn)        
+    def __init__(self, conn, config: DatabaseConfig):
+        super().__init__(conn, config)        
         self._tx = None 
         self._sql_generator = None
 

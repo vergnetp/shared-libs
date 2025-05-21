@@ -53,9 +53,8 @@ class ConnectionManager():
         config (DatabaseConfig)     
         ...
     """
-    def __init__(self, config: DatabaseConfig=None):
-      
-        self._connection_acquisition_timeout = config.connection_acquisition_timeout
+    def __init__(self, config: DatabaseConfig=None):      
+
         self.config = config                  
               
         # Use thread-local storage for sync connections
@@ -64,12 +63,7 @@ class ConnectionManager():
 
         if not self.is_environment_async():
             self._local._sync_conn = self.get_sync_connection()
-
-    @property
-    def connection_acquisition_timeout(self) -> float:
-        '''Returns the connection acqusition timeout defined in the ConnectionManager'''
-        return self._connection_acquisition_timeout
-    
+   
     def is_environment_async(self) -> bool:
         """
         Determines if code is running in an async environment.
@@ -113,9 +107,9 @@ class ConnectionManager():
         if not hasattr(self._local, '_sync_conn') or self._local._sync_conn is None:
             try:
                 start_time = time.time()
-                raw_conn = self._create_sync_connection(self.config.config())
+                raw_conn = self._create_sync_connection(self.config)
                 logger.info(f"Thread {thread_id}: Sync connection created and cached for {self.config.alias()} in {(time.time() - start_time):.2f}s")
-                self._local._sync_conn = self._wrap_sync_connection(raw_conn)
+                self._local._sync_conn = self._wrap_sync_connection(raw_conn, self.config)
             except Exception as e:
                 logger.error(f"Thread {thread_id}: Could not create a sync connection for {self.config.alias()}: {e}")                     
         else:
@@ -273,7 +267,7 @@ class ConnectionManager():
 
 
     @abstractmethod
-    def _wrap_sync_connection(self, raw_conn: Any) -> SyncConnection:
+    def _wrap_sync_connection(self, raw_conn: Any, config: DatabaseConfig) -> SyncConnection:
         """
         Wraps a raw database connection in the SyncConnection interface.
         
@@ -289,7 +283,7 @@ class ConnectionManager():
         raise Exception("Derived class must implement this")
 
     @abstractmethod
-    def _wrap_async_connection(self, raw_conn: Any) -> AsyncConnection:
+    def _wrap_async_connection(self, raw_conn: Any, config: DatabaseConfig) -> AsyncConnection:
         """
         Wraps a raw database connection in the AsyncConnection interface.
         
@@ -306,7 +300,7 @@ class ConnectionManager():
 
     @abstractmethod
     @try_catch
-    def _create_sync_connection(self, config: Dict) -> Any:
+    def _create_sync_connection(self, config: DatabaseConfig) -> Any:
         """
         Creates a new synchronous database connection.
         

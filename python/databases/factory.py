@@ -8,10 +8,10 @@ class DatabaseFactory:
     def create_database(db_type: str, db_config: DatabaseConfig) -> ConnectionManager:
         """Factory method to create the appropriate database instance"""
         if db_type.lower() == 'postgres':    
-            return PostgresDatabase(**db_config.config())
+            return PostgresDatabase(db_config)
         elif db_type.lower() == 'mysql':
-            return MySqlDatabase(**db_config.config())
+            return MySqlDatabase(db_config)
         elif db_type.lower() == 'sqlite':
-            return SqliteDatabase(**db_config.config())
+            return SqliteDatabase(db_config)
         else:
             raise ValueError(f"Unsupported database type: {db_type}")

@@ -34,14 +34,12 @@ class DatabaseConfig:
                  password: str=None, 
                  alias: str=None, 
                  env: str='prod',  
-                 connection_acquisition_timeout: float=10.0,  # Time to acquire connection from pool
+                 connection_acquisition_timeout: float=10.0, # Time to acquire connection from pool
                  pool_creation_timeout: float=30.0,          # Time to create/initialize pool
                  query_execution_timeout: float=60.0,        # Default timeout for SQL queries
-                 connection_creation_timeout: float=15.0,    # Time to create individual connections
-                 pool_shutdown_timeout: float=30.0,          # Time for graceful pool shutdown
-                 *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
+                 connection_creation_timeout: float=15.0     # Time to create individual connections                
+                ):
+      
         # Validate inputs
         if not database:
             raise ValueError("Database name or connection string is required")
@@ -62,8 +60,7 @@ class DatabaseConfig:
         self.connection_acquisition_timeout = connection_acquisition_timeout
         self.pool_creation_timeout = pool_creation_timeout
         self.query_execution_timeout = query_execution_timeout
-        self.connection_creation_timeout = connection_creation_timeout
-        self.pool_shutdown_timeout = pool_shutdown_timeout
+        self.connection_creation_timeout = connection_creation_timeout      
 
     def config(self) -> Dict[str, Any]:
         """
@@ -84,8 +81,7 @@ class DatabaseConfig:
             'connection_acquisition_timeout': self.connection_acquisition_timeout,
             'pool_creation_timeout': self.pool_creation_timeout,
             'query_execution_timeout': self.query_execution_timeout,
-            'connection_creation_timeout': self.connection_creation_timeout,
-            'pool_shutdown_timeout': self.pool_shutdown_timeout
+            'connection_creation_timeout': self.connection_creation_timeout           
         }
     
     def database(self) -> str:

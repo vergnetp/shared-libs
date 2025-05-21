@@ -11,3 +11,4 @@ from .circuit_breaker import *
 from .retry import *
 from .timeout import *
 from .track_slow import *
+from .profile import *

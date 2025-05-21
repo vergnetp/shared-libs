@@ -70,7 +70,7 @@ class ConnectionPool(ABC):
         
         Args:
             timeout (Optional[float]): Maximum time in seconds to wait for a connection.
-                                      If None, use the pool's default timeout.
+                                      If None, defaults to 10 seconds.
         
         Returns:
             Any: A database connection specific to the underlying driver.
