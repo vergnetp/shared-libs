@@ -30,6 +30,12 @@ class DeploymentConfig(BaseConfig):
         # Runtime selection
         container_runtime: ContainerRuntime = ContainerRuntime.DOCKER,
         
+        nginx_enabled: bool = True,
+        nginx_template: Optional[str] = None,
+        ssl_enabled: bool = False,
+        ssl_cert_path: Optional[str] = None,
+        ssl_key_path: Optional[str] = None,
+        domain_names: List[str] = None,
         **kwargs
     ):
         self._api_servers = api_servers or ["localhost"]
@@ -40,7 +46,8 @@ class DeploymentConfig(BaseConfig):
         # Default container files (could be Dockerfile, Containerfile, etc.)
         self._container_files = container_files or {
             "api": "containers/Containerfile.api",      # Generic naming
-            "worker": "containers/Containerfile.worker"
+            "worker": "containers/Containerfile.worker",
+            "nginx":"containers/Containerfile.nginx"
         }
         self._build_context = build_context
         self._build_args = build_args or {}
@@ -52,6 +59,16 @@ class DeploymentConfig(BaseConfig):
         
         self._container_runtime = container_runtime
         
+        self._nginx_enabled = nginx_enabled
+        self._nginx_template = nginx_template or "containers/nginx.conf.template"
+        self._ssl_enabled = ssl_enabled
+        self._ssl_cert_path = ssl_cert_path
+        self._ssl_key_path = ssl_key_path
+        self._domain_names = domain_names or ["localhost"]
+
+        if nginx_enabled and not self._container_files.get("nginx", None):
+            self._container_files["nginx"] = "containers/Containerfile.nginx"
+
         super().__init__()
         self._validate_config()    
 
@@ -267,4 +284,49 @@ class DeploymentConfig(BaseConfig):
             container_runtime=ContainerRuntime(os.getenv('DEPLOY_RUNTIME', 'docker'))
         )
     
+    def generate_nginx_config(self, api_instances: List[str]) -> str:
+        """Generate nginx configuration for load balancing."""
+        upstream_servers = "\n    ".join([
+            f"server {instance}:8000;" for instance in api_instances
+        ])
+        
+        ssl_config = ""
+        if self._ssl_enabled:
+            ssl_config = f"""
+    listen 443 ssl;
+    ssl_certificate {self._ssl_cert_path};
+    ssl_certificate_key {self._ssl_key_path};
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
+"""
+        
+        return f"""
+upstream api_backend {{
+    {upstream_servers}
+}}
+
+server {{
+    listen 80;
+    server_name {' '.join(self._domain_names)};
+    
+    {ssl_config}
+    
+    location / {{
+        proxy_pass http://api_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 30s;
+        proxy_read_timeout 30s;
+    }}
+    
+    location /health {{
+        access_log off;
+        return 200 "healthy\\n";
+        add_header Content-Type text/plain;
+    }}
+}}
+"""
    
