@@ -1,0 +1,14 @@
+cluster.name: "myapp-logs"
+node.name: "opensearch-node1"
+network.host: 0.0.0.0
+http.port: 9200
+discovery.type: "single-node"
+bootstrap.memory_lock: true
+
+# Security settings
+plugins.security.ssl.transport.enforce_hostname_verification: false
+plugins.security.ssl.http.enabled: false
+plugins.security.allow_default_init_securityindex: true
+
+# Performance settings
+indices.query.bool.max_clause_count: 10000

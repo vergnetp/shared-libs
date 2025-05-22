@@ -1,0 +1,17 @@
+FROM redis:7-alpine
+
+# Copy custom redis configuration
+COPY containerfiles/redis.conf /usr/local/etc/redis/redis.conf
+
+# Create redis user data directory
+RUN mkdir -p /data && chown redis:redis /data
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD redis-cli ping || exit 1
+
+EXPOSE 6379
+
+USER redis
+
+CMD ["redis-server", "/usr/local/etc/redis/redis.conf"]

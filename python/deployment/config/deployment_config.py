@@ -38,6 +38,114 @@ class DeploymentConfig(BaseConfig):
         domain_names: List[str] = None,
         **kwargs
     ):
+        """
+        Initialize deployment configuration for container-based applications.
+        
+        This configuration supports multiple container runtimes (Docker, Kubernetes, etc.)
+        and provides a unified interface for deploying applications with optional nginx
+        load balancing and SSL termination.
+        
+        Args:
+            api_servers (List[str], optional): List of servers where API containers will be deployed.
+                Defaults to ["localhost"]. Each server should be a hostname or IP address.
+                Example: ["web1.company.com", "web2.company.com"]
+                
+            worker_servers (List[str], optional): List of servers where worker containers will be deployed.
+                Defaults to ["localhost"]. Workers typically handle background tasks.
+                Example: ["worker1.company.com", "worker2.company.com"]
+                
+            container_registry (str, optional): Container registry URL for pushing/pulling images.
+                If None, images are only built locally. Supports Docker Hub, AWS ECR, etc.
+                Example: "registry.company.com" or "123456789012.dkr.ecr.us-east-1.amazonaws.com"
+                
+            deployment_strategy (str, optional): Strategy for rolling out updates.
+                Defaults to "rolling". Options: "rolling", "blue_green", "canary".
+                
+            container_files (Dict[str, str], optional): Mapping of service types to their container files.
+                Defaults to {"api": "containers/Containerfile.api", "worker": "containers/Containerfile.worker"}.
+                Supports Dockerfile, Containerfile, or any OCI-compatible build file.
+                Example: {"api": "docker/api.dockerfile", "worker": "docker/worker.dockerfile"}
+                
+            build_context (str, optional): Directory used as build context for container builds.
+                Defaults to ".". All container files should be accessible from this directory.
+                
+            build_args (Dict[str, str], optional): Static build arguments passed to all container builds.
+                These are literal values, not configuration references.
+                Example: {"NODE_ENV": "production", "VERSION": "1.2.3"}
+                
+            image_templates (Dict[str, str], optional): Templates for generating image names.
+                Supports format strings with {registry}, {service}, {version} placeholders.
+                Example: {"api": "{registry}/myapp-{service}:{version}"}
+                
+            config_injection (Dict[str, Any], optional): Configuration objects to inject into builds.
+                These objects provide values that can be referenced in config_mapping.
+                Example: {"db": database_config, "app": app_config}
+                
+            config_mapping (Dict[str, str], optional): Maps build argument names to configuration paths.
+                Uses dot notation to reference properties from config_injection objects.
+                Example: {"DB_HOST": "db.host", "APP_NAME": "app.name"}
+                
+            sensitive_configs (List[str], optional): List of configuration paths containing sensitive data.
+                These values will be masked in logs and dry-run output for security.
+                Example: ["db.password", "app.api_key"]
+                
+            container_runtime (ContainerRuntime, optional): Container runtime to use for deployment.
+                Defaults to ContainerRuntime.DOCKER. Options: DOCKER, KUBERNETES, PODMAN, etc.
+                
+            nginx_enabled (bool, optional): Whether to deploy nginx as a reverse proxy/load balancer.
+                Defaults to True. When enabled, nginx will be configured to balance across API servers.
+                
+            nginx_template (str, optional): Path to custom nginx configuration template.
+                If provided, this template will be used instead of the auto-generated configuration.
+                Template should support format strings for upstream servers and SSL settings.
+                
+            ssl_enabled (bool, optional): Whether to enable SSL/TLS termination in nginx.
+                Defaults to False. Requires ssl_cert_path and ssl_key_path when enabled.
+                
+            ssl_cert_path (str, optional): Path to SSL certificate file for HTTPS.
+                Required when ssl_enabled=True. Should be accessible to nginx container.
+                
+            ssl_key_path (str, optional): Path to SSL private key file for HTTPS.
+                Required when ssl_enabled=True. Should be accessible to nginx container.
+                
+            domain_names (List[str], optional): Domain names that nginx should respond to.
+                Defaults to ["localhost"]. Used in nginx server_name directive.
+                Example: ["api.company.com", "www.company.com"]
+                
+        Raises:
+            ValueError: If configuration validation fails. Common issues include:
+                - Empty server lists
+                - Invalid deployment strategy
+                - Missing SSL files when SSL is enabled
+                - Invalid configuration mappings
+                
+        Example:
+            >>> # Basic configuration
+            >>> config = DeploymentConfig(
+            ...     api_servers=["web1", "web2"],
+            ...     worker_servers=["worker1"]
+            ... )
+            
+            >>> # Production configuration with SSL
+            >>> config = DeploymentConfig(
+            ...     api_servers=["api1.company.com", "api2.company.com"],
+            ...     worker_servers=["worker1.company.com"],
+            ...     container_registry="registry.company.com",
+            ...     ssl_enabled=True,
+            ...     ssl_cert_path="/etc/ssl/certs/company.crt",
+            ...     ssl_key_path="/etc/ssl/private/company.key",
+            ...     domain_names=["api.company.com"]
+            ... )
+            
+            >>> # Configuration with database injection
+            >>> db_config = DatabaseConfig(host="db.company.com", database="myapp")
+            >>> config = DeploymentConfig(
+            ...     api_servers=["web1", "web2"],
+            ...     config_injection={"db": db_config},
+            ...     config_mapping={"DATABASE_URL": "db.connection_string"},
+            ...     sensitive_configs=["db.password"]
+            ... )
+        """
         self._api_servers = api_servers or ["localhost"]
         self._worker_servers = worker_servers or ["localhost"]
         self._container_registry = container_registry
@@ -311,8 +419,21 @@ class DeploymentConfig(BaseConfig):
     
     def generate_nginx_config(self, api_instances: List[str]) -> str:
         """Generate nginx configuration for load balancing."""
+        if self._nginx_template and os.path.exists(self._nginx_template):
+            with open(self._nginx_template, 'r') as f:
+                template = f.read()
+            
+            # Replace template variables
+            return template.format(
+                upstream_servers="\n    ".join([f"server {instance};" for instance in api_instances]),
+                domain_names=' '.join(self._domain_names),
+                ssl_cert_path=self._ssl_cert_path,
+                ssl_key_path=self._ssl_key_path
+            )
+        
+
         upstream_servers = "\n    ".join([
-            f"server {instance}:8000;" for instance in api_instances
+            f"server {instance};" for instance in api_instances
         ])
         
         ssl_config = ""
@@ -323,18 +444,28 @@ class DeploymentConfig(BaseConfig):
     ssl_certificate_key {self._ssl_key_path};
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
+    ssl_prefer_server_ciphers off;"""
+        
+        # Add HTTP to HTTPS redirect if SSL is enabled
+        redirect_config = ""
+        if self._ssl_enabled:
+            redirect_config = """
+server {
+    listen 80;
+    server_name """ + ' '.join(self._domain_names) + """;
+    return 301 https://$server_name$request_uri;
+}
 """
         
-        return f"""
+        return f"""{redirect_config}
 upstream api_backend {{
     {upstream_servers}
 }}
 
 server {{
-    listen 80;
-    server_name {' '.join(self._domain_names)};
-    
+    {"listen 80;" if not self._ssl_enabled else ""}
     {ssl_config}
+    server_name {' '.join(self._domain_names)};
     
     location / {{
         proxy_pass http://api_backend;

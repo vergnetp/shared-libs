@@ -1,0 +1,22 @@
+FROM opensearchproject/opensearch:2.11.0
+
+# Build arguments
+ARG OPENSEARCH_INITIAL_ADMIN_PASSWORD
+
+# Environment variables
+ENV discovery.type=single-node
+ENV bootstrap.memory_lock=true
+ENV "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
+ENV OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
+
+# Disable security plugin for development (enable in production)
+ENV DISABLE_SECURITY_PLUGIN=false
+
+# Copy custom opensearch configuration
+COPY containerfiles/opensearch.yml /usr/share/opensearch/config/opensearch.yml
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+    CMD curl -f http://localhost:9200/_cluster/health || exit 1
+
+EXPOSE 9200 9600
