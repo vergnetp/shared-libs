@@ -137,7 +137,32 @@ class DeploymentConfig(BaseConfig):
     def all_servers(self) -> List[str]:
         """Get all servers combined."""
         return self._api_servers + self._worker_servers
+
+    @property
+    def ssl_enabled(self) -> bool:
+        """Get SSL enabled status."""
+        return self._ssl_enabled
     
+    @property
+    def ssl_cert_path(self) -> Optional[str]:
+        """Get SSL certificate path."""
+        return self._ssl_cert_path
+    
+    @property
+    def ssl_key_path(self) -> Optional[str]:
+        """Get SSL key path."""
+        return self._ssl_key_path
+    
+    @property
+    def domain_names(self) -> List[str]:
+        """Get domain names."""
+        return self._domain_names
+    
+    @property
+    def nginx_enabled(self) -> bool:
+        """Get nginx enabled status."""
+        return self._nginx_enabled
+       
     def get_servers_by_type(self, server_type: str) -> List[str]:
         """Get servers by type (api or worker)."""
         if server_type == "api":

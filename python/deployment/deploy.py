@@ -1,8 +1,8 @@
-import time
-from typing import Dict, Any
+import time, os
+from typing import Dict, Any, List
 
 from .config import DeploymentConfig, ConfigurationResolver
-from .containers import ContainerBuildSpec, ContainerRuntimeFactory
+from .containers import ContainerBuildSpec, ContainerRuntimeFactory, ContainerImage
 from .. import log as logger  
 
 
@@ -100,7 +100,65 @@ async def deploy_containers_runtime_agnostic(
             "success": False,
             "error": str(e)
         }
-    
+
+async def _deploy_nginx(config: DeploymentConfig, api_instances: List[str], dry_run: bool, log) -> Dict[str, Any]:
+        """Deploy nginx with proper configuration."""
+        try:
+            # Generate nginx config
+            nginx_config_content = config.generate_nginx_config(api_instances)
+            
+            if dry_run:
+                log.info("[DRY RUN] Would deploy nginx with config:")
+                log.info(nginx_config_content[:200] + "..." if len(nginx_config_content) > 200 else nginx_config_content)
+                return {"nginx_deployed": True, "dry_run": True}
+            
+            # Write nginx config to build context
+            nginx_config_path = os.path.join(config.build_context, "nginx.conf")
+            with open(nginx_config_path, 'w') as f:
+                f.write(nginx_config_content)
+            
+            # Create nginx image if using custom build
+            if "nginx" in config.container_files:
+                nginx_image = config.create_container_image("nginx", "latest")
+                
+                # Build nginx image
+                image_builder = ContainerRuntimeFactory.create_image_builder(config)
+                build_spec = ContainerBuildSpec(
+                    image=nginx_image,
+                    build_args={},
+                    labels={
+                        "app.name": "nginx-proxy",
+                        "service.type": "nginx"
+                    }
+                )
+                
+                build_success = await image_builder.build_image(build_spec, log)
+                if not build_success:
+                    return {"nginx_deployed": False, "error": "Failed to build nginx image"}
+            else:
+                # Use official nginx image
+                nginx_image = ContainerImage(name="nginx", tag="alpine", registry="docker.io")
+            
+            # Create runtime spec
+            container_runner = ContainerRuntimeFactory.create_container_runner(config)
+            nginx_spec = ContainerRuntimeFactory.create_nginx_spec(config, api_instances, nginx_config_path)
+            
+            # Deploy nginx container
+            nginx_container_id = await container_runner.run_container(nginx_spec, log)
+            
+            log.info(f"✓ Nginx deployed: {nginx_container_id}")
+            
+            return {
+                "nginx_deployed": True,
+                "nginx_container_id": nginx_container_id,
+                "nginx_config_path": nginx_config_path
+            }
+            
+        except Exception as e:
+            log.error(f"Nginx deployment failed: {e}")
+            return {"nginx_deployed": False, "error": str(e)}
+        
+
 async def deploy_with_nginx(
     config: DeploymentConfig,
     version: str,
@@ -121,39 +179,19 @@ async def deploy_with_nginx(
             return app_result
         
         # 2. Deploy nginx if enabled
-        if config._nginx_enabled:
+        if config.nginx_enabled:
             log.info("Deploying nginx reverse proxy...")
             
             # Get API instance endpoints
             api_instances = [f"{server}:8000" for server in config.api_servers]
             
-            # Generate nginx config
-            nginx_config_content = config.generate_nginx_config(api_instances)
+            # Deploy nginx
+            nginx_result = await _deploy_nginx(config, api_instances, dry_run, log)
             
-            if dry_run:
-                log.info("[DRY RUN] Would deploy nginx with config:")
-                log.info(nginx_config_content)
-            else:
-                # Write nginx config file
-                import tempfile
-                with tempfile.NamedTemporaryFile(mode='w', suffix='.conf', delete=False) as f:
-                    f.write(nginx_config_content)
-                    nginx_config_path = f.name
-                
-                # Create nginx runtime spec
-                container_runner = ContainerRuntimeFactory.create_container_runner(config)
-                nginx_spec = ContainerRuntimeFactory.create_nginx_spec(config, api_instances)
-                
-                # Run nginx container
-                nginx_container_id = await container_runner.run_container(nginx_spec, log)
-                
-                log.info(f"✓ Nginx deployed: {nginx_container_id}")
-                
-                return {
-                    **app_result,
-                    "nginx_deployed": True,
-                    "nginx_container_id": nginx_container_id
-                }
+            return {
+                **app_result,
+                **nginx_result
+            }
         
         return app_result
         

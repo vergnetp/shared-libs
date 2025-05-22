@@ -33,23 +33,44 @@ class ContainerRuntimeFactory:
             raise ValueError(f"Unsupported container runtime: {runtime}")
     
     @staticmethod
-    def create_nginx_spec(config: DeploymentConfig, api_instances: List[str]) -> ContainerRuntimeSpec:
+    def create_nginx_spec(config: DeploymentConfig, api_instances: List[str], nginx_config_path: str = None) -> ContainerRuntimeSpec:
         """Create nginx container specification."""
-        nginx_config = config.generate_nginx_config(api_instances)
         
-        # Write config to temporary file (or use volume mount)
-        config_volume = f"{config.build_context}/nginx.conf:/etc/nginx/nginx.conf:ro"
+        # Use custom nginx image if configured, otherwise official
+        if "nginx" in config.container_files:
+            nginx_image = config.create_container_image("nginx", "latest")
+        else:
+            nginx_image = ContainerImage(
+                name="nginx",
+                tag="alpine",
+                registry="docker.io"
+            )
         
-        nginx_image = ContainerImage(
-            name="nginx",
-            tag="alpine",
-            registry="docker.io"  # Use official nginx image
-        )
+        # Set up volumes
+        volumes = []
+        if nginx_config_path:
+            volumes.append(f"{nginx_config_path}:/etc/nginx/nginx.conf:ro")
+        
+        # Add SSL certificates if enabled
+        if config._ssl_enabled and config._ssl_cert_path and config._ssl_key_path:
+            volumes.extend([
+                f"{config._ssl_cert_path}:/etc/nginx/ssl/cert.pem:ro",
+                f"{config._ssl_key_path}:/etc/nginx/ssl/key.pem:ro"
+            ])
+        
+        # Determine ports
+        ports = [80]
+        if config._ssl_enabled:
+            ports.append(443)
         
         return ContainerRuntimeSpec(
             image=nginx_image,
-            ports=[80, 443] if config._ssl_enabled else [80],
-            volumes=[config_volume],
+            ports=ports,
+            volumes=volumes,
             health_check="curl -f http://localhost/health || exit 1",
-            restart_policy="unless-stopped"
+            restart_policy="unless-stopped",
+            environment={
+                "NGINX_HOST": ",".join(config._domain_names),
+                "NGINX_PORT": "80"
+            }
         )
