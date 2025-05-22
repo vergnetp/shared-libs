@@ -53,14 +53,18 @@ class DeploymentConfig(BaseConfig):
         self._container_runtime = container_runtime
         
         super().__init__()
-        self._validate_config()
-    
-    # Runtime-agnostic property names
+        self._validate_config()    
+
     @property
     def container_files(self) -> Dict[str, str]:
         """Get container file paths (Dockerfile, Containerfile, etc.)."""
         return self._container_files
-    
+
+    @property
+    def sensitive_configs(self) -> set:
+        """Get sensitive configuration keys."""
+        return self._sensitive_configs
+        
     @property
     def container_registry(self) -> Optional[str]:
         """Get container registry URL."""
@@ -70,7 +74,62 @@ class DeploymentConfig(BaseConfig):
     def container_runtime(self) -> ContainerRuntime:
         """Get selected container runtime."""
         return self._container_runtime
+
+    @property
+    def api_servers(self) -> List[str]:
+        """Get API server list."""
+        return self._api_servers
     
+    @property
+    def worker_servers(self) -> List[str]:
+        """Get worker server list."""
+        return self._worker_servers
+    
+    @property
+    def deployment_strategy(self) -> str:
+        """Get deployment strategy."""
+        return self._deployment_strategy
+    
+    @property
+    def build_context(self) -> str:
+        """Get build context directory."""
+        return self._build_context
+    
+    @property
+    def build_args(self) -> Dict[str, str]:
+        """Get build arguments."""
+        return self._build_args
+    
+    @property
+    def config_injection(self) -> Dict[str, Any]:
+        """Get configuration injection mapping."""
+        return self._config_injection
+    
+    @property
+    def config_mapping(self) -> Dict[str, str]:
+        """Get configuration mapping."""
+        return self._config_mapping
+    
+    # Add methods referenced in readme examples
+    @property
+    def total_server_count(self) -> int:
+        """Get total number of servers."""
+        return len(self._api_servers) + len(self._worker_servers)
+    
+    @property
+    def all_servers(self) -> List[str]:
+        """Get all servers combined."""
+        return self._api_servers + self._worker_servers
+    
+    def get_servers_by_type(self, server_type: str) -> List[str]:
+        """Get servers by type (api or worker)."""
+        if server_type == "api":
+            return self._api_servers
+        elif server_type == "worker":
+            return self._worker_servers
+        else:
+            raise ValueError(f"Unknown server type: {server_type}")
+
     def get_container_file_path(self, service_type: str) -> str:
         """Get container file path for a service (Dockerfile, Containerfile, etc.)."""
         if service_type not in self._container_files:
@@ -153,5 +212,59 @@ class DeploymentConfig(BaseConfig):
             
             if errors:
                 raise ValueError(f"Deployment configuration validation failed: {'; '.join(errors)}")
+            
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert configuration to dictionary."""
+        return {
+            'api_servers': self._api_servers,
+            'worker_servers': self._worker_servers,
+            'container_registry': self._container_registry,
+            'deployment_strategy': self._deployment_strategy,
+            'container_files': self._container_files,
+            'build_context': self._build_context,
+            'build_args': self._build_args,
+            'image_templates': self._image_templates,
+            'config_injection': self._config_injection,
+            'config_mapping': self._config_mapping,
+            'sensitive_configs': list(self._sensitive_configs),
+            'container_runtime': self._container_runtime.value
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'DeploymentConfig':
+        """Create instance from dictionary."""
+        # Convert container_runtime back to enum
+        runtime = data.get('container_runtime', 'docker')
+        if isinstance(runtime, str):
+            runtime = ContainerRuntime(runtime)
+        
+        return cls(
+            api_servers=data.get('api_servers'),
+            worker_servers=data.get('worker_servers'),
+            container_registry=data.get('container_registry'),
+            deployment_strategy=data.get('deployment_strategy', 'rolling'),
+            container_files=data.get('container_files'),
+            build_context=data.get('build_context', '.'),
+            build_args=data.get('build_args'),
+            image_templates=data.get('image_templates'),
+            config_injection=data.get('config_injection'),
+            config_mapping=data.get('config_mapping'),
+            sensitive_configs=data.get('sensitive_configs'),
+            container_runtime=runtime
+        )
+    
+    @classmethod
+    def from_environment(cls) -> 'DeploymentConfig':
+        """Create configuration from environment variables."""
+        api_servers_str = os.getenv('DEPLOY_API_SERVERS', 'localhost')
+        worker_servers_str = os.getenv('DEPLOY_WORKER_SERVERS', 'localhost')
+        
+        return cls(
+            api_servers=api_servers_str.split(','),
+            worker_servers=worker_servers_str.split(','),
+            container_registry=os.getenv('DEPLOY_DOCKER_REGISTRY'),
+            deployment_strategy=os.getenv('DEPLOY_STRATEGY', 'rolling'),
+            container_runtime=ContainerRuntime(os.getenv('DEPLOY_RUNTIME', 'docker'))
+        )
     
    
