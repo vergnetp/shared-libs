@@ -115,34 +115,43 @@ class DeploymentConfig(BaseConfig):
             build_context=self._build_context,
             container_file=self.get_container_file_path(service_type)
         )
-
     
     def _validate_config(self):
-        """Validate deployment configuration."""
-        errors = []
-        
-        # Validate server lists
-        if not self._api_servers:
-            errors.append("api_servers cannot be empty")
-        
-        if not self._worker_servers:
-            errors.append("worker_servers cannot be empty")
-        
-        # Validate server entries
-        for i, server in enumerate(self._api_servers):
-            if not server or not isinstance(server, str):
-                errors.append(f"api_servers[{i}] must be a non-empty string")
-        
-        for i, server in enumerate(self._worker_servers):
-            if not server or not isinstance(server, str):
-                errors.append(f"worker_servers[{i}] must be a non-empty string")        
-        
-        # Validate deployment strategy
-        valid_strategies = {'rolling', 'blue_green', 'canary'}
-        if self._deployment_strategy not in valid_strategies:
-            errors.append(f"deployment_strategy must be one of {valid_strategies}, got '{self._deployment_strategy}'")
-        
-        if errors:
-            raise ValueError(f"Deployment configuration validation failed: {'; '.join(errors)}")
+            """Validate deployment configuration."""
+            errors = []
+            
+            # Validate server lists
+            if not self._api_servers:
+                errors.append("api_servers cannot be empty")
+            
+            if not self._worker_servers:
+                errors.append("worker_servers cannot be empty")
+            
+            # Validate server entries
+            for i, server in enumerate(self._api_servers):
+                if not server or not isinstance(server, str):
+                    errors.append(f"api_servers[{i}] must be a non-empty string")
+            
+            for i, server in enumerate(self._worker_servers):
+                if not server or not isinstance(server, str):
+                    errors.append(f"worker_servers[{i}] must be a non-empty string")        
+            
+            # Validate deployment strategy
+            valid_strategies = {'rolling', 'blue_green', 'canary'}
+            if self._deployment_strategy not in valid_strategies:
+                errors.append(f"deployment_strategy must be one of {valid_strategies}, got '{self._deployment_strategy}'")
+            
+            # Validate container files exist
+            for service_type, container_file in self._container_files.items():
+                if not isinstance(container_file, str) or not container_file:
+                    errors.append(f"container_file for {service_type} must be a non-empty string")
+            
+            # Validate build args are strings
+            for key, value in self._build_args.items():
+                if not isinstance(key, str) or not isinstance(value, str):
+                    errors.append(f"build_args must be string key-value pairs, got {key}={value}")
+            
+            if errors:
+                raise ValueError(f"Deployment configuration validation failed: {'; '.join(errors)}")
     
    

@@ -10,6 +10,8 @@ class ConfigurationResolver:
     
     def __init__(self, deployment_config: DeploymentConfig):
         self.config = deployment_config
+        # Initialize sensitive configs set
+        self._sensitive_configs = getattr(deployment_config, '_sensitive_configs', set())
     
     def resolve_config_value(self, config_path: str) -> Any:
         """
@@ -39,6 +41,9 @@ class ConfigurationResolver:
         for prop in property_path:
             if hasattr(current_obj, prop):
                 attr = getattr(current_obj, prop)
+                current_obj = attr() if callable(attr) else attr
+            elif hasattr(current_obj, f'_{prop}'):  # Check for private attributes
+                attr = getattr(current_obj, f'_{prop}')
                 current_obj = attr() if callable(attr) else attr
             else:
                 raise ValueError(f"Property '{prop}' not found on {type(current_obj).__name__}")
