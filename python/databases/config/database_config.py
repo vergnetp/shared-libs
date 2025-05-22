@@ -3,7 +3,9 @@ import hashlib
 from typing import Dict, Any
 from ... import log as logger
 
-class DatabaseConfig:
+from ...config.base_config import BaseConfig
+
+class DatabaseConfig(BaseConfig):
     """
     Holds database connection configuration parameters.
     
@@ -38,29 +40,52 @@ class DatabaseConfig:
                  pool_creation_timeout: float=30.0,          # Time to create/initialize pool
                  query_execution_timeout: float=60.0,        # Default timeout for SQL queries
                  connection_creation_timeout: float=15.0     # Time to create individual connections                
-                ):
-      
-        # Validate inputs
-        if not database:
-            raise ValueError("Database name or connection string is required")
+                ):      
+        self._host = host
+        self._port = port
+        self._database = database
+        self._user = user
+        self._password = password
+        self._env = env
+        self._alias = alias or database or 'database'
+        self._connection_acquisition_timeout = connection_acquisition_timeout
+        self._pool_creation_timeout = pool_creation_timeout
+        self._query_execution_timeout = query_execution_timeout
+        self._connection_creation_timeout = connection_creation_timeout
         
-        if port is not None and not isinstance(port, int):
-            raise ValueError(f"Port must be an integer, got {type(port).__name__}")
+        super().__init__()
+        self._validate_config()
+    
+    def _validate_config(self):
+        """Validate configuration."""
+        errors = []
         
-        if env not in ('prod', 'dev', 'test', 'staging'):
-            logger.warning(f"Unrecognized environment '{env}', using anyway but this might indicate a mistake")
-  
-        self.__host = host
-        self.__port = port
-        self.__database = database
-        self.__user = user
-        self.__password = password
-        self.__env = env
-        self.__alias = alias or database or f'database'
-        self.connection_acquisition_timeout = connection_acquisition_timeout
-        self.pool_creation_timeout = pool_creation_timeout
-        self.query_execution_timeout = query_execution_timeout
-        self.connection_creation_timeout = connection_creation_timeout      
+        if not self._database:
+            errors.append("Database name cannot be empty")
+        
+        if self._port is not None and (not isinstance(self._port, int) or self._port <= 0):
+            errors.append(f"Port must be a positive integer, got {self._port}")
+        
+        if self._connection_acquisition_timeout <= 0:
+            errors.append(f"connection_acquisition_timeout must be positive, got {self._connection_acquisition_timeout}")
+        
+        if self._pool_creation_timeout <= 0:
+            errors.append(f"pool_creation_timeout must be positive, got {self._pool_creation_timeout}")
+        
+        if self._query_execution_timeout <= 0:
+            errors.append(f"query_execution_timeout must be positive, got {self._query_execution_timeout}")
+        
+        if self._connection_creation_timeout <= 0:
+            errors.append(f"connection_creation_timeout must be positive, got {self._connection_creation_timeout}")
+        
+        # For environment, we can be more lenient but still validate
+        valid_envs = {'prod', 'dev', 'test', 'staging'}
+        if self._env not in valid_envs:
+            # Could be a warning instead of error, but for consistency:
+            errors.append(f"Environment must be one of {valid_envs}, got '{self._env}'")
+        
+        if errors:
+            raise ValueError(f"Database configuration validation failed: {'; '.join(errors)}")
 
     def config(self) -> Dict[str, Any]:
         """
@@ -73,15 +98,15 @@ class DatabaseConfig:
             Dict: Dictionary containing host, port, database, user, and password.
         """
         return {
-            'host': self.__host,
-            'port': self.__port,
-            'database': self.__database,
-            'user': self.__user,
-            'password': self.__password,
-            'connection_acquisition_timeout': self.connection_acquisition_timeout,
-            'pool_creation_timeout': self.pool_creation_timeout,
-            'query_execution_timeout': self.query_execution_timeout,
-            'connection_creation_timeout': self.connection_creation_timeout           
+            'host': self._host,
+            'port': self._port,
+            'database': self._database,
+            'user': self._user,
+            'password': self._password,
+            'connection_acquisition_timeout': self._connection_acquisition_timeout,
+            'pool_creation_timeout': self._pool_creation_timeout,
+            'query_execution_timeout': self._query_execution_timeout,
+            'connection_creation_timeout': self._connection_creation_timeout
         }
     
     def database(self) -> str:
@@ -91,7 +116,7 @@ class DatabaseConfig:
         Returns:
             str: The configured database name.
         """
-        return self.__database
+        return self._database
     
     def alias(self) -> str:
         """
@@ -103,7 +128,7 @@ class DatabaseConfig:
         Returns:
             str: The database connection alias.
         """
-        return self.__alias
+        return self._alias
     
     def user(self) -> str:
         """
@@ -112,7 +137,7 @@ class DatabaseConfig:
         Returns:
             str: The configured database user.
         """
-        return self.__user
+        return self._user
     
     def host(self) -> str:
         """
@@ -121,10 +146,10 @@ class DatabaseConfig:
         Returns:
             str: The configured database host.
         """
-        return self.__host
+        return self._host
     
     def password(self):
-        return self.__password #todo  clean this unsafe thing
+        return self._password #todo  clean this unsafe thing
     
     def port(self) -> int:
         """
@@ -133,7 +158,7 @@ class DatabaseConfig:
         Returns:
             int: The configured database port.
         """
-        return self.__port
+        return self._port
     
     def env(self) -> str:
         """
@@ -145,20 +170,26 @@ class DatabaseConfig:
         Returns:
             str: The database environment label.
         """
-        return self.__env
+        return self._env
 
-    def hash(self) -> str:
-        """
-        Returns a stable, hash-based key for the database configuration.
-        
-        This hash is used to uniquely identify connection pools and can be
-        used as a key in dictionaries. It is based on all configuration
-        parameters except the password.
-        
-        Returns:
-            str: MD5 hash of the JSON-serialized configuration.
-        """
-        cfg = self.config().copy()
-        cfg.pop('password', None)  # optional, if you want pools keyed w/o password
-        key_json = json.dumps(cfg, sort_keys=True)
-        return hashlib.md5(key_json.encode()).hexdigest()
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert configuration to dictionary."""
+        return self.config()
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'DatabaseConfig':
+        """Create instance from dictionary."""
+        return cls(
+            database=data.get('database', ''),
+            host=data.get('host', 'localhost'),
+            port=data.get('port', 5432),
+            user=data.get('user'),
+            password=data.get('password'),
+            alias=data.get('alias'),
+            env=data.get('env', 'prod'),
+            connection_acquisition_timeout=data.get('connection_acquisition_timeout', 10.0),
+            pool_creation_timeout=data.get('pool_creation_timeout', 30.0),
+            query_execution_timeout=data.get('query_execution_timeout', 60.0),
+            connection_creation_timeout=data.get('connection_creation_timeout', 15.0)
+        )

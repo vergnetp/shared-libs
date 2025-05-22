@@ -23,9 +23,9 @@ def run_command(command):
     )
     stdout, stderr = process.communicate()
     if stdout:
-        logger.info(f"Command output: {stdout}")
+        logger.info(f"Command output: {stdout}"[:200])
     if stderr:
-        logger.info(f"Command error: {stderr}")
+        logger.info(f"Command error: {stderr}"[:600])
     return process.returncode, stdout, stderr
 
 def delete_pytest_cache():

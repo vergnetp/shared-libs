@@ -1,7 +1,9 @@
-from typing import Any, Dict, List, Optional, Union, Callable, Type
+from typing import Any, Dict
+
+from ...config.base_config import BaseConfig
 
 
-class QueueWorkerConfig:
+class QueueWorkerConfig(BaseConfig):
     """
     Configuration for worker execution and thread pool.
     
@@ -23,39 +25,55 @@ class QueueWorkerConfig:
             work_timeout: Default timeout in seconds for processing operations (default: 30.0)
             grace_shutdown_period: Time in seconds to wait for clean shutdown (default: 5.0)  
         """
-        self.worker_count = worker_count
-        self.thread_pool_size = thread_pool_size
-        self.work_timeout = work_timeout    
+        self._worker_count = worker_count
+        self._thread_pool_size = thread_pool_size
+        self._work_timeout = work_timeout
         
-        # Validate configuration
+        super().__init__()
         self._validate_config()
+    
+    @property
+    def worker_count(self) -> int:
+        return self._worker_count
+    
+    @property
+    def thread_pool_size(self) -> int:
+        return self._thread_pool_size
+    
+    @property
+    def work_timeout(self) -> float:
+        return self._work_timeout
     
     def _validate_config(self):
         """Validate worker configuration parameters."""
         errors = []
         
-        if self.worker_count <= 0:
-            errors.append(f"worker_count must be positive, got {self.worker_count}")
-            
-        if self.thread_pool_size <= 0:
-            errors.append(f"thread_pool_size must be positive, got {self.thread_pool_size}")
-            
-        if self.work_timeout <= 0:
-            errors.append(f"work_timeout must be positive, got {self.work_timeout}")
-            
+        if self._worker_count <= 0:
+            errors.append(f"worker_count must be positive, got {self._worker_count}")
+        
+        if self._thread_pool_size <= 0:
+            errors.append(f"thread_pool_size must be positive, got {self._thread_pool_size}")
+        
+        if self._work_timeout <= 0:
+            errors.append(f"work_timeout must be positive, got {self._work_timeout}")
+        
         if errors:
             raise ValueError(f"Worker configuration validation failed: {'; '.join(errors)}")
     
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert configuration to dictionary.
-        
-        Returns:
-            Dictionary representation of the configuration
-        """
+        """Convert configuration to dictionary."""
         return {
-            "worker_count": self.worker_count,
-            "thread_pool_size": self.thread_pool_size,
-            "work_timeout": self.work_timeout 
+            "worker_count": self._worker_count,
+            "thread_pool_size": self._thread_pool_size,
+            "work_timeout": self._work_timeout
         }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'QueueWorkerConfig':
+        """Create instance from dictionary."""
+        return cls(
+            worker_count=data.get('worker_count', 5),
+            thread_pool_size=data.get('thread_pool_size', 20),
+            work_timeout=data.get('work_timeout', 30.0)
+        )
 

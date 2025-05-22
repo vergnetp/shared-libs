@@ -1,8 +1,9 @@
 import random
-from typing import Any, Dict, List, Optional, Union, Callable, Type
+from typing import Any, Dict, List, Optional
 
+from ...config.base_config import BaseConfig
 
-class QueueRetryConfig:
+class QueueRetryConfig(BaseConfig):
     """
     Configuration for retry behavior in queue operations.
     
@@ -24,35 +25,67 @@ class QueueRetryConfig:
             delays: List of delay times in seconds for each retry attempt (default: exponential backoff)
             timeout: Optional total time limit for retries in seconds (default: None, no limit)
         """
-        self.max_attempts = max_attempts
-        self.timeout = timeout
+        self._max_attempts = max_attempts
+        self._timeout = timeout
         
-        # If delays are provided directly, use them
         if delays:
-            self.delays = delays
+            self._delays = delays
         else:
-            # Otherwise, use exponential backoff with fixed parameters
-            self.delays = self._generate_exponential_delays()
+            self._delays = self._generate_exponential_delays()
         
-        # Validate configuration
+        super().__init__()
         self._validate_config()
+    
+    @property
+    def max_attempts(self) -> int:
+        return self._max_attempts
+    
+    @property
+    def delays(self) -> List[float]:
+        return self._delays
+    
+    @property
+    def timeout(self) -> Optional[float]:
+        return self._timeout
     
     def _validate_config(self):
         """Validate retry configuration parameters."""
         errors = []
         
-        if self.max_attempts <= 0:
-            errors.append(f"max_attempts must be positive, got {self.max_attempts}")
-            
-        if self.delays and len(self.delays) == 0:
+        if self._max_attempts <= 0:
+            errors.append(f"max_attempts must be positive, got {self._max_attempts}")
+        
+        if self._delays and len(self._delays) == 0:
             errors.append("delays list cannot be empty")
-            
-        if self.timeout is not None and self.timeout <= 0:
-            errors.append(f"timeout must be positive, got {self.timeout}")
-            
+        
+        if self._timeout is not None and self._timeout <= 0:
+            errors.append(f"timeout must be positive, got {self._timeout}")
+        
         if errors:
             raise ValueError(f"Retry configuration validation failed: {'; '.join(errors)}")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert configuration to dictionary.
+        
+        Returns:
+            Dictionary representation of the configuration
+        """
+        return {
+            "max_attempts": self.max_attempts,
+            "delays": self.delays,
+            "timeout": self.timeout
+        }
     
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'QueueRetryConfig':
+        """Create instance from dictionary."""
+        return cls(
+            max_attempts=data.get("max_attempts", 5),
+            delays=data.get("delays"),
+            timeout=data.get("timeout")
+        )
+
     def _generate_exponential_delays(self) -> List[float]:
         """
         Generate exponential backoff delays with fixed parameters.
@@ -111,37 +144,7 @@ class QueueRetryConfig:
         
         # Check if elapsed time plus next delay would exceed total timeout
         return (elapsed + next_delay) > self.timeout
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert configuration to dictionary.
         
-        Returns:
-            Dictionary representation of the configuration
-        """
-        return {
-            "max_attempts": self.max_attempts,
-            "delays": self.delays,
-            "timeout": self.timeout
-        }
-    
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'QueueRetryConfig':
-        """
-        Create instance from dictionary.
-        
-        Args:
-            data: Dictionary containing retry configuration
-            
-        Returns:
-            QueueRetryConfig instance
-        """
-        return cls(
-            max_attempts=data.get("max_attempts", 5),
-            delays=data.get("delays"),
-            timeout=data.get("timeout")
-        )
-    
     @classmethod
     def fixed(cls, delay: float, max_attempts: int = 5, timeout: Optional[float] = None) -> 'QueueRetryConfig':
         """

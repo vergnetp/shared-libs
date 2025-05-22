@@ -2,8 +2,9 @@ import threading
 import time
 from typing import Any, Dict, List, Optional, Union, Callable, Type
 
+from ...config.base_config import BaseConfig
 
-class QueueMetricsConfig:
+class QueueMetricsConfig(BaseConfig):
     """
     Configuration for metrics collection and reporting.
     
@@ -22,21 +23,51 @@ class QueueMetricsConfig:
             enabled: Whether metrics collection is enabled (default: True)
             log_threshold: Threshold for logging metric changes, as a fraction (default: 0.1 = 10%)
         """
-        self.enabled = enabled
-        self.log_threshold = log_threshold
+        self._enabled = enabled
+        self._log_threshold = log_threshold
         
         # Initialize metrics storage
-        self._metrics = {} if self.enabled else None
-        self._metrics_lock = threading.RLock()  
-        self._metrics['enqueued'] = 0
-        self._metrics['processed'] = 0
-        self._metrics['failed'] = 0
-        self._metrics['retried'] = 0
-        self._metrics['timeouts'] = 0
+        self._metrics = {} if self._enabled else None
+        self._metrics_lock = threading.RLock()
         
-        # Initialize system start time
-        if self.enabled:
+        if self._enabled:
+            self._metrics['enqueued'] = 0
+            self._metrics['processed'] = 0
+            self._metrics['failed'] = 0
+            self._metrics['retried'] = 0
+            self._metrics['timeouts'] = 0
             self._metrics['system_start_time'] = time.time()
+        
+        super().__init__()
+        self._validate_config()
+    
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
+    
+    @property
+    def log_threshold(self) -> float:
+        return self._log_threshold
+    
+    def _validate_config(self):
+        """Validate configuration."""
+        if self._log_threshold < 0 or self._log_threshold > 1:
+            raise ValueError(f"log_threshold must be between 0 and 1, got {self._log_threshold}")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert configuration to dictionary."""
+        return {
+            "enabled": self._enabled,
+            "log_threshold": self._log_threshold
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'QueueMetricsConfig':
+        """Create instance from dictionary."""
+        return cls(
+            enabled=data.get('enabled', True),
+            log_threshold=data.get('log_threshold', 0.1)
+        )
 
     def update_metric(self, metric_name: str, value: Any = 1, force_log: bool = False, logger=None):
         """
@@ -202,14 +233,3 @@ class QueueMetricsConfig:
             
             return metrics
     
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert configuration to dictionary.
-        
-        Returns:
-            Dictionary representation of the configuration
-        """
-        return {
-            "enabled": self.enabled,
-            "log_threshold": self.log_threshold
-        }

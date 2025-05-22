@@ -41,3 +41,4 @@ class AppConfig(BaseModel):
     redis: Optional[RedisConfig] = Field(None, description="Redis configuration")
     opensearch: Optional[OpenSearchConfig] = Field(None, description="OpenSearch configuration")
     deployment: DeploymentConfig = Field(default_factory=DeploymentConfig, description="Deployment configuration")
+

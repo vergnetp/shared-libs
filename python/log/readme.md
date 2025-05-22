@@ -130,7 +130,7 @@ debug("Custom categorization",
 
 ```python
 from myapp.log import initialize_logger
-from myapp.log.logger_config import LogLevel
+from myapp.log.config.logger_config import LogLevel
 
 # Initialize with custom settings
 logger = initialize_logger(

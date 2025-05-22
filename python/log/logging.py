@@ -12,7 +12,7 @@ from typing import Optional, Dict, Any, Union, List
 import atexit
 from .. import utils
 from ..queue import QueueConfig, QueueManager, QueueRetryConfig
-from .logger_config import LoggerConfig, LogLevel
+from .config.logger_config import LoggerConfig, LogLevel
 
 
 class Logger:

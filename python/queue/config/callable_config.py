@@ -1,9 +1,11 @@
 import threading
 import importlib
-from typing import Dict, Optional, Callable
+from typing import Dict, Optional, Callable, Any
 
 
-class QueueCallableConfig:
+from ...config.base_config import BaseConfig
+
+class QueueCallableConfig(BaseConfig):
     """
     Configuration for managing callable functions within the queue system.
     
@@ -17,44 +19,59 @@ class QueueCallableConfig:
         Args:
             logger: Optional logger for error reporting
         """
-        self.registry = {}
+        self._logger = logger
+        self._registry = {}
         self._registry_lock = threading.RLock()
-        self.logger = logger
         
+        super().__init__()
+    
+    @property
+    def logger(self):
+        return self._logger
+    
+    @property
+    def registry(self):
+        return self._registry
+    
+    def _validate_config(self):
+        """No validation needed for callable config."""
+        pass
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'QueueCallableConfig':
+        """Create instance from dictionary."""
+        instance = cls()
+        # Registry will be populated dynamically
+        return instance
+
+    def to_dict(self) -> Dict[str, Dict[str, str]]:
+            """Convert configuration to dictionary."""
+            with self._registry_lock:
+                return {
+                    key: {
+                        "name": key.split(".")[-1],
+                        "module": ".".join(key.split(".")[:-1]),
+                    }
+                    for key in self._registry  # ← Fix: use private attribute
+                }
+                  
     def register(self, callable_func: Callable) -> str:
-        """
-        Register a callable function for later use.
-        
-        Args:
-            callable_func: The callable function to register
-            
-        Returns:
-            Key used for the registry
-        """
+        """Register a callable function for later use."""
         with self._registry_lock:
             key = f"{callable_func.__module__}.{callable_func.__name__}"
-            self.registry[key] = callable_func
+            self._registry[key] = callable_func  # ← Fix: use private attribute
             return key
 
     def get(self, name: str, module: str) -> Optional[Callable]:
-        """
-        Get a callable by name and module, attempting to import it if not found.
-        
-        Args:
-            name: Name of the callable
-            module: Module name
-            
-        Returns:
-            Callable function or None if not found or import fails
-        """
+        """Get a callable by name and module, attempting to import it if not found."""
         with self._registry_lock:
             key = f"{module}.{name}"
             
             # Return cached callable if available
-            if key in self.registry:
+            if key in self._registry:  # ← Fix: use private attribute
                 if self.logger:
                     self.logger.debug(f"Found callable in registry: {key}")
-                return self.registry[key]
+                return self._registry[key]  # ← Fix: use private attribute
             
             # Not found in registry, try dynamic import
             try:
@@ -65,7 +82,7 @@ class QueueCallableConfig:
                 
                 # Register for future use
                 if callable(callable_func):
-                    self.registry[key] = callable_func
+                    self._registry[key] = callable_func  # ← Fix: use private attribute
                     if self.logger:
                         self.logger.debug(f"Successfully imported and registered callable: {key}")
                     return callable_func
@@ -91,9 +108,9 @@ class QueueCallableConfig:
                                 callable_func = getattr(mod, name)
                                 if callable(callable_func):
                                     shorter_key = f"{try_module}.{name}"
-                                    self.registry[shorter_key] = callable_func
+                                    self._registry[shorter_key] = callable_func  # ← Fix: use private attribute
                                     # Also register with original key for future lookups
-                                    self.registry[key] = callable_func
+                                    self._registry[key] = callable_func  # ← Fix: use private attribute
                                     if self.logger:
                                         self.logger.debug(f"Found callable in parent module: {try_module}")
                                     return callable_func
@@ -103,19 +120,3 @@ class QueueCallableConfig:
             if self.logger:
                 self.logger.warning(f"Callable not found: {key}")
             return None
-
-    def to_dict(self) -> Dict[str, Dict[str, str]]:
-        """
-        Convert configuration to dictionary.
-        
-        Returns:
-            Dictionary representation of the registered callables
-        """
-        with self._registry_lock:
-            return {
-                key: {
-                    "name": key.split(".")[-1],
-                    "module": ".".join(key.split(".")[:-1]),
-                }
-                for key in self.registry
-            }
