@@ -119,7 +119,7 @@ Example:
 
 - Add **caching layers** for frequent reads.
 - Use **queues and batch processing** for writes.
-- Accept **eventual inconsistency** for massive scale.
+- Accept **eventual consistency** for massive scale.
 
 **⚡ This requires adding caching and async write strategies to the codebase.**
 
@@ -275,7 +275,10 @@ config = DatabaseConfig(
     password="secret",
     alias="main_db",
     env="dev",
-    connection_acquisition_timeout=10.0  # Optional timeout setting
+    connection_acquisition_timeout=10.0,  # Optional timeout setting
+    pool_creation_timeout=30.0,           # Optional timeout setting
+    query_execution_timeout=60.0,         # Optional timeout setting
+    connection_creation_timeout=15.0      # Optional timeout setting
 )
 
 db = DatabaseFactory.create_database("postgres", config)
@@ -681,6 +684,7 @@ Base configuration object for databases with comprehensive timeout settings.
 | Decorators | Method | Args | Returns | Category | Description |
 |------------|--------|------|---------|----------|-------------|
 | | `__init__` | `database: str`, `host: str="localhost"`, `port: int=5432`, `user: str=None`, `password: str=None`, `alias: str=None`, `env: str='prod'`, `connection_acquisition_timeout: float=10.0`, `pool_creation_timeout: float=30.0`, `query_execution_timeout: float=60.0`, `connection_creation_timeout: float=15.0` | | Initialization | Initializes database configuration with connection parameters and comprehensive timeout settings. |
+
 </details>
 
 <br>
@@ -708,7 +712,7 @@ Factory for creating database instances.
 
 </div>
 
-The factory (or direct instanciation) will then give you a:
+The factory (or direct instantiation) will then give you a:
 
 <div style="background-color:#f8f9fa; border:1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 24px;margin-top: 24px;">
 
@@ -773,15 +777,15 @@ Abstract base class defining the interface for asynchronous database connections
 | <code style="background-color:lightpink">@async_method</code> <code style="background-color:gainsboro">@abstractmethod</code> | `rollback_transaction` | | `None` | Transaction Management | Rolls back the current transaction. |
 | <code style="background-color:lightpink">@async_method</code> <code style="background-color:gainsboro">@abstractmethod</code> | `close` | | `None` | Connection Management | Closes the database connection. |
 | <code style="background-color:lightpink">@async_method</code> <code style="background-color:gainsboro">@abstractmethod</code> | `get_version_details` | | `Dict[str, str]` | Diagnostic | Returns {'db_server_version', 'db_driver'} |
-| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `get_entity` | `entity_name: str`, `entity_id: str`, `include_deleted: bool=False`, `deserialize: bool=False` | `Optional[Dict[str, Any]]` | Entity | Fetch an entity by ID. Returns None if not found. If deserialize=True, converts field values to appropriate Python types based on metadata. |
-| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `save_entity` | `entity_name: str`, `entity: Dict[str, Any]`, `user_id: str=None`, `comment: str=None`, `timeout: Optional[float] = 60` | `Dict[str, Any]` | Entity | Save an entity (create or update). Adds id, created_at, updated_at, and other system fields. Uses upsert to efficiently handle both new entities and updates. Adds an entry to the history table. |
-| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `save_entities` | `entity_name: str`, `entities: List[Dict[str, Any]]`, `user_id: str=None`, `comment: str=None`, `timeout: Optional[float] = 60` | `List[Dict[str, Any]]` | Entity | Save a list of entities in bulk. Processes each entity similar to save_entity. Returns the list of saved entities with their IDs. |
-| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `delete_entity` | `entity_name: str`, `entity_id: str`, `user_id: str=None`, `permanent: bool=False` | `bool` | Entity | Delete an entity. By default performs a soft delete (sets deleted_at), but can permanently remove the record if permanent=True. |
-| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `restore_entity` | `entity_name: str`, `entity_id: str`, `user_id: str=None` | `bool` | Entity | Restore a soft-deleted entity by clearing the deleted_at field. Returns True if successful. |
-| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `find_entities` | `entity_name: str`, `where_clause: str=None`, `params: Tuple=None`, `order_by: str=None`, `limit: int=None`, `offset: int=None`, `include_deleted: bool=False`, `deserialize: bool=False` | `List[Dict[str, Any]]` | Entity | Query entities with flexible filtering. Returns a list of matching entities. |
-| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `count_entities` | `entity_name: str`, `where_clause: str=None`, `params: Tuple=None`, `include_deleted: bool=False` | `int` | Entity | Count entities matching the criteria. |
-| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `get_entity_history` | `entity_name: str`, `entity_id: str`, `deserialize: bool=False` | `List[Dict[str, Any]]` | Entity | Get the history of all previous versions of an entity. Returns a list of historical entries ordered by version. |
-| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `get_entity_by_version` | `entity_name: str`, `entity_id: str`, `version: int`, `deserialize: bool=False` | `Optional[Dict[str, Any]]` | Entity | Get a specific version of an entity from its history or None if not found. |
+| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `get_entity` | `entity_name: str`, `entity_id: str`, `include_deleted: bool = False`, `deserialize: bool = False` | `Optional[Dict[str, Any]]` | Entity | Fetch an entity by ID. Returns None if not found. If deserialize=True, converts field values to appropriate Python types based on metadata. |
+| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `save_entity` | `entity_name: str`, `entity: Dict[str, Any]`, `user_id: Optional[str] = None`, `comment: Optional[str] = None`, `timeout: Optional[float] = 60.0` | `Dict[str, Any]` | Entity | Save an entity (create or update). Adds id, created_at, updated_at, and other system fields. Uses upsert to efficiently handle both new entities and updates. Adds an entry to the history table. |
+| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `save_entities` | `entity_name: str`, `entities: List[Dict[str, Any]]`, `user_id: Optional[str] = None`, `comment: Optional[str] = None`, `timeout: Optional[float] = 60.0` | `List[Dict[str, Any]]` | Entity | Save a list of entities in bulk. Processes each entity similar to save_entity. Returns the list of saved entities with their IDs. |
+| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `delete_entity` | `entity_name: str`, `entity_id: str`, `user_id: Optional[str] = None`, `permanent: bool = False` | `bool` | Entity | Delete an entity. By default performs a soft delete (sets deleted_at), but can permanently remove the record if permanent=True. |
+| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `restore_entity` | `entity_name: str`, `entity_id: str`, `user_id: Optional[str] = None` | `bool` | Entity | Restore a soft-deleted entity by clearing the deleted_at field. Returns True if successful. |
+| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `find_entities` | `entity_name: str`, `where_clause: Optional[str] = None`, `params: Optional[Tuple] = None`, `order_by: Optional[str] = None`, `limit: Optional[int] = None`, `offset: Optional[int] = None`, `include_deleted: bool = False`, `deserialize: bool = False` | `List[Dict[str, Any]]` | Entity | Query entities with flexible filtering. Returns a list of matching entities. |
+| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `count_entities` | `entity_name: str`, `where_clause: Optional[str] = None`, `params: Optional[Tuple] = None`, `include_deleted: bool = False` | `int` | Entity | Count entities matching the criteria. |
+| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `get_entity_history` | `entity_name: str`, `entity_id: str`, `deserialize: bool = False` | `List[Dict[str, Any]]` | Entity | Get the history of all previous versions of an entity. Returns a list of historical entries ordered by version. |
+| <code style="background-color:lightpink">@async_method</code> <code style="background-color:yellow">@with_timeout</code> <code style="background-color:lightgreen">@auto_transaction</code> | `get_entity_by_version` | `entity_name: str`, `entity_id: str`, `version: int`, `deserialize: bool = False` | `Optional[Dict[str, Any]]` | Entity | Get a specific version of an entity from its history or None if not found. |
 | | `register_serializer` | `type_name: str`, `serializer_func: Callable`, `deserializer_func: Callable` | `None` | Serialization | Register custom serialization functions for handling non-standard types. The `serializer_func` should convert the custom type to a string, and the `deserializer_func` should convert the string back to the custom type. |
 
 </details>
@@ -799,6 +803,13 @@ Abstract base class defining the interface for asynchronous database connections
 | | `_is_idle` | `timeout_seconds: int=1800` | `bool` | Connection Management | Check if connection has been idle for too long (default 30 mins). |
 | | `_mark_leaked` | | | Connection Management | Mark this connection as leaked. |
 | <code style="background-color:gainsboro">@property</code> | `_is_leaked` | | `bool` | Connection Management | Check if this connection has been marked as leaked. |
+| <code style="background-color:lightpink">@async_method</code> | `_get_field_names` | `entity_name: str`, `is_history: bool = False` | `List[str]` | Entity Framework | Get field names for an entity table from schema or metadata cache. |
+| <code style="background-color:lightpink">@async_method</code> | `_ensure_entity_schema` | `entity_name: str`, `sample_entity: Optional[Dict[str, Any]] = None` | `None` | Entity Framework | Ensure entity tables and metadata exist, creating them if necessary. |
+| <code style="background-color:lightpink">@async_method</code> | `_update_entity_metadata` | `entity_name: str`, `entity: Dict[str, Any]` | `None` | Entity Framework | Update metadata table based on entity fields and add missing columns to tables. |
+| <code style="background-color:lightpink">@async_method</code> | `_get_entity_metadata` | `entity_name: str`, `use_cache: bool = True` | `Dict[str, str]` | Entity Framework | Get metadata for an entity type, mapping field names to types. |
+| <code style="background-color:lightpink">@async_method</code> | `_add_to_history` | `entity_name: str`, `entity: Dict[str, Any]`, `user_id: Optional[str] = None`, `comment: Optional[str] = None` | `None` | Entity Framework | Add an entry to entity history table with version tracking. |
+| <code style="background-color:lightpink">@async_method</code> | `_check_column_exists` | `table_name: str`, `column_name: str` | `bool` | Entity Framework | Check if a column exists in a table, handling different database formats. |
+
 </details>
 
 <br>
@@ -813,7 +824,6 @@ Notes:
 * Entity values are automatically serialized to database types, but by default are not deserialized (deserialize=False)
 * Set deserialize=True when you need to perform computation on the entity data in your application logic
 * The `SyncConnection` class exposes the same public methods.
-
 
 </div>
 
@@ -854,6 +864,7 @@ Class to manage the lifecycle of asynchronous connection pools with comprehensiv
 | <code style="background-color:gainsboro">@property</code> | `_pool` | | `Optional[Any]` | Pool Management | Gets the connection pool for this instance's configuration. |
 | <code style="background-color:gainsboro">@property</code> | `_pool_lock` | | `asyncio.Lock` | Concurrency | Gets the lock for this instance's configuration to ensure thread-safe initialization. |
 | <code style="background-color:gainsboro">@property</code> | `_connections` | | `Set[AsyncConnection]` | Connection Management | Gets the set of active connections for this instance's configuration. |
+
 </details>
 
 <br>
@@ -874,4 +885,3 @@ Class to manage the lifecycle of asynchronous connection pools with comprehensiv
 | | `auto_transaction` | `func` | `Callable` | Transaction | Decorator that automatically wraps a function in a transaction. If a transaction is already in progress, uses the existing transaction. |
 
 </div>
-
