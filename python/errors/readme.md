@@ -53,6 +53,138 @@ except Error as e:
     return {"error": e.user_message()}
 ```
 
+## When to Add Granular Error Handling
+
+### The Golden Rule
+
+**Only add granular error handling when the method name and location aren't sufficient to understand what failed.**
+
+Your `@try_catch` decorator already captures:
+- **Method name**: `_prepare_entity`, `_execute_statement`, `authenticate_user`
+- **Class name**: `UserService`, `DatabaseConnection` 
+- **Line number**: Exact location of the failure
+- **Original exception**: The meaningful error from libraries/drivers
+
+### Don't Over-Engineer
+
+Most methods don't need additional error handling because they have descriptive names and single responsibilities:
+
+```python
+# ❌ DON'T do this - redundant error wrapping
+@try_catch
+def save_user(self, user_data):
+    try:
+        prepared = self._prepare_entity('users', user_data)  # Clear method name
+    except Exception as e:
+        raise Error(e, description="Failed during entity preparation")  # Redundant!
+    
+    try:
+        await self._ensure_schema('users')  # Clear method name
+    except Exception as e:
+        raise Error(e, description="Failed during schema operations")  # Redundant!
+
+# ✅ DO this - let @try_catch handle it
+@try_catch(description="Failed to save user", action="Check user data format")
+def save_user(self, user_data):
+    prepared = self._prepare_entity('users', user_data)  # If this fails, you'll see "_prepare_entity failed"
+    await self._ensure_schema('users')  # If this fails, you'll see "_ensure_schema failed"
+```
+
+    Exactly! You've identified the other key case. Here's the corrected section:
+
+
+## When to Add Granular Error Handling
+
+### The Golden Rule
+
+**Only add granular error handling when the method name and location aren't sufficient to understand what failed.**
+
+Your `@try_catch` decorator already captures:
+- **Method name**: `_prepare_entity`, `_execute_statement`, `authenticate_user`
+- **Class name**: `UserService`, `DatabaseConnection` 
+- **Line number**: Exact location of the failure
+- **Original exception**: The meaningful error from libraries/drivers
+
+### Don't Over-Engineer
+
+Most methods don't need additional error handling because they have descriptive names and single responsibilities:
+
+```python
+# ❌ DON'T do this - redundant error wrapping
+@try_catch
+def save_user(self, user_data):
+    try:
+        prepared = self._prepare_entity('users', user_data)  # Clear method name
+    except Exception as e:
+        raise Error(e, description="Failed during entity preparation")  # Redundant!
+    
+    try:
+        await self._ensure_schema('users')  # Clear method name
+    except Exception as e:
+        raise Error(e, description="Failed during schema operations")  # Redundant!
+
+# ✅ DO this - let @try_catch handle it
+@try_catch(description="Failed to save user", action="Check user data format")
+def save_user(self, user_data):
+    prepared = self._prepare_entity('users', user_data)  # If this fails, you'll see "_prepare_entity failed"
+    await self._ensure_schema('users')  # If this fails, you'll see "_ensure_schema failed"
+```
+
+### When Granular Handling IS Needed
+
+Add granular error handling only in these cases:
+
+1. **Loop operations** - Need to know which iteration failed:
+```python
+@try_catch
+def process_batch(self, items):
+    for i, item in enumerate(items):
+        try:
+            await self._process_item(item)  # Method name is clear
+        except Exception as e:
+            # Add context because "which item failed" isn't obvious from the stack trace
+            raise Error(e, description=f"Failed processing item {i+1} of {len(items)}")
+```
+
+2. **Long methods that don't call other methods** - When line number alone isn't enough:
+```python
+@try_catch
+def complex_calculation(self, data):
+    # Phase 1: Input validation (lines 3-15)
+    try:
+        if not isinstance(data, dict):
+            raise ValueError("Data must be dictionary")
+        required_fields = ['amount', 'rate', 'period']
+        for field in required_fields:
+            if field not in data:
+                raise ValueError(f"Missing field: {field}")
+        # ... more validation logic
+    except Exception as e:
+        raise Error(e, description="Failed during input validation phase")
+    
+    # Phase 2: Mathematical calculations (lines 20-40)  
+    try:
+        base_amount = float(data['amount'])
+        interest_rate = float(data['rate']) / 100
+        # ... complex mathematical operations
+        result = base_amount * (1 + interest_rate) ** periods
+    except Exception as e:
+        raise Error(e, description="Failed during mathematical calculations")
+    
+    # Phase 3: Result formatting (lines 45-60)
+    try:
+        formatted_result = {
+            'principal': base_amount,
+            'interest': result - base_amount,
+            'total': result
+        }
+        # ... more formatting logic
+        return formatted_result
+    except Exception as e:
+        raise Error(e, description="Failed during result formatting")
+```
+
+
 ### Error Classes
 
 #### Base Error
