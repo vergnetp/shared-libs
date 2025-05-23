@@ -37,8 +37,8 @@ class Logger:
         # Thread synchronization
         self._file_lock = threading.RLock()
         
-        # Initialize QueueConfig if Redis is enabled
-        if self.config.use_redis:
+        # Initialize QueueConfig if Redis is enabled and defined
+        if self.config.use_redis and self.config.redis_url:
             try:
                 self.queue_config = QueueConfig(
                     redis_url=self.config.redis_url,
@@ -52,7 +52,12 @@ class Logger:
                 if not self.config.quiet_init:
                     print(f"Failed to initialize Redis: {e}. Falling back to local logging only.")
                 self.config.use_redis = False
-        
+        else:
+            if self.config.use_redis and not self.config.redis_url:
+                if not self.config.quiet_init:
+                    print("Warning: use_redis is True but redis_url is not provided. Disabling Redis logging.")
+                self.config._use_redis = False
+
         # Ensure log directory exists if not using default path
         if self.config.log_dir is not None:
             self._ensure_log_dir()
@@ -195,11 +200,11 @@ class Logger:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
         
         # Add request_id if available and not already present
-        if 'request_id' not in combined_context:
+        """if 'request_id' not in combined_context:
             from ..framework.context import request_id_var
             request_id = request_id_var.get()
             if request_id:
-                combined_context['request_id'] = request_id
+                combined_context['request_id'] = request_id """
         
         # Add standard fields to context if not already present
         if 'timestamp' not in combined_context:

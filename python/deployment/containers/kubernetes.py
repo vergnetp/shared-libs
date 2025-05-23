@@ -2,7 +2,8 @@ import asyncio
 from typing import Dict, Any, List
 
 from ..config import DeploymentConfig, ConfigurationResolver
-from .interface_container import ContainerBuildSpec, ContainerImage, ContainerRuntimeSpec, ContainerRunner, ContainerImageBuilder
+from ..types import ContainerBuildSpec, ContainerImage, ContainerRuntimeSpec
+from .interface import ContainerRunner, ContainerImageBuilder
 
 class KubernetesImageBuilder(ContainerImageBuilder):
     """Kubernetes-specific implementation using buildah or similar."""

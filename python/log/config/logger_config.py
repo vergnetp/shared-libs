@@ -102,7 +102,11 @@ class LoggerConfig(BaseConfig):
     @property
     def redis_url(self) -> Optional[str]:
         return self._redis_url
-    
+
+    @property
+    def quiet_init(self) -> bool:
+        return self._quiet_init
+       
     @property
     def log_dir(self) -> Optional[str]:
         return self._log_dir

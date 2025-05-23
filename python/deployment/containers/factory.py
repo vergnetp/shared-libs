@@ -1,9 +1,10 @@
 from typing import List
 
 from ..config import DeploymentConfig
-from .interface_container import ContainerImageBuilder, ContainerRuntime, ContainerRunner, ContainerRuntimeSpec, ContainerImage
-from .docker_container import DockerImageBuilder, DockerRunner
-from .kubernetes_container import KubernetesImageBuilder, KubernetesRunner
+from ..types import ContainerRuntime, ContainerImage, ContainerRuntimeSpec
+from .interface import ContainerRunner, ContainerImageBuilder
+from .docker import DockerImageBuilder, DockerRunner
+from .kubernetes import KubernetesImageBuilder, KubernetesRunner
 
 class ContainerRuntimeFactory:
     """Factory to create appropriate runtime implementations."""

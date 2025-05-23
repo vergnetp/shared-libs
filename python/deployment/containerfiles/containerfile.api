@@ -16,12 +16,14 @@ COPY src/ ./src/
 COPY python/ ./python/
 
 # Build arguments (injected from deployment config)
-ARG APP_NAME
-ARG ENVIRONMENT
+ARG app_name
+ARG environment
+ARG version
 
 # Set environment variables
-ENV APP_NAME=${APP_NAME}
-ENV ENVIRONMENT=${ENVIRONMENT}
+ENV APP_NAME=${app_name}
+ENV ENVIRONMENT=${environment}
+ENV VERSION=${version}
 ENV PYTHONPATH=/app
 
 # Create non-root user

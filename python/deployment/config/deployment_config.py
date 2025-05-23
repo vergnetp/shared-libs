@@ -2,7 +2,7 @@ import os
 from typing import List, Optional, Dict, Any
 
 from ...config.base_config import BaseConfig
-from ..containers import ContainerRuntime, ContainerImage
+from ..types import ContainerRuntime, ContainerImage
 
 class DeploymentConfig(BaseConfig):
     """
@@ -24,7 +24,6 @@ class DeploymentConfig(BaseConfig):
         
         # Configuration injection (same as before)
         config_injection: Optional[Dict[str, Any]] = None,
-        config_mapping: Optional[Dict[str, str]] = None,
         sensitive_configs: Optional[List[str]] = None,
         
         # Runtime selection
@@ -79,11 +78,7 @@ class DeploymentConfig(BaseConfig):
                 
             config_injection (Dict[str, Any], optional): Configuration objects to inject into builds.
                 These objects provide values that can be referenced in config_mapping.
-                Example: {"db": database_config, "app": app_config}
-                
-            config_mapping (Dict[str, str], optional): Maps build argument names to configuration paths.
-                Uses dot notation to reference properties from config_injection objects.
-                Example: {"DB_HOST": "db.host", "APP_NAME": "app.name"}
+                Example: {"db": database_config, "app": app_config}  
                 
             sensitive_configs (List[str], optional): List of configuration paths containing sensitive data.
                 These values will be masked in logs and dry-run output for security.
@@ -142,7 +137,6 @@ class DeploymentConfig(BaseConfig):
             >>> config = DeploymentConfig(
             ...     api_servers=["web1", "web2"],
             ...     config_injection={"db": db_config},
-            ...     config_mapping={"DATABASE_URL": "db.connection_string"},
             ...     sensitive_configs=["db.password"]
             ... )
         """
@@ -161,8 +155,7 @@ class DeploymentConfig(BaseConfig):
         self._build_args = build_args or {}
         self._image_templates = image_templates or {}
         
-        self._config_injection = config_injection or {}
-        self._config_mapping = config_mapping or {}
+        self._config_injection = config_injection or {}        
         self._sensitive_configs = set(sensitive_configs or [])
         
         self._container_runtime = container_runtime

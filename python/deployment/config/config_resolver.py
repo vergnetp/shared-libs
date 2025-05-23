@@ -49,10 +49,10 @@ class ConfigurationResolver:
                 raise ValueError(f"Property '{prop}' not found on {type(current_obj).__name__}")
         
         return current_obj
-    
+
     def resolve_all_config_values(self, mask_sensitive: bool = True) -> Dict[str, str]:
         """
-        Resolve all configured config mappings to their values.
+        Resolve all configured config mappings to their values using reflection.
         
         Returns:
             Dictionary of resolved configuration values
@@ -62,32 +62,87 @@ class ConfigurationResolver:
         # Start with static build args
         resolved.update(self.config.build_args)
         
-        # Add resolved configuration values
+        # Use reflection to automatically discover and inject config values
+        resolved.update(self._resolve_by_reflection(mask_sensitive))
+        
+        # Add manual config mappings (for overrides or special cases)
         for build_arg_name, config_path in self.config.config_mapping.items():
             try:
-                value = self.resolve_config_value(config_path)
-                
-                # Convert to string for build args
-                if value is None:
-                    resolved[build_arg_name] = ""
-                elif isinstance(value, bool):
-                    resolved[build_arg_name] = "true" if value else "false"
+                if '{' in config_path and '}' in config_path:
+                    resolved_value = self._resolve_interpolated_string(config_path)
                 else:
-                    resolved[build_arg_name] = str(value)
+                    resolved_value = self.resolve_config_value(config_path)
+                
+                if resolved_value is None:
+                    resolved[build_arg_name] = ""
+                elif isinstance(resolved_value, bool):
+                    resolved[build_arg_name] = "true" if resolved_value else "false"
+                else:
+                    resolved[build_arg_name] = str(resolved_value)
                     
             except ValueError as e:
                 print(f"Warning: Could not resolve config path '{config_path}': {e}")
                 resolved[build_arg_name] = ""
         
-        # Mask sensitive values if requested
-        if mask_sensitive:
-            for arg_name, config_path in self.config.config_mapping.items():
-                if config_path in self.config._sensitive_configs:
-                    if arg_name in resolved:
-                        resolved[arg_name] = "***MASKED***"
+        return resolved
+
+    def _resolve_by_reflection(self, mask_sensitive: bool = True) -> Dict[str, str]:
+        """Use reflection to automatically inject all config properties."""
+        resolved = {}
+        
+        for config_name, config_obj in self.config.config_injection.items():
+            # Get all public properties
+            for attr_name in dir(config_obj):
+                if attr_name.startswith('_') or callable(getattr(config_obj, attr_name, None)):
+                    continue
+                    
+                try:
+                    value = getattr(config_obj, attr_name)
+                    
+                    # Convert to string
+                    if value is None:
+                        str_value = ""
+                    elif isinstance(value, bool):
+                        str_value = "true" if value else "false"
+                    else:
+                        str_value = str(value)
+                    
+                    # Check for sensitive data
+                    config_path = f"{config_name}.{attr_name}"
+                    if mask_sensitive and config_path in self.config._sensitive_configs:
+                        str_value = "***MASKED***"
+                    
+                    # Simple mapping: property name = build arg name
+                    resolved[attr_name] = str_value
+                    
+                except Exception as e:
+                    print(f"Warning: Could not resolve {config_name}.{attr_name}: {e}")
         
         return resolved
-    
+
+    def _resolve_interpolated_string(self, template: str) -> str:
+        """
+        Resolve a string with interpolated config values.
+        Example: "redis://:{redis.password}@{redis.host}:{redis.port}/0"
+        """
+        import re
+        
+        # Find all {config.path} patterns
+        pattern = r'\{([^}]+)\}'
+        matches = re.findall(pattern, template)
+        
+        result = template
+        for match in matches:
+            try:
+                value = self.resolve_config_value(match)
+                result = result.replace(f'{{{match}}}', str(value))
+            except ValueError as e:
+                print(f"Warning: Could not resolve interpolated value '{match}': {e}")
+                # Keep the placeholder if resolution fails
+                pass
+        
+        return result
+      
     def validate_config_mappings(self) -> List[str]:
         """
         Validate that all config mappings can be resolved.

@@ -1,0 +1,43 @@
+2025-05-23 09:52:19.479 [INFO] [INFO] deploy - deploy -  Deploying containers using kubernetes runtime | component=deploy subcomponent=deploy service_name=service-28784 environment=dev
+2025-05-23 09:52:19.482 [INFO] [INFO] deploy - _deploy_app_service -  [DRY RUN] Would build and deploy: prod-registry.company.com/api:1.0.0 | component=deploy subcomponent=_deploy_app_service service_name=service-28784 environment=dev
+2025-05-23 09:52:19.484 [ERROR] [ERROR] deploy - deploy -  Failed to deploy nginx: name 'log' is not defined | component=deploy subcomponent=deploy service_name=service-28784 environment=dev
+2025-05-23 09:56:18.249 [INFO] [INFO] deploy - deploy -  Deploying containers using kubernetes runtime | component=deploy subcomponent=deploy service_name=service-27180 environment=dev
+2025-05-23 09:56:18.258 [INFO] [INFO] deploy - _deploy_app_service -  [DRY RUN] Would build and deploy: prod-registry.company.com/api:1.0.0 | component=deploy subcomponent=_deploy_app_service service_name=service-27180 environment=dev
+2025-05-23 09:56:18.259 [INFO] [INFO] deploy - _deploy_nginx_service -  [DRY RUN] Would deploy nginx with config: | component=deploy subcomponent=_deploy_nginx_service service_name=service-27180 environment=dev
+2025-05-23 09:56:18.267 [INFO] [INFO] deploy - _deploy_nginx_service -  
+server {
+    listen 80;
+    server_name api.company.com www.company.com app.company.com;
+    return 301 https://$server_name$request_uri;
+}
+
+upstream api_backend {
+    server prod-api1.company.com:80... | component=deploy subcomponent=_deploy_nginx_service service_name=service-27180 environment=dev
+2025-05-23 10:13:06.535 [INFO] [INFO] deploy - deploy -  Deploying containers using kubernetes runtime | component=deploy subcomponent=deploy service_name=service-14224 environment=dev
+2025-05-23 10:13:06.539 [INFO] [INFO] deploy - _deploy_app_service -  [DRY RUN] Would build and deploy: prod-registry.company.com/api:1.0.0 | component=deploy subcomponent=_deploy_app_service service_name=service-14224 environment=dev
+2025-05-23 10:13:06.539 [INFO] [INFO] deploy - _deploy_app_service -  [DRY RUN] Would build and deploy: prod-registry.company.com/worker-queue:1.0.0 | component=deploy subcomponent=_deploy_app_service service_name=service-14224 environment=dev
+2025-05-23 10:13:06.540 [INFO] [INFO] deploy - _deploy_app_service -  [DRY RUN] Would build and deploy: prod-registry.company.com/worker-db:1.0.0 | component=deploy subcomponent=_deploy_app_service service_name=service-14224 environment=dev
+2025-05-23 10:13:06.540 [INFO] [INFO] deploy - _deploy_nginx_service -  [DRY RUN] Would deploy nginx with config: | component=deploy subcomponent=_deploy_nginx_service service_name=service-14224 environment=dev
+2025-05-23 10:13:06.541 [INFO] [INFO] deploy - _deploy_nginx_service -  
+server {
+    listen 80;
+    server_name api.company.com www.company.com app.company.com;
+    return 301 https://$server_name$request_uri;
+}
+
+upstream api_backend {
+    server prod-api1.company.com:80... | component=deploy subcomponent=_deploy_nginx_service service_name=service-14224 environment=dev
+2025-05-23 11:36:33.561 [INFO] [INFO] deploy - deploy -  Deploying containers using kubernetes runtime | component=deploy subcomponent=deploy service_name=service-29100 environment=dev
+2025-05-23 11:36:33.562 [INFO] [INFO] deploy - _deploy_app_service -  [DRY RUN] Would build and deploy: prod-registry.company.com/api:1.0 | component=deploy subcomponent=_deploy_app_service service_name=service-29100 environment=dev
+2025-05-23 11:36:33.563 [INFO] [INFO] deploy - _deploy_app_service -  [DRY RUN] Would build and deploy: prod-registry.company.com/worker-queue:1.0 | component=deploy subcomponent=_deploy_app_service service_name=service-29100 environment=dev
+2025-05-23 11:36:33.564 [INFO] [INFO] deploy - _deploy_app_service -  [DRY RUN] Would build and deploy: prod-registry.company.com/worker-db:1.0 | component=deploy subcomponent=_deploy_app_service service_name=service-29100 environment=dev
+2025-05-23 11:36:33.571 [INFO] [INFO] deploy - _deploy_nginx_service -  [DRY RUN] Would deploy nginx with config: | component=deploy subcomponent=_deploy_nginx_service service_name=service-29100 environment=dev
+2025-05-23 11:36:33.572 [INFO] [INFO] deploy - _deploy_nginx_service -  
+server {
+    listen 80;
+    server_name api.company.com www.company.com app.company.com;
+    return 301 https://$server_name$request_uri;
+}
+
+upstream api_backend {
+    server prod-api1.company.com:80... | component=deploy subcomponent=_deploy_nginx_service service_name=service-29100 environment=dev

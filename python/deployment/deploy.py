@@ -2,7 +2,9 @@ import time, os
 from typing import Dict, Any, List
 
 from .config import DeploymentConfig, ConfigurationResolver
-from .containers import ContainerBuildSpec, ContainerRuntimeFactory, ContainerRuntimeSpec
+from .types import ContainerBuildSpec,  ContainerRuntimeSpec
+from .containers.factory import ContainerRuntimeFactory
+from .containers.interface import ContainerImage
 from .. import log as logger  
 
 async def deploy(
@@ -105,7 +107,14 @@ async def deploy(
         
         # Determine which services to deploy
         if services is None:
-            services = ["api", "worker"]
+            services = ["api"]
+            # Add worker services based on available container files
+            if "worker-queue" in config.container_files:
+                services.append("worker-queue")
+            if "worker-db" in config.container_files:
+                services.append("worker-db")
+            if "worker" in config.container_files:  
+                services.append("worker")
             if config.nginx_enabled:
                 services.append("nginx")
         
@@ -126,7 +135,7 @@ async def deploy(
                 if service == "nginx":
                     # Handle nginx deployment specially
                     nginx_result = await _deploy_nginx_service(
-                        config, image_builder, container_runner, dry_run, log
+                        config, image_builder, container_runner, dry_run, logger
                     )
                     if nginx_result["success"]:
                         deployed_services[service] = nginx_result
@@ -269,8 +278,7 @@ async def _deploy_nginx_service(
             if not build_success:
                 return {"success": False, "error": "Failed to build nginx image"}
         else:
-            # Use official nginx image
-            from .containers.interface_container import ContainerImage
+            # Use official nginx image            
             nginx_image = ContainerImage(name="nginx", tag="alpine", registry="docker.io")
         
         # Create runtime spec

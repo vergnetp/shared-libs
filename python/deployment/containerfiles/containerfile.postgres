@@ -1,0 +1,25 @@
+FROM postgres:15-alpine
+
+# Build arguments
+ARG POSTGRES_DB
+ARG POSTGRES_USER
+ARG POSTGRES_PASSWORD
+
+# Set environment variables
+ENV POSTGRES_DB=${POSTGRES_DB}
+ENV POSTGRES_USER=${POSTGRES_USER}
+ENV POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+ENV PGDATA=/var/lib/postgresql/data
+
+# Copy initialization scripts
+COPY containers/postgres-init/ /docker-entrypoint-initdb.d/
+
+# Create directories and set permissions
+RUN mkdir -p /var/lib/postgresql/data && \
+    chown -R postgres:postgres /var/lib/postgresql/data
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} || exit 1
+
+EXPOSE 5432
