@@ -76,8 +76,7 @@ class DeploymentConfig(BaseConfig):
                 Supports format strings with {registry}, {service}, {version} placeholders.
                 Example: {"api": "{registry}/myapp-{service}:{version}"}
                 
-            config_injection (Dict[str, Any], optional): Configuration objects to inject into builds.
-                These objects provide values that can be referenced in config_mapping.
+            config_injection (Dict[str, Any], optional): Configuration objects to inject into builds.                
                 Example: {"db": database_config, "app": app_config}  
                 
             sensitive_configs (List[str], optional): List of configuration paths containing sensitive data.
@@ -222,12 +221,7 @@ class DeploymentConfig(BaseConfig):
     def config_injection(self) -> Dict[str, Any]:
         """Get configuration injection mapping."""
         return self._config_injection
-    
-    @property
-    def config_mapping(self) -> Dict[str, str]:
-        """Get configuration mapping."""
-        return self._config_mapping
-    
+  
     # Add methods referenced in readme examples
     @property
     def total_server_count(self) -> int:

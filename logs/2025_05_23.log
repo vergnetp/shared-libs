@@ -41,3 +41,37 @@ server {
 
 upstream api_backend {
     server prod-api1.company.com:80... | component=deploy subcomponent=_deploy_nginx_service service_name=service-29100 environment=dev
+2025-05-23 21:19:02.278 [INFO] [INFO] deploy - deploy -  Deploying containers using docker runtime | component=deploy subcomponent=deploy service_name=service-28056 environment=dev
+2025-05-23 21:19:02.279 [INFO] [INFO] deploy - _deploy_app_service -  [DRY RUN] Would build and deploy: api:1 | component=deploy subcomponent=_deploy_app_service service_name=service-28056 environment=dev
+2025-05-23 21:19:02.280 [INFO] [INFO] deploy - _deploy_app_service -  [DRY RUN] Would build and deploy: worker:1 | component=deploy subcomponent=_deploy_app_service service_name=service-28056 environment=dev
+2025-05-23 21:19:02.281 [INFO] [INFO] deploy - _deploy_nginx_service -  [DRY RUN] Would deploy nginx with config: | component=deploy subcomponent=_deploy_nginx_service service_name=service-28056 environment=dev
+2025-05-23 21:19:02.281 [INFO] [INFO] deploy - _deploy_nginx_service -  
+upstream api_backend {
+    server localhost:8000;
+}
+
+server {
+    listen 80;
+    
+    server_name localhost;
+    
+    location / {
+        proxy_pass http://api_backend;
+        proxy_set_header Host... | component=deploy subcomponent=_deploy_nginx_service service_name=service-28056 environment=dev
+2025-05-23 21:23:36.447 [INFO] [INFO] deploy - deploy -  Deploying containers using docker runtime | component=deploy subcomponent=deploy service_name=service-28760 environment=dev
+2025-05-23 21:23:36.448 [INFO] [INFO] deploy - _deploy_app_service -  [DRY RUN] Would build and deploy: api:1 | component=deploy subcomponent=_deploy_app_service service_name=service-28760 environment=dev
+2025-05-23 21:23:36.449 [INFO] [INFO] deploy - _deploy_app_service -  [DRY RUN] Would build and deploy: worker:1 | component=deploy subcomponent=_deploy_app_service service_name=service-28760 environment=dev
+2025-05-23 21:23:36.449 [INFO] [INFO] deploy - _deploy_nginx_service -  [DRY RUN] Would deploy nginx with config: | component=deploy subcomponent=_deploy_nginx_service service_name=service-28760 environment=dev
+2025-05-23 21:23:36.450 [INFO] [INFO] deploy - _deploy_nginx_service -  
+upstream api_backend {
+    server localhost:8000;
+}
+
+server {
+    listen 80;
+    
+    server_name localhost;
+    
+    location / {
+        proxy_pass http://api_backend;
+        proxy_set_header Host... | component=deploy subcomponent=_deploy_nginx_service service_name=service-28760 environment=dev

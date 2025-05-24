@@ -63,27 +63,8 @@ class ConfigurationResolver:
         resolved.update(self.config.build_args)
         
         # Use reflection to automatically discover and inject config values
-        resolved.update(self._resolve_by_reflection(mask_sensitive))
-        
-        # Add manual config mappings (for overrides or special cases)
-        for build_arg_name, config_path in self.config.config_mapping.items():
-            try:
-                if '{' in config_path and '}' in config_path:
-                    resolved_value = self._resolve_interpolated_string(config_path)
-                else:
-                    resolved_value = self.resolve_config_value(config_path)
-                
-                if resolved_value is None:
-                    resolved[build_arg_name] = ""
-                elif isinstance(resolved_value, bool):
-                    resolved[build_arg_name] = "true" if resolved_value else "false"
-                else:
-                    resolved[build_arg_name] = str(resolved_value)
-                    
-            except ValueError as e:
-                print(f"Warning: Could not resolve config path '{config_path}': {e}")
-                resolved[build_arg_name] = ""
-        
+        resolved.update(self._resolve_by_reflection(mask_sensitive))        
+ 
         return resolved
 
     def _resolve_by_reflection(self, mask_sensitive: bool = True) -> Dict[str, str]:
@@ -119,29 +100,6 @@ class ConfigurationResolver:
                     print(f"Warning: Could not resolve {config_name}.{attr_name}: {e}")
         
         return resolved
-
-    def _resolve_interpolated_string(self, template: str) -> str:
-        """
-        Resolve a string with interpolated config values.
-        Example: "redis://:{redis.password}@{redis.host}:{redis.port}/0"
-        """
-        import re
-        
-        # Find all {config.path} patterns
-        pattern = r'\{([^}]+)\}'
-        matches = re.findall(pattern, template)
-        
-        result = template
-        for match in matches:
-            try:
-                value = self.resolve_config_value(match)
-                result = result.replace(f'{{{match}}}', str(value))
-            except ValueError as e:
-                print(f"Warning: Could not resolve interpolated value '{match}': {e}")
-                # Keep the placeholder if resolution fails
-                pass
-        
-        return result
       
     def validate_config_mappings(self) -> List[str]:
         """

@@ -12,8 +12,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY src/ ./src/
-COPY python/ ./python/
+COPY ../../src/ ../../src/
+COPY ./python/ ./python/
 
 # Build arguments (injected from deployment config)
 ARG app_name

@@ -1,4 +1,4 @@
-import sys
+import sys, os
 import asyncio
 
 sys.path.insert(0, str("C:\\Users\\Phil\\Desktop\\Projects\\shared-libs\\python"))
@@ -10,6 +10,8 @@ from .deploy import deploy
 async def main():
     """Deploy to production."""
     
+
+
     global config
     
     config = None
@@ -24,6 +26,11 @@ async def main():
     if not config:
         print(f"No config available for {env}, aborting")
         return 0
+
+    print(f"Current Working Directory: {os.getcwd()}")
+    print(f"Build Context: {config.build_context}")
+    print(f"Container Files: {config.container_files}")
+    print(f"The file directory: {os.path.abspath(os.path.dirname(__file__))}")
 
     # Get version from command line or prompt
     if len(sys.argv) > 1:
